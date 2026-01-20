@@ -1,0 +1,20 @@
+\begin{table}
+\caption{VeryHighRiskHome - Robustness Analysis: 10 ML Models}
+\label{tab:robustness_veryhigh}
+\begin{tabular}{lllllll}
+\toprule
+Model & Train_Acc & Test_Acc & Train_F1 & Test_F1 & Train_AUC & Test_AUC \\
+\midrule
+XGBoost & 0.8249 & 0.8196 & 0.6855 & 0.6763 & 0.8718 & 0.8613 \\
+LightGBM & 0.8221 & 0.8195 & 0.6787 & 0.6745 & 0.8653 & 0.8596 \\
+RandomForest & 0.8461 & 0.8126 & 0.7270 & 0.6671 & 0.9128 & 0.8508 \\
+Logistic & 0.8084 & 0.8047 & 0.6709 & 0.6628 & 0.8502 & 0.8451 \\
+AdaBoost & 0.8141 & 0.8109 & 0.6667 & 0.6614 & 0.8543 & 0.8505 \\
+OLS & 0.8093 & 0.8056 & 0.6683 & 0.6602 & 0.8468 & 0.8414 \\
+ElasticNet & 0.8096 & 0.8055 & 0.6686 & 0.6597 & 0.8468 & 0.8414 \\
+Ridge & 0.8093 & 0.8056 & 0.6678 & 0.6596 & 0.8468 & 0.8414 \\
+Lasso & 0.8096 & 0.8054 & 0.6685 & 0.6595 & 0.8468 & 0.8414 \\
+NaiveBayes & 0.7092 & 0.7054 & 0.6051 & 0.5988 & 0.7804 & 0.7745 \\
+\bottomrule
+\end{tabular}
+\end{table}

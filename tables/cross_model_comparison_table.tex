@@ -1,0 +1,20 @@
+\begin{table}
+\caption{Cross-Model Performance Comparison: All Targets (Test Set)}
+\label{tab:robustness_comparison}
+\begin{tabular}{lllllll}
+\toprule
+Model & SomeRisk_F1 & SomeRisk_AUC & VeryHigh_F1 & VeryHigh_AUC & Treatment_F1 & Treatment_AUC \\
+\midrule
+OLS & 0.8923 & 0.8712 & 0.6602 & 0.8414 & 0.6545 & 0.8781 \\
+Logistic & 0.8950 & 0.8797 & 0.6628 & 0.8451 & 0.6660 & 0.8820 \\
+Lasso & 0.8921 & 0.8713 & 0.6595 & 0.8414 & 0.6540 & 0.8781 \\
+Ridge & 0.8923 & 0.8713 & 0.6596 & 0.8414 & 0.6545 & 0.8781 \\
+ElasticNet & 0.8921 & 0.8713 & 0.6597 & 0.8414 & 0.6532 & 0.8781 \\
+NaiveBayes & 0.7427 & 0.8058 & 0.5988 & 0.7745 & 0.5207 & 0.8548 \\
+RandomForest & 0.8965 & 0.8849 & 0.6671 & 0.8508 & 0.6799 & 0.8889 \\
+XGBoost & 0.9005 & 0.8932 & 0.6763 & 0.8613 & 0.6760 & 0.9004 \\
+LightGBM & 0.8972 & 0.8917 & 0.6745 & 0.8596 & 0.6712 & 0.8973 \\
+AdaBoost & 0.8946 & 0.8819 & 0.6614 & 0.8505 & 0.6568 & 0.8784 \\
+\bottomrule
+\end{tabular}
+\end{table}
