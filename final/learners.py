@@ -17,7 +17,6 @@ from sklearn.linear_model import (
 )
 from sklearn.ensemble import (
     RandomForestRegressor, RandomForestClassifier,
-    GradientBoostingRegressor, GradientBoostingClassifier,
     StackingRegressor, StackingClassifier,
 )
 from xgboost import XGBRegressor, XGBClassifier
@@ -27,6 +26,54 @@ from sklearn.preprocessing import StandardScaler
 from config import RANDOM_STATE, N_JOBS
 
 _CS_FAST = np.logspace(-3, 3, 7)
+
+# Inside StackingRegressor/StackingClassifier, scikit-learn already
+# parallelizes across folds and base learners.  Setting base-learner
+# n_jobs=1 avoids fork-bombing the machine when the outer ensemble
+# also uses n_jobs>1.
+N_JOBS_BASE = 1
+
+
+def _lasso_regressor(n_jobs=N_JOBS):
+    return Pipeline([
+        ("scaler", StandardScaler()),
+        ("lasso", LassoCV(cv=3, n_jobs=n_jobs, random_state=RANDOM_STATE, max_iter=5000)),
+    ])
+
+
+def _ridge_regressor():
+    return Pipeline([
+        ("scaler", StandardScaler()),
+        ("ridge", RidgeCV(cv=3)),
+    ])
+
+
+def _rf_regressor(n_jobs=N_JOBS):
+    return RandomForestRegressor(
+        n_estimators=200, max_depth=15, min_samples_leaf=5,
+        random_state=RANDOM_STATE, n_jobs=n_jobs,
+    )
+
+
+def _lasso_classifier(n_jobs=N_JOBS):
+    return LogisticRegressionCV(
+        cv=3, Cs=_CS_FAST, penalty="l1", solver="liblinear", max_iter=500,
+        tol=1e-2, n_jobs=n_jobs, random_state=RANDOM_STATE, scoring="roc_auc",
+    )
+
+
+def _ridge_classifier(n_jobs=N_JOBS):
+    return LogisticRegressionCV(
+        cv=3, Cs=_CS_FAST, penalty="l2", solver="lbfgs", max_iter=1000,
+        tol=1e-2, n_jobs=n_jobs, random_state=RANDOM_STATE, scoring="roc_auc",
+    )
+
+
+def _rf_classifier(n_jobs=N_JOBS):
+    return RandomForestClassifier(
+        n_estimators=200, max_depth=15, min_samples_leaf=5,
+        random_state=RANDOM_STATE, n_jobs=n_jobs,
+    )
 
 
 def create_learners() -> dict:
@@ -48,25 +95,13 @@ def create_learners() -> dict:
     }
 
     learners["lasso"] = {
-        "g": Pipeline([
-            ("scaler", StandardScaler()),
-            ("lasso", LassoCV(cv=3, n_jobs=N_JOBS, random_state=RANDOM_STATE, max_iter=5000)),
-        ]),
-        "m": LogisticRegressionCV(
-            cv=3, Cs=_CS_FAST, penalty="l1", solver="liblinear", max_iter=500,
-            tol=1e-2, n_jobs=N_JOBS, random_state=RANDOM_STATE, scoring="roc_auc",
-        ),
+        "g": _lasso_regressor(n_jobs=N_JOBS),
+        "m": _lasso_classifier(n_jobs=N_JOBS),
     }
 
     learners["ridge"] = {
-        "g": Pipeline([
-            ("scaler", StandardScaler()),
-            ("ridge", RidgeCV(cv=3)),
-        ]),
-        "m": LogisticRegressionCV(
-            cv=3, Cs=_CS_FAST, penalty="l2", solver="lbfgs", max_iter=1000,
-            tol=1e-2, n_jobs=N_JOBS, random_state=RANDOM_STATE, scoring="roc_auc",
-        ),
+        "g": _ridge_regressor(),
+        "m": _ridge_classifier(n_jobs=N_JOBS),
     }
 
     learners["enet"] = {
@@ -83,14 +118,8 @@ def create_learners() -> dict:
     }
 
     learners["rf"] = {
-        "g": RandomForestRegressor(
-            n_estimators=200, max_depth=15, min_samples_leaf=5,
-            random_state=RANDOM_STATE, n_jobs=N_JOBS,
-        ),
-        "m": RandomForestClassifier(
-            n_estimators=200, max_depth=15, min_samples_leaf=5,
-            random_state=RANDOM_STATE, n_jobs=N_JOBS,
-        ),
+        "g": _rf_regressor(n_jobs=N_JOBS),
+        "m": _rf_classifier(n_jobs=N_JOBS),
     }
 
     learners["xgb"] = {
@@ -112,36 +141,20 @@ def create_learners() -> dict:
 
 
 def _base_learners_regressor() -> list:
+    # Use N_JOBS_BASE=1 because StackingRegressor already parallelizes
+    # across folds and base learners via its own n_jobs parameter.
     return [
-        ("lasso", Pipeline([
-            ("scaler", StandardScaler()),
-            ("lasso", LassoCV(cv=3, n_jobs=N_JOBS, random_state=RANDOM_STATE, max_iter=3000)),
-        ])),
-        ("ridge", Pipeline([
-            ("scaler", StandardScaler()),
-            ("ridge", RidgeCV(cv=3)),
-        ])),
-        ("rf", RandomForestRegressor(
-            n_estimators=150, max_depth=12, min_samples_leaf=5,
-            random_state=RANDOM_STATE, n_jobs=N_JOBS,
-        )),
+        ("lasso", _lasso_regressor(n_jobs=N_JOBS_BASE)),
+        ("ridge", _ridge_regressor()),
+        ("rf", _rf_regressor(n_jobs=N_JOBS_BASE)),
     ]
 
 
 def _base_learners_classifier() -> list:
     return [
-        ("lasso", LogisticRegressionCV(
-            cv=3, Cs=_CS_FAST, penalty="l1", solver="liblinear", max_iter=500,
-            tol=1e-2, n_jobs=N_JOBS, random_state=RANDOM_STATE, scoring="roc_auc",
-        )),
-        ("ridge", LogisticRegressionCV(
-            cv=3, Cs=_CS_FAST, penalty="l2", solver="lbfgs", max_iter=1000,
-            tol=1e-2, n_jobs=N_JOBS, random_state=RANDOM_STATE, scoring="roc_auc",
-        )),
-        ("rf", RandomForestClassifier(
-            n_estimators=150, max_depth=12, min_samples_leaf=5,
-            random_state=RANDOM_STATE, n_jobs=N_JOBS,
-        )),
+        ("lasso", _lasso_classifier(n_jobs=N_JOBS_BASE)),
+        ("ridge", _ridge_classifier(n_jobs=N_JOBS_BASE)),
+        ("rf", _rf_classifier(n_jobs=N_JOBS_BASE)),
     ]
 
 

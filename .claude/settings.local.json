@@ -9,7 +9,8 @@
       "Bash(\"C:\\\\Users\\\\jadrk\\\\Dropbox\\\\MICS_DDML\\\\.venv\\\\Scripts\\\\python.exe\" \"C:\\\\Users\\\\jadrk\\\\Dropbox\\\\MICS_DDML\\\\final\\\\run_debug.py\")",
       "Bash(C:\\\\Users\\\\jadrk\\\\Dropbox\\\\MICS_DDML\\\\.venv\\\\Scripts\\\\python.exe *)",
       "PowerShell(& \"C:\\\\Users\\\\jadrk\\\\Dropbox\\\\MICS_DDML\\\\.venv\\\\Scripts\\\\python.exe\" -c \"import sys; print\\(sys.version\\); import pandas; import sklearn; import doubleml; print\\('Imports OK'\\)\")",
-      "Bash(git *)"
+      "Bash(git *)",
+      "Bash(gh auth *)"
     ]
   }
 }

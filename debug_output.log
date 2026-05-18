@@ -57,3 +57,79 @@ Dataset: U5 | N = 7,224
     Effect: -0.0556 (0.0116) ***
 
   Some Risk Home | Any Treatment | stacked
+    Saved checkpoint: debug_hh_any_HH_SomeRiskHome_water_treatment_stacked.pkl
+    Effect: -0.0556 (0.0106) ***
+
+  Very High Risk Home | Any Treatment | ols
+    Saved checkpoint: debug_hh_any_HH_VeryHighRiskHome_water_treatment_ols.pkl
+    Effect: -0.0178 (0.0133) 
+
+  Very High Risk Home | Any Treatment | stacked
+    Saved checkpoint: debug_hh_any_HH_VeryHighRiskHome_water_treatment_stacked.pkl
+    Effect: -0.0246 (0.0119) ***
+
+--- U5: Any Treatment -> Diarrhea ---
+
+  Diarrhea | Any Treatment | ols
+    Saved checkpoint: debug_u5_any_U5_diarrhea_water_treatment_ols.pkl
+    Effect: -0.0456 (0.0112) ***
+
+  Diarrhea | Any Treatment | stacked
+    Saved checkpoint: debug_u5_any_U5_diarrhea_water_treatment_stacked.pkl
+    Effect: -0.0360 (0.0111) ***
+
+--- HH: Specific Treatments -> E.coli ---
+
+  Some Risk Home | Boil | ols
+    Saved checkpoint: debug_hh_spec_HH_SomeRiskHome_treat_boil_ols.pkl
+    Effect: -0.1316 (0.0180) ***
+
+  Some Risk Home | Boil | stacked
+    Saved checkpoint: debug_hh_spec_HH_SomeRiskHome_treat_boil_stacked.pkl
+    Effect: -0.1678 (0.0133) ***
+
+  Some Risk Home | Chlorine | ols
+    Saved checkpoint: debug_hh_spec_HH_SomeRiskHome_treat_chlorine_ols.pkl
+    Effect: 0.0019 (0.0288) 
+
+  Some Risk Home | Chlorine | stacked
+    Saved checkpoint: debug_hh_spec_HH_SomeRiskHome_treat_chlorine_stacked.pkl
+    Effect: 0.0020 (0.0215) 
+
+  Very High Risk Home | Boil | ols
+    Saved checkpoint: debug_hh_spec_HH_VeryHighRiskHome_treat_boil_ols.pkl
+    Effect: -0.1301 (0.0155) ***
+
+  Very High Risk Home | Boil | stacked
+    Saved checkpoint: debug_hh_spec_HH_VeryHighRiskHome_treat_boil_stacked.pkl
+    Effect: -0.1183 (0.0118) ***
+
+  Very High Risk Home | Chlorine | ols
+    Saved checkpoint: debug_hh_spec_HH_VeryHighRiskHome_treat_chlorine_ols.pkl
+    Effect: -0.0336 (0.0309) 
+
+  Very High Risk Home | Chlorine | stacked
+    Saved checkpoint: debug_hh_spec_HH_VeryHighRiskHome_treat_chlorine_stacked.pkl
+    Effect: 0.0197 (0.0237) 
+
+======================================================================
+DEBUG RUN COMPLETE
+======================================================================
+
+================================================================================
+Significant effects (95% CI excludes zero): 9/14
+================================================================================
+Outcome                Treatment          Learner          Coef       SE               95% CI       N
+--------------------------------------------------------------------------------
+SomeRiskHome           treat_boil         ols           -0.1316   0.0180 [-0.1684, -0.0962]   11924
+SomeRiskHome           treat_boil         stacked       -0.1678   0.0133 [-0.1940, -0.1417]   11924
+SomeRiskHome           water_treatment    ols           -0.0556   0.0116 [-0.0786, -0.0328]   11924
+SomeRiskHome           water_treatment    stacked       -0.0556   0.0106 [-0.0764, -0.0348]   11924
+VeryHighRiskHome       treat_boil         ols           -0.1301   0.0155 [-0.1612, -0.0998]   11924
+VeryHighRiskHome       treat_boil         stacked       -0.1183   0.0118 [-0.1410, -0.0951]   11924
+VeryHighRiskHome       water_treatment    stacked       -0.0246   0.0119 [-0.0478, -0.0012]   11924
+diarrhea               water_treatment    ols           -0.0456   0.0112 [-0.0676, -0.0236]    7224
+diarrhea               water_treatment    stacked       -0.0360   0.0111 [-0.0577, -0.0144]    7224
+================================================================================
+
+CSV saved to: C:\Users\jadrk\Dropbox\MICS_DDML\Output\results_debug.csv

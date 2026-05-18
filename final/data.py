@@ -304,13 +304,16 @@ def get_summary(dt: pd.DataFrame, dataset_type: str = "HH") -> dict:
             summary[f"risk_source_{label}_n"] = n
 
     # Print summary
-    print(f"\n{'='*60}")
-    print(f"Dataset: {dataset_type} | N = {summary['n_total']:,}")
-    print(f"{'='*60}")
+    lines = [
+        "=" * 60,
+        f"Dataset: {dataset_type} | N = {summary['n_total']:,}",
+        "=" * 60,
+    ]
     for key, val in summary.items():
         if key not in ["dataset"]:
-            logger.info(f"  {key}: {val}")
-    print(f"{'='*60}\n")
+            lines.append(f"  {key}: {val}")
+    lines.append("=" * 60)
+    logger.info("\n".join(lines))
 
     return summary
 
@@ -339,6 +342,6 @@ def validate_data(dt: pd.DataFrame, outcome_var: str, treatment_var: str) -> boo
 
     if issues:
         for issue in issues:
-            logger.info(f"  WARNING: {issue}")
+            logger.warning(f"  {issue}")
         return False
     return True

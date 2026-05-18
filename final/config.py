@@ -33,8 +33,10 @@ for d in [OUTPUT_DIR, CHECKPOINT_DIR, FIGURE_DIR]:
 # RANDOM SEED & PARALLELIZATION
 # =============================================================================
 
+import os
+
 RANDOM_STATE = 42
-N_JOBS = -1
+N_JOBS = max(1, os.cpu_count() // 2)  # cap to avoid oversubscription
 
 # =============================================================================
 # CROSS-VALIDATION SETTINGS
@@ -179,6 +181,9 @@ EDUCATION_SUBGROUP_VALUES = [0, 1, 2]
 # =============================================================================
 
 LEARNER_NAMES = ["ols", "lasso", "ridge", "enet", "rf", "xgb", "stacked"]
+
+# Subset used when --fast is passed (fastest + most informative learners)
+FAST_LEARNER_NAMES = ["ols", "lasso", "rf", "stacked"]
 
 LEARNER_LABELS = {
     "ols": "OLS",
