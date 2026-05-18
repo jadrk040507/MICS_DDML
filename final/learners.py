@@ -57,15 +57,17 @@ def _rf_regressor(n_jobs=N_JOBS):
 
 def _lasso_classifier(n_jobs=N_JOBS):
     return LogisticRegressionCV(
-        cv=3, Cs=_CS_FAST, penalty="l1", solver="liblinear", max_iter=500,
+        cv=3, Cs=_CS_FAST, solver="liblinear", max_iter=500,
         tol=1e-2, n_jobs=n_jobs, random_state=RANDOM_STATE, scoring="roc_auc",
+        l1_ratios=(1,),
     )
 
 
 def _ridge_classifier(n_jobs=N_JOBS):
     return LogisticRegressionCV(
-        cv=3, Cs=_CS_FAST, penalty="l2", solver="lbfgs", max_iter=1000,
+        cv=3, Cs=_CS_FAST, solver="lbfgs", max_iter=1000,
         tol=1e-2, n_jobs=n_jobs, random_state=RANDOM_STATE, scoring="roc_auc",
+        l1_ratios=(0,),
     )
 
 
@@ -89,8 +91,9 @@ def create_learners() -> dict:
     learners["ols"] = {
         "g": LinearRegression(),
         "m": LogisticRegressionCV(
-            cv=3, Cs=_CS_FAST, penalty="l2", solver="lbfgs", max_iter=1000,
+            cv=3, Cs=_CS_FAST, solver="lbfgs", max_iter=1000,
             tol=1e-2, n_jobs=N_JOBS, random_state=RANDOM_STATE, scoring="roc_auc",
+            l1_ratios=(0,),
         ),
     }
 
@@ -111,7 +114,7 @@ def create_learners() -> dict:
                                     n_jobs=N_JOBS, random_state=RANDOM_STATE, max_iter=3000)),
         ]),
         "m": LogisticRegressionCV(
-            cv=3, Cs=_CS_FAST, penalty="elasticnet", solver="saga", max_iter=2000,
+            cv=3, Cs=_CS_FAST, solver="saga", max_iter=2000,
             tol=1e-2, n_jobs=N_JOBS, random_state=RANDOM_STATE, scoring="roc_auc",
             l1_ratios=[0.2, 0.5, 0.8],
         ),
@@ -169,8 +172,9 @@ def _create_stacked_ensemble() -> dict:
 
     final_g = RidgeCV(alphas=_RIDGE_ALPHAS, cv=5)
     final_m = LogisticRegressionCV(
-        cv=5, Cs=_CS_FAST, penalty="l2", solver="lbfgs", max_iter=1000,
+        cv=5, Cs=_CS_FAST, solver="lbfgs", max_iter=1000,
         tol=1e-2, n_jobs=N_JOBS, random_state=RANDOM_STATE, scoring="roc_auc",
+        l1_ratios=(0,),
     )
     stacked_g = StackingRegressor(
         estimators=_base_learners_regressor(),

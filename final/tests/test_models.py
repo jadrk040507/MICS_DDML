@@ -70,7 +70,6 @@ def test_run_analysis_multiple_learners():
         outcomes=outcomes,
         treatments=treatments,
         learners=learners,
-        skip_checkpoint=True,
     )
     assert len(results) > 0
     assert results[0]["learner"] == "ols"

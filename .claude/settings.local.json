@@ -10,7 +10,11 @@
       "Bash(C:\\\\Users\\\\jadrk\\\\Dropbox\\\\MICS_DDML\\\\.venv\\\\Scripts\\\\python.exe *)",
       "PowerShell(& \"C:\\\\Users\\\\jadrk\\\\Dropbox\\\\MICS_DDML\\\\.venv\\\\Scripts\\\\python.exe\" -c \"import sys; print\\(sys.version\\); import pandas; import sklearn; import doubleml; print\\('Imports OK'\\)\")",
       "Bash(git *)",
-      "Bash(gh auth *)"
+      "Bash(gh auth *)",
+      "Bash(\"C:\\\\Users\\\\jadrk\\\\Dropbox\\\\MICS_DDML\\\\.venv\\\\Scripts\\\\python.exe\" -m pytest final/tests/ -v)",
+      "Bash(\"C:\\\\Users\\\\jadrk\\\\Dropbox\\\\MICS_DDML\\\\.venv\\\\Scripts\\\\python.exe\" -m pip list)",
+      "Bash(uv pip *)",
+      "Bash(\"C:\\\\Users\\\\jadrk\\\\Dropbox\\\\MICS_DDML\\\\.venv\\\\Scripts\\\\python.exe\" -m pytest tests/ -v)"
     ]
   }
 }
