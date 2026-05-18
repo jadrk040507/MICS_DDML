@@ -2,8 +2,7 @@
 Main analysis: DDML IRM estimation for HH (E.coli) and U5 (diarrhea) datasets.
 
 Usage:
-    python run_main.py              # Full analysis (7 learners, slow)
-    python run_main.py --fast       # Fast analysis (4 learners, ~2x speedup)
+    python run_main.py              # Full analysis (7 learners)
     python run_main.py --learners ols lasso rf  # Custom learner subset
 
 Runs:
@@ -26,7 +25,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from config import (
     HH_DATA_FILE, U5_DATA_FILE, HH_OUTCOMES, U5_OUTCOMES,
     ANY_TREATMENT, SPECIFIC_TREATMENTS, ALL_TREATMENTS,
-    LEARNER_NAMES, FAST_LEARNER_NAMES, SUBGROUP_VAR, SUBGROUP_LABELS,
+    LEARNER_NAMES, SUBGROUP_VAR, SUBGROUP_LABELS,
     OUTPUT_DIR, CHECKPOINT_DIR,
     logger, setup_logging,
 )
@@ -42,11 +41,6 @@ import pickle
 def main():
     parser = argparse.ArgumentParser(
         description="Run the MICS DDML main analysis pipeline."
-    )
-    parser.add_argument(
-        "--fast",
-        action="store_true",
-        help="Use only fast learners (OLS, Lasso, RF, Stacked) for quicker iteration.",
     )
     parser.add_argument(
         "--learners",
@@ -72,18 +66,11 @@ def main():
     setup_logging()
 
     # Determine learner subset
-    if args.learners:
-        selected_learners = args.learners
-    elif args.fast:
-        selected_learners = FAST_LEARNER_NAMES
-    else:
-        selected_learners = LEARNER_NAMES
+    selected_learners = args.learners if args.learners else LEARNER_NAMES
 
     logger.info("=" * 70)
     logger.info("MICS DDML: MAIN ANALYSIS")
     logger.info(f"Learners: {selected_learners}")
-    if args.fast:
-        logger.info("FAST MODE: Using reduced learner set for speed")
     logger.info("=" * 70)
 
     # =========================================================================

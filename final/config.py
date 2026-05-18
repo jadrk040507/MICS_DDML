@@ -182,9 +182,6 @@ EDUCATION_SUBGROUP_VALUES = [0, 1, 2]
 
 LEARNER_NAMES = ["ols", "lasso", "ridge", "enet", "rf", "xgb", "stacked"]
 
-# Subset used when --fast is passed (fastest + most informative learners)
-FAST_LEARNER_NAMES = ["ols", "lasso", "rf", "stacked"]
-
 LEARNER_LABELS = {
     "ols": "OLS",
     "lasso": "Lasso",
