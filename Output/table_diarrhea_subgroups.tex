@@ -1,0 +1,54 @@
+\begin{table}[htbp]
+\centering
+\caption{Effect of Boiling on Diarrhea (Child had diarrhea in last 2 weeks) by Water Source Risk Level}
+\label{tab:diarrhea_subgroups}
+\begin{tabular}{lccccccc}
+\toprule
+ & OLS & Lasso & Ridge & ENet & RF & XGB & Stacked \\
+\midrule
+\multicolumn{8}{l}{\textbf{Panel A: No Risk (Risk Source = 0)}} \\
+\midrule
+Coefficient & -0.0114 & -0.0209 & -0.0160 & -0.0191 & -0.0060 & 0.0024 & -0.0328*** \\
+ & (0.0179) & (0.0230) & (0.0165) & (0.0172) & (0.0307) & (0.0364) & (0.0097) \\
+RV (\%) \\
+RVa (\%) \\
+Weight $(g)$ & 0.13 & 0.18 & 0.29 & 0.10 & 0.04 & 0.26 & — \\
+Weight $(m)$ & 0.06 & 0.38 & 0.06 & 0.06 & 0.19 & 0.25 & — \\
+N & \multicolumn{7}{c}{12,629} \\
+
+\multicolumn{8}{l}{\textbf{Panel B: Moderate Risk (Risk Source = 1)}} \\
+\midrule
+Coefficient & -0.0204* & -0.0179 & -0.0100 & -0.0127 & -0.0403* & 0.0054 & -0.0327*** \\
+ & (0.0117) & (0.0173) & (0.0137) & (0.0134) & (0.0244) & (0.0248) & (0.0110) \\
+RV (\%) \\
+RVa (\%) \\
+Weight $(g)$ & 0.09 & 0.27 & 0.10 & 0.19 & 0.03 & 0.32 & — \\
+Weight $(m)$ & 0.07 & 0.21 & 0.07 & 0.07 & 0.30 & 0.27 & — \\
+N & \multicolumn{7}{c}{13,893} \\
+
+\multicolumn{8}{l}{\textbf{Panel C: Very High Risk (Risk Source = 2)}} \\
+\midrule
+Coefficient & 0.0566** & -0.0017 & 0.0306 & -0.0054 & 0.0325 & 0.0499 & -0.0294** \\
+ & (0.0260) & (0.0227) & (0.0240) & (0.0216) & (0.0351) & (0.0379) & (0.0138) \\
+RV (\%) \\
+RVa (\%) \\
+Weight $(g)$ & 0.17 & 0.12 & 0.21 & 0.14 & 0.05 & 0.31 & — \\
+Weight $(m)$ & 0.04 & 0.14 & 0.04 & 0.04 & 0.46 & 0.29 & — \\
+N & \multicolumn{7}{c}{9,599} \\
+
+\midrule
+\bottomrule
+\end{tabular}
+\begin{minipage}{\textwidth}
+\footnotesize
+\textit{Notes:} DoubleML IRM estimates with 5-fold cross-validation, 5 repetitions. 
+Standard errors clustered at PSU level (13,596 clusters) in parentheses. 
+Controls: wealth quintiles, education, urban, sanitation, water source FE, country FE. 
+Subgroup analysis by water source risk level (0=No Risk, 1=Moderate, 2=Very High). 
+RV (Robustness Value) = minimum % of residual variance explained by unobserved confounder 
+to make 95% CI include zero. RVa = minimum % to make point estimate equal zero. 
+Stacked weights are normalized absolute coefficients from the ridge/logistic meta-learner. 
+Weight (g) = outcome model, Weight (m) = treatment (propensity score) model. 
+$^{***}p<0.01$, $^{**}p<0.05$, $^{*}p<0.10$
+\end{minipage}
+\end{table}

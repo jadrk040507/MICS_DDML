@@ -1,0 +1,27 @@
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.ipynb_checkpoints/
+.mypy_cache/
+.dmypy.json
+.pytest_cache/
+
+Data/
+Output/checkpoints/
+Output/figures/
+*.dta
+*.pkl
+
+.dropboxignore
+desktop.ini
+nul
+
+Literature/
+Questionaire/
+Writing edit/
+Do file/
+Figures/
+
+skills-lock.json

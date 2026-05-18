@@ -1,0 +1,102 @@
+"""
+Configuration constants for the DoubleML MICS analysis (translated from config.R).
+"""
+
+from pathlib import Path
+
+# Project root (assumes this file is in python/ and project root is one level up)
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+# Use the child-level dataset as per user request
+DATA_FILE = PROJECT_ROOT / "Data" / "3. Final" / "MASTER_MICS_FINAL_U5.dta"
+OUTPUT_DIR = PROJECT_ROOT / "Output"
+CHECKPOINT_DIR = OUTPUT_DIR / "checkpoints"
+
+# Create directories
+OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+CHECKPOINT_DIR.mkdir(parents=True, exist_ok=True)
+
+# Random seed
+import numpy as np
+np.random.seed(42)
+RANDOM_STATE = 42
+
+# ==============================================================================
+# LEARNERS
+# ==============================================================================
+
+# Base learners for DoubleML
+LEARNER_NAMES = ["ols", "lasso", "ridge", "enet", "rf", "xgb"]
+
+# ==============================================================================
+# OUTCOMES
+# ==============================================================================
+
+# Binary outcomes from WQ26 E.coli count at home:
+# SomeRiskHome: 1 if 0 <= WQ26 <= 100, else 0
+# VeryHighRiskHome: 1 if WQ26 >= 101, else 0
+BINARY_OUTCOMES = [
+    {"var": "some_risk_home", "label": "Some Risk Home", "desc": "E.coli count at home 0-100"},
+    {"var": "very_high_risk_home", "label": "Very High Risk Home", "desc": "E.coli count at home >=101"}
+]
+
+# ==============================================================================
+# TREATMENTS
+# ==============================================================================
+
+# Any treatment (binary) - includes boil, chlorine, filter, other
+ANY_TREATMENT = {"var": "any_treatment", "label": "Any"}
+
+# Specific treatments (vs control)
+MULTI_TREATMENTS = [
+    {"var": "boil", "label": "Boil"},
+    {"var": "chlorine", "label": "Chlorine"},
+    {"var": "filter", "label": "Filter"},
+    {"var": "other_treat", "label": "Other"}
+]
+
+# ==============================================================================
+# CONFOUNDERS
+# ==============================================================================
+
+# Base confounders (common to all models)
+BASE_CONFOUNDERS = [
+    # Wealth (quintile dummies)
+    "wealth_q1", "wealth_q2", "wealth_q3", "wealth_q4", "wealth_q5",
+    # Education (dummies)
+    "edu_0", "edu_1", "edu_2", "edu_3", "edu_4", "edu_na",
+    # Urban
+    "urban_bin",
+    # Sanitation
+    "sanitation",
+    # Household composition
+    "num_children",
+    # Water source (will create dummies)
+    "water_source"
+]
+
+# Country fixed effects (create dummies later)
+COUNTRY_FE = "country"
+
+# Source E.coli (for diarrhea model only) - NOT USED NOW
+SOURCE_ECOLI = None
+
+# Factors (columns to keep as categorical, not convert to numeric)
+FACTORS = [
+    "helevel", "windex5", "WS1", "wq27_decile", "country_cat",
+    "urban", "Any_U5", "Girls_less_than15", "Boys_15or_less", "Toilet",
+    "Country"
+]
+
+# ==============================================================================
+# SUBGROUPS
+# ==============================================================================
+
+SUBGROUP_VAR = "RiskSource"
+SUBGROUP_LABELS = {0: "No Risk", 1: "Moderate", 2: "High"}
+
+# ==============================================================================
+# CROSS-VALIDATION
+# ==============================================================================
+
+N_FOLDS = 5
+N_REP = 2

@@ -1,0 +1,38 @@
+\begin{table}[htbp]
+\centering
+\caption{DDML Estimates: Effect of Water Treatment on E.coli Contamination and Diarrhea}
+\label{tab:main_results}
+\resizebox{\textwidth}{!}{
+\begin{tabular}{llccccccc}
+\hline\hline
+Outcome & Treatment & OLS & Lasso & Ridge & Elastic Net & Random Forest & XGBoost & Stacked \\
+\hline
+Diarrhea (under-5) & Any Treatment & -0.005 & -0.002 & -0.004 & -0.007 & 0.003 & 0.003 & -0.004 \\
+ &  & (0.007) & (0.010) & (0.006) & (0.006) & (0.008) & (0.009) & (0.006) \\
+ &  & {N=36,121} & {N=36,121} & {N=36,121} & {N=36,121} & {N=36,121} & {N=36,121} & {N=36,121} \\
+\addlinespace
+ & Boil & 0.018*** & 0.000 & 0.016** & -0.007 & -0.011 & 0.001 & -0.019*** \\
+ &  & (0.006) & (0.010) & (0.007) & (0.006) & (0.009) & (0.013) & (0.006) \\
+ &  & {N=36,121} & {N=36,121} & {N=36,121} & {N=36,121} & {N=36,121} & {N=36,121} & {N=36,121} \\
+\addlinespace
+ & Chlorine & -0.018 & -0.005 & -0.015 & -0.006 & -0.011 & -0.016 & -0.002 \\
+ &  & (0.012) & (0.012) & (0.012) & (0.012) & (0.013) & (0.016) & (0.010) \\
+ &  & {N=36,121} & {N=36,121} & {N=36,121} & {N=36,121} & {N=36,121} & {N=36,121} & {N=36,121} \\
+\addlinespace
+ & Filter & 0.045*** & 0.017 & 0.042*** & 0.010 & 0.008 & 0.028* & 0.014* \\
+ &  & (0.012) & (0.013) & (0.012) & (0.011) & (0.013) & (0.017) & (0.008) \\
+ &  & {N=36,121} & {N=36,121} & {N=36,121} & {N=36,121} & {N=36,121} & {N=36,121} & {N=36,121} \\
+\addlinespace
+ & Other & -0.009 & -0.047*** & -0.012 & -0.054*** & -0.029*** & 0.004 & -0.058*** \\
+ &  & (0.012) & (0.012) & (0.013) & (0.011) & (0.011) & (0.014) & (0.008) \\
+ &  & {N=36,121} & {N=36,121} & {N=36,121} & {N=36,121} & {N=36,121} & {N=36,121} & {N=36,121} \\
+\hline\hline
+\end{tabular}}
+\begin{minipage}{\textwidth}
+\footnotesize
+\textit{Notes:} DDML IRM estimates with ATE score. 
+Standard errors clustered at PSU level. 
+$^{***}$p$<$0.01, $^{**}$p$<$0.05, $^{*}$p$<$0.1. 
+Cross-fitting: 5 folds, 5 repetitions. 
+\end{minipage}
+\end{table}

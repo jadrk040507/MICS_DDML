@@ -1,0 +1,169 @@
+"""
+Data preparation functions (translated from data.R) - adapted for discretized outcomes.
+"""
+
+import pandas as pd
+import numpy as np
+from config import (
+    DATA_FILE, BASE_CONFOUNDERS,
+    BINARY_OUTCOMES, COUNTRY_FE, SUBGROUP_VAR,
+    MULTI_TREATMENTS, SOURCE_ECOLI
+)
+
+def prepare_data(filepath=None):
+    """
+    Load and prepare data similar to R's prepare_data function.
+    Creates binary outcomes some_risk_home and very_high_risk_home from WQ26.
+    """
+    if filepath is None:
+        filepath = DATA_FILE
+    
+    # Load data
+    dt = pd.read_stata(filepath)
+    
+    # ============================================================================
+    # OUTCOMES: create binary indicators from WQ26 (E.coli count at home)
+    # SomeRiskHome: 1 if 0 <= WQ26 <= 100, else 0
+    # VeryHighRiskHome: 1 if WQ26 >= 101, else 0
+    # If columns already exist, ensure they are 0/1.
+    if "some_risk_home" not in dt.columns:
+        dt["some_risk_home"] = ((dt["WQ26"] >= 0) & (dt["WQ26"] <= 100)).astype(int)
+    else:
+        dt["some_risk_home"] = dt["some_risk_home"].astype(int)
+    
+    if "very_high_risk_home" not in dt.columns:
+        dt["very_high_risk_home"] = (dt["WQ26"] >= 101).astype(int)
+    else:
+        dt["very_high_risk_home"] = dt["very_high_risk_home"].astype(int)
+    
+    # ============================================================================
+    # TREATMENTS
+    # ============================================================================
+    
+    # Any water treatment (includes boil, chlorine, filter, other)
+    dt["any_treatment"] = dt["water_treatment"].astype(int)
+    
+    # Specific treatments (vs control = no treatment)
+    # Note: WQ15_g = 0 (no treatment), 1 (boil), 2 (chlorine), 3 (filter), 98 (other)
+    dt["no_treatment"] = dt["WQ15_g_0"].astype(int)
+    dt["boil"] = dt["WQ15_g_1"].astype(int)
+    dt["chlorine"] = dt["WQ15_g_2"].astype(int)
+    dt["filter"] = dt["WQ15_g_3"].astype(int)
+    dt["other_treat"] = dt["WQ15_g_98"].astype(int)  # Other treatment
+    
+    # ============================================================================
+    # CONFOUNDERS
+    # ============================================================================
+    
+    # Wealth quintile dummies
+    # windex5 is categorical 1..5; we create dummies
+    dt["windex5"] = pd.to_numeric(dt["windex5"], errors='coerce')
+    for i in range(1, 6):
+        dt[f"wealth_q{i}"] = (dt["windex5"] == i).astype(int)
+    
+    # Education dummies
+    dt["helevel_num"] = pd.to_numeric(dt["helevel"], errors='coerce')
+    dt["edu_0"] = dt["helevel_num"].eq(0).astype(int)
+    dt["edu_1"] = dt["helevel_num"].eq(1).astype(int)
+    dt["edu_2"] = dt["helevel_num"].eq(2).astype(int)
+    dt["edu_3"] = dt["helevel_num"].eq(3).astype(int)
+    dt["edu_4"] = dt["helevel_num"].eq(4).astype(int)
+    dt["edu_na"] = dt["helevel_num"].isna().astype(int)
+    
+    # Urban
+    dt["urban_bin"] = dt["urban"].astype(int)  # assuming urban is 0/1 or categorical; we'll convert
+    
+    # Sanitation
+    dt["sanitation"] = dt["improved_latrine"].astype(int)
+    
+    # Number of children
+    dt["num_children"] = dt["HHCHILDREN"].astype(int)
+    dt["num_children"] = dt["num_children"].fillna(0).astype(int)
+    
+    # Water source (factor for dummies)
+    dt["water_source"] = dt["WS1"].astype('category')
+    
+    # Country (factor for FE)
+    dt["country"] = dt["Country"].astype('category')
+    
+    # ============================================================================
+    # SUBGROUPS
+    # ============================================================================
+    
+    # Source risk (0 = no risk, 1 = moderate, 2 = high)
+    dt["risk_source"] = dt["RiskSource"].astype(int)
+    
+    return dt
+
+
+def create_model_matrix(dt, include_source_ecoli=True):
+    """
+    Create model matrix X for DoubleML.
+    include_source_ecoli is kept for compatibility but not used (unless needed).
+    """
+    # Base confounders
+    X_base = BASE_CONFOUNDERS.copy()
+    
+    # Extract base columns
+    X_df = dt[X_base].copy()
+    
+    # Water source dummies
+    ws_dummies = pd.get_dummies(dt["water_source"], prefix="ws", drop_first=False)
+    X_df = pd.concat([X_df, ws_dummies], axis=1)
+    
+    # Country dummies
+    country_dummies = pd.get_dummies(dt["country"], prefix="ctry", drop_first=False)
+    country_dummies.columns = country_dummies.columns.str.replace(' ', '_')
+    X_df = pd.concat([X_df, country_dummies], axis=1)
+    
+    # Combine
+    X = X_df.values
+    
+    # Add source E.coli if needed (for diarrhea model) - currently not used
+    if include_source_ecoli:
+        # Ensure log_WQ27 exists
+        if "log_WQ27" not in dt.columns:
+            dt["log_WQ27"] = np.log1p(dt["WQ27"])
+        X = np.column_stack([X, dt["log_WQ27"].values])
+    
+    return X
+
+
+def get_summary(dt):
+    """
+    Print summary statistics similar to R's get_summary.
+    """
+    print("\n=== DATA SUMMARY ===\n")
+    print(f"Observations: {dt.shape[0]}\n")
+    
+    print("OUTCOMES:")
+    for out in BINARY_OUTCOMES:
+        var = out["var"]
+        # Ensure column exists
+        if var in dt.columns:
+            mean_val = dt[var].mean()
+            print(f"  {out['label']}: {dt[var].sum():.0f} obs, {mean_val*100:.1f}% positive")
+        else:
+            print(f"  {out['label']}: column missing")
+    print()
+    
+    print("TREATMENTS:")
+    any_treat_mean = dt["any_treatment"].mean()
+    boil_mean = dt["boil"].mean()
+    chlorine_mean = dt["chlorine"].mean()
+    filter_mean = dt["filter"].mean()
+    other_treat_mean = dt["other_treat"].mean()
+    print(f"  Any treatment: {any_treat_mean*100:.1f}%")
+    print(f"  Boil: {boil_mean*100:.1f}%")
+    print(f"  Chlorine: {chlorine_mean*100:.1f}%")
+    print(f"  Filter: {filter_mean*100:.1f}%")
+    print(f"  Other: {other_treat_mean*100:.1f}%\n")
+    
+    print("CONFOUNDER:")
+    # log_WQ27 only if needed
+    if "log_WQ27" in dt.columns:
+        logWQ27_mean = dt["log_WQ27"].mean()
+        logWQ27_std = dt["log_WQ27"].std()
+        print(f"  log(1+WQ27): Mean = {logWQ27_mean:.2f}, SD = {logWQ27_std:.2f}")
+    else:
+        print("  log(1+WQ27): not computed (not needed for current outcomes)")

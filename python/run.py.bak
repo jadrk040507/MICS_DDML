@@ -1,0 +1,557 @@
+#!/usr/bin/env python3
+"""
+DoubleML Treatment Effect Estimation — MICS Data
+Translation of R script dml_estimation.R to efficient Python.
+
+Outcomes     : SomeRiskHome, VeryHighRiskHome
+Treatments   : water_treatment, WQ15_g_1, WQ15_g_2, WQ15_g_3, WQ15_g_98
+Covariates   : helevel, windex5, WS1_g, wq27_decile, country_cat,
+                urban, Any_U5, Girls_less_than15, Boys_15or_less, Toilet
+Samples      : All, NoRisk, ModHighRisk, VeryHighRisk
+
+CV           : 5 folds, 3 repetitions
+
+Learners (9 base + 1 stack):
+    OLS / Logit
+    Lasso, Ridge
+    rf1  : shallow  (300 trees, max.depth = 5)
+    rf2  : default  (500 trees, no depth limit)
+    rf3  : deep     (1 000 trees, min.node.size = 5)
+    xgb1 : conservative  (depth 3, eta 0.05, 200 rounds)
+    xgb2 : moderate      (depth 4, eta 0.10, 300 rounds)
+    xgb3 : flexible      (depth 6, eta 0.10, 500 rounds)
+    Stack: Ridge meta-learner on OOF predictions of all 9 base learners
+
+Parallelism  : joblib Parallel (backend='loky')
+Crash safety : each model written via tmp->rename atomic swap.
+Metadata     : OUT / TRT / SPL / learner tag stored in model$.meta so the
+                table builder never has to parse filenames.
+Output files : Tables/table_{OUT}_{SPL}.tex  — one file per outcome x sample
+                (each file contains one table with 5 treatment panels A-E)
+"""
+
+import os
+import pickle
+import tempfile
+from pathlib import Path
+import numpy as np
+import pandas as pd
+from sklearn.linear_model import LinearRegression, LassoCV, RidgeCV, LogisticRegressionCV
+from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier, StackingRegressor, StackingClassifier
+from sklearn.base import clone
+import xgboost as xgb
+from doubleml import DoubleMLData, DoubleMLIRM
+from joblib import Parallel, delayed
+import itertools
+
+# ==============================================================================
+# Configuration
+# ==============================================================================
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+DATA_PATH = PROJECT_ROOT / "Data" / "3. Final" / "MASTER_MICS_FINAL_U5.dta"
+OUTPUT_DIR = PROJECT_ROOT / "Output"
+TABLES_DIR = PROJECT_ROOT / "Tables"
+
+OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+TABLES_DIR.mkdir(parents=True, exist_ok=True)
+
+OUTCOMES = ["SomeRiskHome", "VeryHighRiskHome"]
+TREATMENTS = ["water_treatment", "WQ15_g_1", "WQ15_g_2", "WQ15_g_3", "WQ15_g_98"]
+METHOD_VARS = ["WQ15_g_1", "WQ15_g_2", "WQ15_g_3", "WQ15_g_98"]  # for specific treatments
+X_VARS = [
+    "helevel", "windex5", "WS1_g", "wq27_decile", "country_cat",
+    "urban", "Any_U5", "Girls_less_than15", "Boys_15or_less", "Toilet"
+]
+FACTORS = [
+    "helevel", "windex5", "WS1_g", "wq27_decile",
+    "urban", "Any_U5", "Girls_less_than15", "Boys_15or_less", "Toilet", "country_cat"
+]
+
+SAMPLES = {
+    "All":          (None, None),
+    "NoRisk":       ("RiskSource", "No risk"),
+    "ModHighRisk":  ("RiskSource", "Moderate to high risk"),
+    "VeryHighRisk": ("RiskSource", "Very high risk")
+}
+
+N_FOLDS = 5
+N_REP = 3
+RANDOM_STATE = 42
+
+LEARNER_BASE_IDS = ["ols", "lasso", "ridge",
+                    "rf1", "rf2", "rf3",
+                    "xgb1", "xgb2", "xgb3"]
+LEARNER_LEVELS = ["stack"] + LEARNER_BASE_IDS
+LEARNER_LABELS = ["Stack", "OLS", "Lasso", "Ridge",
+                  "RF 1", "RF 2", "RF 3",
+                  "XGB 1", "XGB 2", "XGB 3"]
+
+TREATMENT_LABELS = {
+    "water_treatment": "Any treatment vs.~nothing",
+    "WQ15_g_1":        "Boil",
+    "WQ15_g_2":        "Chlorine/Aquatabs/PUR",
+    "WQ15_g_3":        "Strain/Settle",
+    "WQ15_g_98":       "Other"
+}
+SAMPLE_LABELS = {
+    "All":          "All observations",
+    "NoRisk":       "No risk",
+    "ModHighRisk":  "Moderate to high risk",
+    "VeryHighRisk": "Very high risk"
+}
+OUTCOME_LABELS = {
+    "SomeRiskHome":     "Some Risk Home",
+    "VeryHighRiskHome": "Very High Risk Home"
+}
+
+# ==============================================================================
+# Helper functions
+# ==============================================================================
+
+def load_and_prepare_data():
+    """Load .dta file, convert labelled columns, outcomes/treatments to numeric,
+    factor columns to categorical, create RiskSource factor."""
+    # Columns we need: outcomes, treatments, factors, RiskSource, WQ15_g_0
+    cols_needed = list(set(OUTCOMES + TREATMENTS + FACTORS + ["RiskSource", "WQ15_g_0"]))
+    # Read Stata file; we only read the columns we need to save memory and time.
+    # We use convert_categoricals=False to get the raw values (strings or numbers) and then convert.
+    df = pd.read_stata(DATA_PATH, columns=cols_needed, convert_categoricals=False)
+    
+    # Convert all columns to numeric, coercing errors to NaN (mimic R's as.numeric)
+    for col in df.columns:
+        df[col] = pd.to_numeric(df[col], errors='coerce')
+    
+    # Convert factor columns to categorical
+    for col in FACTORS:
+        if col in df.columns:
+            df[col] = df[col].astype('category')
+    
+    # Create RiskSource factor with labels
+    if "RiskSource" in df.columns:
+        # Convert to nullable integer to handle NaNs
+        df["RiskSource"] = df["RiskSource"].astype('Int64')
+        # Create categorical with categories 0,1,2
+        df["RiskSource"] = pd.Categorical(
+            df["RiskSource"],
+            categories=[0, 1, 2]
+        )
+        # Rename categories to labels
+        df["RiskSource"] = df["RiskSource"].cat.rename_categories(
+            ["No risk", "Moderate to high risk", "Very high risk"]
+        )
+    
+    # Ensure WQ15_g_0 exists (control)
+    if "WQ15_g_0" not in df.columns:
+        raise KeyError("WQ15_g_0 column missing from data")
+    # Already converted to numeric above, but ensure
+    df["WQ15_g_0"] = pd.to_numeric(df["WQ15_g_0"], errors='coerce')
+    
+    return df
+
+def get_learner(learner_id, task_type):
+    """Return a sklearn compatible learner for DoubleML.
+    task_type: 'regressor' or 'classifier'
+    """
+    if learner_id == "ols":
+        if task_type == "regressor":
+            return LinearRegression()
+        else:
+            return LogisticRegressionCV(cv=5, random_state=RANDOM_STATE)
+    elif learner_id == "lasso":
+        if task_type == "regressor":
+            return LassoCV(cv=5, random_state=RANDOM_STATE, max_iter=10000)
+        else:
+            return LogisticRegressionCV(cv=5, penalty='l1', solver='saga',
+                                       random_state=RANDOM_STATE, max_iter=10000)
+    elif learner_id == "ridge":
+        if task_type == "regressor":
+            return RidgeCV(cv=5)
+        else:
+            return LogisticRegressionCV(cv=5, penalty='l2', solver='lbfgs',
+                                       random_state=RANDOM_STATE, max_iter=10000)
+    elif learner_id.startswith("rf"):
+        # rf1, rf2, rf3
+        if learner_id == "rf1":
+            n_estimators = 300
+            max_depth = 5
+            min_samples_leaf = 1
+        elif learner_id == "rf2":
+            n_estimators = 500
+            max_depth = None
+            min_samples_leaf = 1
+        else:  # rf3
+            n_estimators = 1000
+            max_depth = None
+            min_samples_leaf = 5
+        if task_type == "regressor":
+            rf = RandomForestRegressor(
+                n_estimators=n_estimators,
+                max_depth=max_depth,
+                min_samples_leaf=min_samples_leaf,
+                random_state=RANDOM_STATE,
+                n_jobs=1
+            )
+        else:
+            rf = RandomForestClassifier(
+                n_estimators=n_estimators,
+                max_depth=max_depth,
+                min_samples_leaf=min_samples_leaf,
+                random_state=RANDOM_STATE,
+                n_jobs=1
+            )
+        return rf
+    elif learner_id.startswith("xgb"):
+        # xgb1, xgb2, xgb3
+        params = {
+            "xgb1": {"max_depth": 3, "eta": 0.05, "n_estimators": 200,
+                     "subsample": 0.8, "colsample_bytree": 0.8, "min_child_weight": 10},
+            "xgb2": {"max_depth": 4, "eta": 0.10, "n_estimators": 300,
+                     "subsample": 0.8, "colsample_bytree": 0.8, "min_child_weight": 5},
+            "xgb3": {"max_depth": 6, "eta": 0.10, "n_estimators": 500,
+                     "subsample": 0.8, "colsample_bytree": 0.8, "min_child_weight": 3},
+        }[learner_id]
+        common = {
+            "objective": "reg:squarederror" if task_type == "regressor" else "binary:logistic",
+            "eval_metric": "rmse" if task_type == "regressor" else "logloss",
+            "tree_method": "hist",
+            "seed": RANDOM_STATE,
+            "n_jobs": 1
+        }
+        if task_type == "regressor":
+            return xgb.XGBRegressor(
+                **params,
+                **common
+            )
+        else:
+            return xgb.XGBClassifier(
+                **params,
+                **common
+            )
+    else:
+        raise ValueError(f"Unknown learner ID: {learner_id}")
+
+def make_stacking_learner(base_learner_ids, task_type):
+    """Create a stacking learner using StackingRegressor/Classifier with Ridge meta-learner."""
+    base_learners = []
+    for lid in base_learner_ids:
+        base_learners.append((lid, get_learner(lid, task_type)))
+    if task_type == "regressor":
+        final_estimator = RidgeCV(cv=5)
+        return StackingRegressor(
+            estimators=base_learners,
+            final_estimator=final_estimator,
+            cv=N_FOLDS,  # use same folds? but stacking cv internal; we can set cv=N_FOLDS
+            passthrough=False,
+            n_jobs=None
+        )
+    else:
+        final_estimator = LogisticRegressionCV(cv=5, random_state=RANDOM_STATE)
+        return StackingClassifier(
+            estimators=base_learners,
+            final_estimator=final_estimator,
+            cv=N_FOLDS,
+            n_jobs=None
+        )
+
+def run_doubleml_job(job):
+    """Execute a single DoubleML IRM job."""
+    import shutil
+    OUT = job["OUT"]
+    TRT = job["TRT"]
+    SPL = job["SPL"]
+    learner_idx = job["learner_idx"]
+    fname = job["fname"]
+    row_idx = job["row_idx"]
+    
+    # Ensure output directory exists
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    
+    # Load master data (should be pre-loaded globally for efficiency)
+    data_sub = master_data.iloc[row_idx].copy()
+    
+    # Determine learner tag
+    if learner_idx == 0:
+        learner_tag = "stack"
+        ml_g = make_stacking_learner(LEARNER_BASE_IDS, "regressor")
+        ml_m = make_stacking_learner(LEARNER_BASE_IDS, "classifier")
+    else:
+        lid = LEARNER_BASE_IDS[learner_idx - 1]
+        learner_tag = lid
+        ml_g = get_learner(lid, "regressor")
+        ml_m = get_learner(lid, "classifier")
+    
+    # Prepare DoubleMLData using from_arrays
+    y = data_sub[OUT].values.ravel()  # 1d array
+    d = data_sub[[TRT]].values        # 2d array with single column
+    x = data_sub[X_VARS].values
+    dml_data = DoubleMLData.from_arrays(x=x, y=y, d=d)
+    
+    # Create DoubleMLIRM model
+    dml_irm = DoubleMLIRM(
+        obj_dml_data=dml_data,
+        ml_g=clone(ml_g),
+        ml_m=clone(ml_m),
+        n_folds=N_FOLDS,
+        n_rep=N_REP,
+        score='ATE',
+        draw_sample_splitting=True
+    )
+    # Fit
+    dml_irm.fit(store_predictions=True)
+    
+    # Package output
+    out_obj = {
+        "model": dml_irm,
+        "meta": {"OUT": OUT, "TRT": TRT, "SPL": SPL, "learner": learner_tag}
+    }
+    
+    # Atomic save via temporary file
+    tmp_file = str(fname) + ".tmp"
+    with open(tmp_file, "wb") as f:
+        pickle.dump(out_obj, f, protocol=pickle.HIGHEST_PROTOCOL)
+    os.replace(tmp_file, fname)
+    
+    print(f"[DONE] {OUT} | {TRT} | {SPL} | {learner_tag}")
+    return None
+
+def build_jobs(data):
+    """Create list of job dictionaries for all combinations."""
+    jobs = []
+    for OUT in OUTCOMES:
+        for TRT in TREATMENTS:
+            for SPL, (var, val) in SAMPLES.items():
+                if var is None:
+                    base_idx = np.arange(len(data))
+                else:
+                    base_idx = np.where(data[var] == val)[0]
+                if TRT == "water_treatment":
+                    row_idx = base_idx
+                else:
+                    other_methods = [m for m in METHOD_VARS if m != TRT]
+                    trt_vec = data[TRT].values
+                    ref_vec = data["WQ15_g_0"].values
+                    other_mat = data[other_methods].values
+                    keep = (
+                        (trt_vec == 1) & (ref_vec == 0) & (np.sum(other_mat, axis=1) == 0)
+                    ) | (ref_vec == 1)
+                    row_idx = np.intersect1d(base_idx, np.where(keep)[0])
+                if len(row_idx) < 50:
+                    continue
+                for learner_idx in range(len(LEARNER_LEVELS)):  # 0 stack + 9 base
+                    learner_tag = LEARNER_LEVELS[learner_idx]
+                    fname = OUTPUT_DIR / f"model_{OUT}_{TRT}_{SPL}_{learner_tag if learner_idx>0 else 'stack'}.pkl"
+                    if not fname.exists():
+                        jobs.append({
+                            "OUT": OUT,
+                            "TRT": TRT,
+                            "SPL": SPL,
+                            "learner_idx": learner_idx,
+                            "fname": fname,
+                            "row_idx": row_idx
+                        })
+    return jobs
+
+def summarize_model(path):
+    """Load a saved model .pkl and compute summary statistics."""
+    with open(path, "rb") as f:
+        saved = pickle.load(f)
+    if isinstance(saved, dict) and "model" in saved:
+        obj = saved["model"]
+        meta = saved["meta"]
+    else:
+        obj = saved
+        meta = None
+    if meta is None:
+        return None
+    OUT = meta["OUT"]
+    TRT = meta["TRT"]
+    SPL = meta["SPL"]
+    tag = meta["learner"]
+    
+    # Extract coefficients, se, CI
+    res = obj.param  # DoubleMLIRM param attribute?
+    # Actually DoubleMLIRM stores after fit: obj.coef, obj.se, obj.confint()
+    ate = obj.coef[0]  # single treatment
+    se = obj.se[0]
+    ci = obj.confint(level=0.95)
+    ci_l = ci[0, 0]
+    ci_u = ci[0, 1]
+    
+    # Compute R2 of outcome and treatment predictions
+    pred = obj.predictions  # DoubleMLPredictions
+    # Need to access predictions: pred.ml_g (list of arrays per fold/rep?)
+    # According to doubleml docs, predictions attribute contains:
+    # predictions['ml_g0'], predictions['ml_g1'], predictions['ml_m']
+    # We'll compute as in R:
+    dat = obj.obj_dml_data  # DoubleMLData
+    y = dat.y.reshape(-1)
+    d = dat.d.reshape(-1)
+    # ml_g0 and ml_g1 are lists length n_rep * n_folds? We'll average across all.
+    g0 = np.mean(pred.predictions['ml_g0'], axis=0)
+    g1 = np.mean(pred.predictions['ml_g1'], axis=0)
+    m = np.mean(pred.predictions['ml_m'], axis=0)
+    mu_hat = d * g1 + (1 - d) * g0
+    r2_y = 1 - np.mean((y - mu_hat)**2) / np.var(y)
+    r2_d = 1 - np.mean((d - m)**2) / np.var(d)
+    n_obs = len(y)
+    
+    return pd.DataFrame({
+        "outcome": [OUT],
+        "treatment": [TRT],
+        "sample": [SPL],
+        "learner": [tag],
+        "ate": [ate],
+        "se": [se],
+        "ci_l": [ci_l],
+        "ci_u": [ci_u],
+        "r2_y": [r2_y],
+        "r2_d": [r2_d],
+        "n": [n_obs]
+    })
+
+def make_table_panels(OUT, SPL, summary_df):
+    """Generate LaTeX table lines for given outcome and sample."""
+    df = summary_df[
+        (summary_df["outcome"] == OUT) &
+        (summary_df["sample"] == SPL)
+    ].copy()
+    if df.empty:
+        return None
+    # Order learners as per LEARNER_LABELS
+    df["learner"] = pd.Categorical(df["learner"], categories=LEARNER_LABELS, ordered=True)
+    df = df.sort_values("learner")
+    K = len(LEARNER_LABELS)
+    col_spec = "l" + "c" * K
+    out_lab = OUTCOME_LABELS[OUT]
+    spl_lab = SAMPLE_LABELS[SPL]
+    label = f"tab:{OUT}_{SPL}"
+    caption = f"Effect of water treatment on {out_lab} --- {spl_lab} sample"
+    notes = (
+        "\\footnotesize "
+        "\\textit{Some Risk Home}: E.~coli count at home source $< 100$ CFU/100\\,ml. "
+        "\\textit{Very High Risk Home}: E.~coli count $\\geq 100$ CFU/100\\,ml. "
+        "Each column uses a different ML learner for nuisance functions "
+        "$\\hat{g}$ (outcome) and $\\hat{m}$ (propensity score). "
+        "RF~1: shallow (300 trees, max depth 5). "
+        "RF~2: default (500 trees, no depth limit). "
+        "RF~3: deep (1{,}000 trees, min node size 5). "
+        "XGB~1: conservative ($d=3$, $\\eta=0.05$, 200 rounds). "
+        "XGB~2: moderate ($d=4$, $\\eta=0.10$, 300 rounds). "
+        "XGB~3: flexible ($d=6$, $\\eta=0.10$, 500 rounds). "
+        "Stack: Ridge meta-learner on out-of-fold predictions of all 9 base learners. "
+        "ATE: DML point estimate; Neyman-orthogonal SE in parentheses. "
+        "$R^{2}_{Y}$, $R^{2}_{D}$: cross-fitted $R^{2}$ of outcome and propensity models. "
+        f"Sample: {spl_lab}."
+    )
+    panel_lines = []
+    for i, trt in enumerate(TREATMENTS, start=1):
+        panel_letter = chr(ord('A') + i - 1)
+        trt_lab = TREATMENT_LABELS[trt]
+        sub = df[df["treatment"] == trt]
+        if sub.empty:
+            continue
+        # Build panel rows
+        panel_lines.append(
+            f"\\multicolumn{{{K + 1}}}{{l}}{{\\textbf{{Panel {panel_letter}: {trt_lab}}}}} \\\\"
+        )
+        panel_lines.append("\\midrule")
+        learner_list = " & ".join(sub["learner"].tolist())
+        panel_lines.append(f" & {learner_list} \\\\")
+        panel_lines.append("\\midrule")
+        # ATE
+        ate_vals = " & ".join([f"{v:.3f}" for v in sub["ate"]])
+        panel_lines.append(f"ATE & {ate_vals} \\\\")
+        # SE in parentheses
+        se_vals = " & ".join([f"({v:.3f})" for v in sub["se"]])
+        panel_lines.append(f" & {se_vals} \\\\")
+        # R2_y
+        r2y_vals = " & ".join([f"{v:.3f}" for v in sub["r2_y"]])
+        panel_lines.append(f"$R^{2}_{Y}$ & {r2y_vals} \\\\")
+        # R2_d
+        r2d_vals = " & ".join([f"{v:.3f}" for v in sub["r2_d"]])
+        panel_lines.append(f"$R^{2}_{D}$ & {r2d_vals} \\\\")
+        # N
+        n_vals = " & ".join([f"{int(v):,}" for v in sub["n"]])
+        panel_lines.append(f"$N$ & {n_vals} \\\\")
+        panel_lines.append("\\midrule")
+    if panel_lines and panel_lines[-1] == "\\midrule":
+        panel_lines.pop()
+    # Assemble full table
+    lines = [
+        "\\begin{table}[htbp]",
+        "\\centering",
+        "\\small",
+        f"\\caption{{{caption}}}",
+        f"\\label{{{label}}}",
+        f"\\begin{{tabular}}{{{col_spec}}}",
+        "\\toprule",
+        f" & \\multicolumn{{{K}}}{{c}}{{{out_lab} -- {spl_lab}}} \\\\",
+        f"\\cmidrule(lr){{2-{K + 1}}}",
+    ]
+    lines.extend(panel_lines)
+    lines += [
+        "\\bottomrule",
+        "\\end{tabular}",
+        "\\begin{minipage}{\\linewidth}",
+        "\\smallskip",
+        notes,
+        "\\end{minipage}",
+        "\\end{table}"
+    ]
+    return "\n".join(lines)
+
+def main():
+    global master_data
+    print("Loading and preparing data...")
+    master_data = load_and_prepare_data()
+    print(f"Data shape: {master_data.shape}")
+    # Save master data for reuse (optional)
+    master_path = OUTPUT_DIR / "data_dml.pkl"
+    with open(master_path, "wb") as f:
+        pickle.dump(master_data, f, protocol=pickle.HIGHEST_PROTOCOL)
+    
+    print("Building job list...")
+    jobs = build_jobs(master_data)
+    print(f"Total jobs to run: {len(jobs)}")
+    
+    # Run jobs in parallel
+    n_jobs = max(1, os.cpu_count() - 1)
+    print(f"Running with {n_jobs} workers...")
+    Parallel(n_jobs=n_jobs, backend="loky")(
+        delayed(run_doubleml_job)(job) for job in jobs
+    )
+    print("All jobs completed.")
+    
+    # Summarize results
+    print("Summarizing models...")
+    model_files = list(OUTPUT_DIR.glob("model_*.pkl"))
+    summaries = []
+    for mf in model_files:
+        summ = summarize_model(mf)
+        if summ is not None:
+            summaries.append(summ)
+    if not summaries:
+        raise RuntimeError("No valid model summaries found.")
+    summary_df = pd.concat(summaries, ignore_index=True)
+    summary_path = OUTPUT_DIR / "summary_all.pkl"
+    with open(summary_path, "wb") as f:
+        pickle.dump(summary_df, f, protocol=pickle.HIGHEST_PROTOCOL)
+    print(f"Summary saved to {summary_path}")
+    
+    # Generate LaTeX tables
+    print("Generating LaTeX tables...")
+    for OUT in OUTCOMES:
+        for SPL in SAMPLES.keys():
+            tex = make_table_panels(OUT, SPL, summary_df)
+            if tex is None:
+                print(f"No data for {OUT} / {SPL}")
+                continue
+            out_file = TABLES_DIR / f"table_{OUT}_{SPL}.tex"
+            with open(out_file, "w") as f:
+                f.write(tex)
+            print(f"Written: {out_file}")
+    print("All tables generated.")
+    
+if __name__ == "__main__":
+    main()

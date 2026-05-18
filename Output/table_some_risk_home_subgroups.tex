@@ -1,0 +1,54 @@
+\begin{table}[htbp]
+\centering
+\caption{Effect of Boiling on Any Detectable E.coli at Home ($WQ26>0$) by Water Source Risk Level}
+\label{tab:some_risk_home_subgroups}
+\begin{tabular}{lccccccc}
+\toprule
+ & OLS & Lasso & Ridge & ENet & RF & XGB & Stacked \\
+\midrule
+\multicolumn{8}{l}{\textbf{Panel A: No Risk (Risk Source = 0)}} \\
+\midrule
+Coefficient & 0.0788*** & 0.0746*** & 0.0665*** & 0.0845*** & 0.0931*** & 0.0788** & 0.0918*** \\
+ & (0.0196) & (0.0202) & (0.0158) & (0.0161) & (0.0345) & (0.0320) & (0.0105) \\
+RV (\%) \\
+RVa (\%) \\
+Weight $(g)$ & 0.09 & 0.21 & 0.24 & 0.23 & 0.06 & 0.17 & — \\
+Weight $(m)$ & 0.06 & 0.38 & 0.06 & 0.06 & 0.19 & 0.25 & — \\
+N & \multicolumn{7}{c}{12,629} \\
+
+\multicolumn{8}{l}{\textbf{Panel B: Moderate Risk (Risk Source = 1)}} \\
+\midrule
+Coefficient & 0.0949*** & 0.1145*** & 0.0727*** & 0.0978*** & 0.1275*** & 0.1204*** & 0.1275*** \\
+ & (0.0182) & (0.0250) & (0.0179) & (0.0232) & (0.0339) & (0.0268) & (0.0172) \\
+RV (\%) \\
+RVa (\%) \\
+Weight $(g)$ & 0.07 & 0.08 & 0.06 & 0.18 & 0.29 & 0.33 & — \\
+Weight $(m)$ & 0.07 & 0.21 & 0.07 & 0.07 & 0.30 & 0.27 & — \\
+N & \multicolumn{7}{c}{13,893} \\
+
+\multicolumn{8}{l}{\textbf{Panel C: Very High Risk (Risk Source = 2)}} \\
+\midrule
+Coefficient & 0.1076*** & 0.1059*** & 0.1459*** & 0.1292*** & 0.1573*** & 0.1229* & 0.1813*** \\
+ & (0.0344) & (0.0324) & (0.0281) & (0.0271) & (0.0604) & (0.0647) & (0.0242) \\
+RV (\%) \\
+RVa (\%) \\
+Weight $(g)$ & 0.03 & 0.18 & 0.02 & 0.13 & 0.22 & 0.43 & — \\
+Weight $(m)$ & 0.04 & 0.14 & 0.04 & 0.04 & 0.46 & 0.29 & — \\
+N & \multicolumn{7}{c}{9,599} \\
+
+\midrule
+\bottomrule
+\end{tabular}
+\begin{minipage}{\textwidth}
+\footnotesize
+\textit{Notes:} DoubleML IRM estimates with 5-fold cross-validation, 5 repetitions. 
+Standard errors clustered at PSU level (13,596 clusters) in parentheses. 
+Controls: wealth quintiles, education, urban, sanitation, water source FE, country FE. 
+Subgroup analysis by water source risk level (0=No Risk, 1=Moderate, 2=Very High). 
+RV (Robustness Value) = minimum % of residual variance explained by unobserved confounder 
+to make 95% CI include zero. RVa = minimum % to make point estimate equal zero. 
+Stacked weights are normalized absolute coefficients from the ridge/logistic meta-learner. 
+Weight (g) = outcome model, Weight (m) = treatment (propensity score) model. 
+$^{***}p<0.01$, $^{**}p<0.05$, $^{*}p<0.10$
+\end{minipage}
+\end{table}
