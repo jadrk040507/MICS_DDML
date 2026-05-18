@@ -9,10 +9,10 @@ __pycache__/
 .pytest_cache/
 
 Data/
-Output/checkpoints/
-Output/figures/
+Output/
 *.dta
 *.pkl
+*.log
 
 .dropboxignore
 desktop.ini
@@ -25,3 +25,6 @@ Do file/
 Figures/
 
 skills-lock.json
+
+.agents/
+.claude/
