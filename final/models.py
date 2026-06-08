@@ -20,6 +20,7 @@ from data import create_model_matrix
 from learners import create_learners
 
 import doubleml as dml
+from joblib import Parallel, delayed
 from sklearn.base import clone
 from sklearn.model_selection import StratifiedKFold
 
@@ -51,25 +52,38 @@ def prepare_model_data(
     outcome_var: str,
     treatment_var: str,
     confounder_groups: Optional[Dict[str, List[str]]] = None,
-    include_source_ecoli: bool = False,
-    include_child_controls: bool = False,
-    include_robustness: bool = False,
+    restrict_single_method: bool = False,
     subgroup_var: Optional[str] = None,
     subgroup_val: Optional[Any] = None,
 ) -> Optional[Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, pd.DataFrame]]:
     """
     Prepare clean data matrices for DoubleML estimation.
 
-    Builds the model matrix, applies subgroup filtering, drops incomplete cases,
-    and returns the cleaned arrays.  This should be called once per
-    outcome-treatment-confounder specification and reused across learners.
+    Parameters
+    ----------
+    restrict_single_method : If True and treatment_var is a specific treatment
+        (e.g. treat_chlorine), restrict to households using exactly one method.
 
     Returns
     -------
     (X_clean, y, d, cluster_vars, dt_clean) or None if data is insufficient.
     """
-    # Subsample if subgroup specified
     dt_work = dt.copy()
+
+    # Restrict to single-method households for specific treatment analysis
+    treatment_is_specific = treatment_var.startswith("treat_")
+    if restrict_single_method and treatment_is_specific:
+        if "single_method" in dt_work.columns:
+            n_before = len(dt_work)
+            dt_work = dt_work[dt_work["single_method"] == 1].copy()
+            n_after = len(dt_work)
+            if n_after < MIN_OBSERVATIONS:
+                logger.error(f"    Too few single-method obs (N={n_after})")
+                return None
+        else:
+            logger.warning("    single_method not available, skipping restriction")
+
+    # Subsample if subgroup specified
     if subgroup_var is not None and subgroup_val is not None:
         if subgroup_var not in dt_work.columns:
             logger.error(f"    Subgroup variable '{subgroup_var}' not found")
@@ -84,9 +98,6 @@ def prepare_model_data(
         dt_work,
         outcome_var,
         confounder_groups=confounder_groups,
-        include_source_ecoli=include_source_ecoli,
-        include_child_controls=include_child_controls,
-        include_robustness=include_robustness,
     )
 
     # Filter complete cases on Y, D, and X
@@ -132,9 +143,7 @@ def estimate_effect(
     learner_name: str,
     learner: Dict[str, Any],
     confounder_groups: Optional[Dict[str, List[str]]] = None,
-    include_source_ecoli: bool = False,
-    include_child_controls: bool = False,
-    include_robustness: bool = False,
+    restrict_single_method: bool = False,
     subgroup_var: Optional[str] = None,
     subgroup_val: Optional[Any] = None,
     confounder_set: str = "base",
@@ -142,6 +151,8 @@ def estimate_effect(
     prefix: str = "",
     skip_checkpoint: bool = False,
     prepped_data: Optional[Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, pd.DataFrame]] = None,
+    n_folds: int = N_FOLDS,
+    n_rep: int = N_REP,
 ) -> Optional[Dict[str, Any]]:
     """
     Estimate causal effect using DoubleML IRM.
@@ -154,9 +165,7 @@ def estimate_effect(
     learner_name : Name of the ML learner.
     learner : Dict with 'g' (outcome) and 'm' (treatment) models.
     confounder_groups : Which confounder groups to include.
-    include_source_ecoli : Include risk_source dummies (for diarrhea).
-    include_child_controls : Include child age/sex (U5 only).
-    include_robustness : Include water storage + handwashing.
+    restrict_single_method : If True, restrict specific treatments to single-method households.
     subgroup_var : Variable for subsampling.
     subgroup_val : Value to subsample on.
     confounder_set : Label for the confounder set (for checkpoint naming).
@@ -166,6 +175,8 @@ def estimate_effect(
     prepped_data : Optional tuple (X_clean, y, d, cluster_vars, dt_clean) from
         prepare_model_data().  Passing this avoids re-building the model matrix
         when looping over multiple learners for the same specification.
+    n_folds : Number of cross-fitting folds (default: config.N_FOLDS).
+    n_rep  : Number of cross-fitting repetitions (default: config.N_REP).
 
     Returns
     -------
@@ -196,9 +207,7 @@ def estimate_effect(
             outcome_var=outcome_var,
             treatment_var=treatment_var,
             confounder_groups=confounder_groups,
-            include_source_ecoli=include_source_ecoli,
-            include_child_controls=include_child_controls,
-            include_robustness=include_robustness,
+            restrict_single_method=restrict_single_method,
             subgroup_var=subgroup_var,
             subgroup_val=subgroup_val,
         )
@@ -210,42 +219,64 @@ def estimate_effect(
     n_treated = int(d.sum())
     n_untreated = n_complete - n_treated
 
-    # Use stratified folds for rare treatments to avoid empty folds
-    treated_fraction = n_treated / n_complete
-    use_stratified = treated_fraction < 0.05 or treated_fraction > 0.95
-
-    try:
-        dml_data = dml.DoubleMLData.from_arrays(
-            x=X_clean, y=y, d=d,
-            cluster_vars=cluster_vars,
-        )
-    except Exception as e:
-        logger.error(f"    Creating DoubleMLData: {e}")
-        return None
-
+    # -------------------------------------------------------------------------
     # Fit DoubleML IRM
-    try:
-        dml_model = dml.DoubleMLIRM(
-            obj_dml_data=dml_data,
+    # -------------------------------------------------------------------------
+    # Strategy (defensible + robust):
+    #   1. Start with default n_folds and cluster_vars.
+    #   2. If fit fails for structural reasons (empty folds, cluster splits),
+    #      fall back to fewer folds (n_folds=2).
+    #   3. If that still fails, drop clustering as a last resort.
+    #   This guarantees every specification gets a fair shot without manual
+    #   split construction, which is brittle with clusters.
+    # -------------------------------------------------------------------------
+
+    def _fit_dml(n_folds_try, cluster_try):
+        data = dml.DoubleMLData.from_arrays(
+            x=X_clean, y=y, d=d,
+            cluster_vars=cluster_try,
+        )
+        model = dml.DoubleMLIRM(
+            obj_dml_data=data,
             ml_g=clone(learner["g"]),
             ml_m=clone(learner["m"]),
-            n_folds=N_FOLDS,
-            n_rep=N_REP,
+            n_folds=n_folds_try,
+            n_rep=n_rep,
             score="ATE",
             trimming_rule="truncate",
             trimming_threshold=0.01,
-            draw_sample_splitting=not use_stratified,
+            draw_sample_splitting=True,
         )
-        if use_stratified:
-            skf = StratifiedKFold(n_splits=N_FOLDS, shuffle=True, random_state=RANDOM_STATE)
-            smpls = []
-            for _ in range(N_REP):
-                for train_idx, test_idx in skf.split(X_clean, d):
-                    smpls.append((train_idx, test_idx))
-            dml_model.set_sample_splitting(smpls)
-        dml_model.fit()
-    except Exception as e:
-        logger.error(f"    Fitting DoubleMLIRM: {e}")
+        model.fit()
+        return model
+
+    fallback_log = []
+    dml_model = None
+
+    for attempt, (nf, cl) in enumerate([
+        (n_folds, cluster_vars),
+        (2, cluster_vars),
+        (2, None),
+    ], 1):
+        try:
+            dml_model = _fit_dml(nf, cl)
+            if attempt > 1:
+                logger.info(
+                    f"    Fallback succeeded: attempt {attempt} "
+                    f"(n_folds={nf}, clusters={'yes' if cl is not None else 'no'})"
+                )
+            break
+        except Exception as exc:
+            msg = str(exc)
+            if "zero-dimensional" in msg or "all_smpls_cluster" in msg or "empty" in msg.lower():
+                fallback_log.append(f"attempt {attempt} (n_folds={nf}, clusters={'yes' if cl is not None else 'no'}): {msg}")
+                continue
+            else:
+                logger.error(f"    Unexpected error on attempt {attempt}: {msg}")
+                return None
+
+    if dml_model is None:
+        logger.error(f"    Fitting failed after all attempts: {'; '.join(fallback_log)}")
         return None
 
     # Extract results
@@ -314,20 +345,21 @@ def run_analysis(
     treatments: List[Dict[str, str]],
     learners: Dict[str, Dict],
     confounder_groups: Optional[Dict[str, List[str]]] = None,
-    include_source_ecoli: bool = False,
-    include_child_controls: bool = False,
-    include_robustness: bool = False,
+    restrict_single_method: bool = False,
     subgroup_var: Optional[str] = None,
     subgroup_val: Optional[Any] = None,
     confounder_set: str = "base",
     dataset_type: str = "HH",
     prefix: str = "",
+    n_folds: int = N_FOLDS,
+    n_rep: int = N_REP,
+    n_jobs: int = 1,
 ) -> List[Dict[str, Any]]:
     """
     Run DDML estimation over all outcome-treatment-learner combinations.
 
     Model matrices are built once per outcome-treatment pair and reused across
-    learners, cutting redundant data preparation by ~5-7x.
+    learners.  If n_jobs > 1, learners are run in parallel via joblib.
     """
     results = []
 
@@ -353,40 +385,67 @@ def run_analysis(
                 outcome_var=out_var,
                 treatment_var=trt_var,
                 confounder_groups=confounder_groups,
-                include_source_ecoli=include_source_ecoli,
-                include_child_controls=include_child_controls,
-                include_robustness=include_robustness,
+                restrict_single_method=restrict_single_method,
                 subgroup_var=subgroup_var,
                 subgroup_val=subgroup_val,
             )
             if prepped is None:
                 continue
 
-            for ln_name, ln in learners.items():
-                logger.info(f"{out_label} | {trt_label} | {ln_name}")
+            if n_jobs == 1:
+                for ln_name, ln in learners.items():
+                    logger.info(f"{out_label} | {trt_label} | {ln_name}")
+                    res = estimate_effect(
+                        dt=dt,
+                        outcome_var=out_var,
+                        treatment_var=trt_var,
+                        learner_name=ln_name,
+                        learner=ln,
+                        confounder_groups=confounder_groups,
+                        restrict_single_method=restrict_single_method,
+                        subgroup_var=subgroup_var,
+                        subgroup_val=subgroup_val,
+                        confounder_set=confounder_set,
+                        dataset_type=dataset_type,
+                        prefix=prefix,
+                        prepped_data=prepped,
+                        n_folds=n_folds,
+                        n_rep=n_rep,
+                    )
+                    if res is not None:
+                        results.append(res)
+                        sig = "***" if res["ci_lower"] > 0 or res["ci_upper"] < 0 else ""
+                        logger.info(f"    Effect: {res['coef']:.4f} ({res['se']:.4f}) {sig}")
+            else:
+                # Parallel over learners (embarrassingly parallel)
+                def _fit_one(ln_name, ln):
+                    res = estimate_effect(
+                        dt=dt,
+                        outcome_var=out_var,
+                        treatment_var=trt_var,
+                        learner_name=ln_name,
+                        learner=ln,
+                        confounder_groups=confounder_groups,
+                        restrict_single_method=restrict_single_method,
+                        subgroup_var=subgroup_var,
+                        subgroup_val=subgroup_val,
+                        confounder_set=confounder_set,
+                        dataset_type=dataset_type,
+                        prefix=prefix,
+                        prepped_data=prepped,
+                        n_folds=n_folds,
+                        n_rep=n_rep,
+                    )
+                    return res
 
-                res = estimate_effect(
-                    dt=dt,
-                    outcome_var=out_var,
-                    treatment_var=trt_var,
-                    learner_name=ln_name,
-                    learner=ln,
-                    confounder_groups=confounder_groups,
-                    include_source_ecoli=include_source_ecoli,
-                    include_child_controls=include_child_controls,
-                    include_robustness=include_robustness,
-                    subgroup_var=subgroup_var,
-                    subgroup_val=subgroup_val,
-                    confounder_set=confounder_set,
-                    dataset_type=dataset_type,
-                    prefix=prefix,
-                    prepped_data=prepped,
+                parallel_results = Parallel(n_jobs=n_jobs, backend="loky")(
+                    delayed(_fit_one)(ln_name, ln) for ln_name, ln in learners.items()
                 )
-
-                if res is not None:
-                    results.append(res)
-                    sig = "***" if res["ci_lower"] > 0 or res["ci_upper"] < 0 else ""
-                    logger.info(f"    Effect: {res['coef']:.4f} ({res['se']:.4f}) {sig}")
+                for res in parallel_results:
+                    if res is not None:
+                        results.append(res)
+                        sig = "***" if res["ci_lower"] > 0 or res["ci_upper"] < 0 else ""
+                        logger.info(f"    Effect: {res['coef']:.4f} ({res['se']:.4f}) {sig}")
 
     return results
 

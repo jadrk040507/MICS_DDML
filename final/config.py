@@ -88,24 +88,23 @@ WQ15G_TREATMENT_MAP = {
 # =============================================================================
 
 BASE_CONFOUNDERS = {
-    "wealth": ["wealth_q1", "wealth_q2", "wealth_q3", "wealth_q4", "wealth_q5"],
-    "education": ["edu_none", "edu_primary", "edu_secondary", "edu_missing"],
+    "wealth": ["wealth_q2", "wealth_q3", "wealth_q4", "wealth_q5"],        # ref: q1
+    "education": ["edu_primary", "edu_secondary", "edu_missing"],          # ref: none
     "urban": ["urban_bin"],
-    "sanitation": ["improved_latrine", "toilet_pit_latrine", "toilet_open_defecation", "toilet_missing"],
+    "sanitation": ["toilet_pit_latrine", "toilet_open_defecation", "toilet_missing"],  # ref: flush
     "children": ["num_children"],
-    "water_source": ["water_source"],
-    "country": ["country"],
+    "water_source": ["water_source"],  # dynamically expanded to ws1g_* minus ref
+    "country": ["country"],             # dynamically expanded to country_* minus ref
+    "source_ecoli": ["risk_source_0", "risk_source_1"],  # ref: risk_source_2 (very high)
+}
+
+U5_ADDITIONAL_CONFOUNDERS = {
+    "child": ["child_age", "child_sex_male"],
 }
 
 ROBUSTNESS_CONFOUNDERS = {
     "water_storage": ["water_stored_covered", "water_stored_uncovered", "water_straight_from_source"],
     "handwashing": ["SoapandWater"],
-}
-
-# Confounders only for U5 (diarrhea) models
-U5_ADDITIONAL_CONFOUNDERS = {
-    "child": ["child_age", "child_sex_male"],
-    "source_ecoli": ["risk_source"],  # mediator for E.coli, confounder for diarrhea
 }
 
 # Source E.coli: included for diarrhea, excluded for E.coli outcomes
@@ -125,10 +124,11 @@ STABILITY_GROUPS = [
     ("+ Sanitation", ["wealth", "education", "urban", "water_source", "sanitation"]),
     ("+ Children", ["wealth", "education", "urban", "water_source", "sanitation", "children"]),
     ("+ Country FE", ["wealth", "education", "urban", "water_source", "sanitation", "children", "country"]),
-    ("Full", ["wealth", "education", "urban", "water_source", "sanitation", "children", "country"]),
+    ("+ Source E.coli", ["wealth", "education", "urban", "water_source", "sanitation", "children", "country", "source_ecoli"]),
+    ("Full", ["wealth", "education", "urban", "water_source", "sanitation", "children", "country", "source_ecoli"]),
 ]
 
-# For U5 models, source_ecoli and child are always added after the base groups
+# For U5 models, child controls are added after the base groups
 U5_STABILITY_GROUPS = [
     ("No controls", []),
     ("+ Wealth", ["wealth"]),
@@ -144,12 +144,13 @@ U5_STABILITY_GROUPS = [
 
 # Leave-one-out: drop one confounder group at a time from the full set
 LOO_GROUPS_HH = {
-    "wealth": ["education", "urban", "sanitation", "children", "water_source", "country"],
-    "education": ["wealth", "urban", "sanitation", "children", "water_source", "country"],
-    "urban": ["wealth", "education", "sanitation", "children", "water_source", "country"],
-    "sanitation": ["wealth", "education", "urban", "children", "water_source", "country"],
-    "water_source": ["wealth", "education", "urban", "sanitation", "children", "country"],
-    "country": ["wealth", "education", "urban", "sanitation", "children", "water_source"],
+    "wealth": ["education", "urban", "sanitation", "children", "water_source", "country", "source_ecoli"],
+    "education": ["wealth", "urban", "sanitation", "children", "water_source", "country", "source_ecoli"],
+    "urban": ["wealth", "education", "sanitation", "children", "water_source", "country", "source_ecoli"],
+    "sanitation": ["wealth", "education", "urban", "children", "water_source", "country", "source_ecoli"],
+    "water_source": ["wealth", "education", "urban", "sanitation", "children", "country", "source_ecoli"],
+    "country": ["wealth", "education", "urban", "sanitation", "children", "water_source", "source_ecoli"],
+    "source_ecoli": ["wealth", "education", "urban", "sanitation", "children", "water_source", "country"],
 }
 
 LOO_GROUPS_U5 = {

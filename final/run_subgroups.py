@@ -5,44 +5,27 @@ For both HH (E.coli) and U5 (diarrhea) datasets,
 estimates DDML separately for RiskSource=0, 1, 2.
 """
 
-import sys
-import warnings
-from pathlib import Path
-
-warnings.filterwarnings("ignore", category=FutureWarning, module="sklearn")
-warnings.filterwarnings("ignore", category=UserWarning)
-
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-
 from config import (
-    HH_DATA_FILE, U5_DATA_FILE, HH_OUTCOMES, U5_OUTCOMES,
-    ANY_TREATMENT, LEARNER_NAMES, SUBGROUP_VAR, SUBGROUP_LABELS,
-    OUTPUT_DIR,
+    HH_OUTCOMES, U5_OUTCOMES,
+    ANY_TREATMENT, SUBGROUP_VAR, SUBGROUP_LABELS,
     logger,
 )
-from data import prepare_hh_data, prepare_u5_data, get_summary
-from learners import create_learners
-from models import run_analysis, export_results, export_results_csv, print_significant_effects
-from tables import create_subgroup_table
+from models import run_analysis
+from runners import setup_environment, load_data, select_learners, save_results
 
 
 def main():
+    setup_environment()
     logger.info("=" * 70)
     logger.info("MICS DDML: SUBGROUP ANALYSIS BY RISK SOURCE")
     logger.info("=" * 70)
 
-    # Load data
-    logger.info("\n--- Loading data ---")
-    hh_dt = prepare_hh_data(HH_DATA_FILE)
-    u5_dt = prepare_u5_data(U5_DATA_FILE)
-
-    learners = create_learners()
+    hh_dt, u5_dt = load_data()
+    learners = select_learners()
 
     all_results = []
 
-    # =========================================================================
     # HH Dataset: E.coli outcomes by RiskSource
-    # =========================================================================
     for rs_val, rs_label in SUBGROUP_LABELS.items():
         logger.info(f"\n{'='*70}")
         logger.info(f"HH Dataset — RiskSource={rs_val} ({rs_label})")
@@ -67,9 +50,7 @@ def main():
         )
         all_results.extend(results)
 
-    # =========================================================================
     # U5 Dataset: Diarrhea by RiskSource
-    # =========================================================================
     for rs_val, rs_label in SUBGROUP_LABELS.items():
         logger.info(f"\n{'='*70}")
         logger.info(f"U5 Dataset — RiskSource={rs_val} ({rs_label})")
@@ -87,8 +68,6 @@ def main():
             outcomes=U5_OUTCOMES,
             treatments=[ANY_TREATMENT],
             learners=learners,
-            include_source_ecoli=True,
-            include_child_controls=True,
             subgroup_var=SUBGROUP_VAR,
             subgroup_val=rs_val,
             dataset_type="U5",
@@ -96,19 +75,10 @@ def main():
         )
         all_results.extend(results)
 
-    # =========================================================================
-    # Export results
-    # =========================================================================
-    logger.info("\n" + "=" * 70)
-    logger.info("SUBGROUP ANALYSIS COMPLETE")
-    logger.info("=" * 70)
-    print_significant_effects(all_results)
+    save_results(all_results, tag="subgroups")
 
-    export_results(all_results, "results_subgroups.pkl")
-    export_results_csv(all_results, "results_subgroups.csv")
-
-    # Generate table
     try:
+        from tables import create_subgroup_table
         create_subgroup_table(all_results, filename="table_subgroups.tex")
     except Exception as e:
         logger.info(f"Warning: Table generation failed: {e}")

@@ -15,7 +15,7 @@ import pyreadstat
 
 from config import (
     HH_DATA_FILE, U5_DATA_FILE, WQ15G_TREATMENT_MAP, HELEVEL_CODES,
-    RISKSOURCE_CODES, BASE_CONFOUNDERS, ROBUSTNESS_CONFOUNDERS,
+    RISKSOURCE_CODES, BASE_CONFOUNDERS,
     U5_ADDITIONAL_CONFOUNDERS, CLUSTER_VAR,
     logger,
 )
@@ -116,25 +116,35 @@ def _construct_ecoli_outcomes(dt: pd.DataFrame) -> pd.DataFrame:
 
 
 def _construct_treatment_variables(dt: pd.DataFrame) -> pd.DataFrame:
-    """Construct treatment variables from WQ15_g coding."""
+    """Construct treatment variables from WQ15_g coding and treatment count."""
     dt = dt.copy()
 
     # Any treatment (binary)
     dt["water_treatment"] = (dt["WQ15_g"] > 0).astype(int)
-    # Overwrite with existing water_treatment if available and more complete
     if "water_treatment" in dt.columns:
         dt["water_treatment"] = dt["water_treatment"].fillna(0).astype(int)
 
     # Specific treatments: create dummies from WQ15_g
-    # Only for households with some treatment (WQ15_g > 0)
     for code, name in WQ15G_TREATMENT_MAP.items():
         dt[name] = (dt["WQ15_g"] == code).astype(int)
 
-    # For specific treatment analysis: Restrict to single-method households
-    # Count number of treatment methods (from WQ15A-WQ15Z dummies)
+    # Count how many treatment methods are used (from WQ15A-WQ15Z columns).
+    # These columns contain letters ('A','B',...) or empty/'?' for unused.
     treat_cols = ["WQ15A", "WQ15B", "WQ15C", "WQ15D", "WQ15E", "WQ15F",
                   "WQ15G", "WQ15H", "WQ15X", "WQ15Z"]
     existing_treat_cols = [c for c in treat_cols if c in dt.columns]
+    if existing_treat_cols:
+        # Count non-empty, non-'?' entries per row
+        method_flags = dt[existing_treat_cols].apply(
+            lambda x: x.str.strip().str.len() > 0
+        )
+        dt["treatment_count"] = method_flags.sum(axis=1)
+    else:
+        # Fallback: only the primary method recorded in WQ15_g
+        dt["treatment_count"] = dt["water_treatment"]
+
+    # Single-method indicator for clean specific-treatment estimation
+    dt["single_method"] = (dt["treatment_count"] == 1).astype(int)
 
     return dt
 
@@ -193,15 +203,9 @@ def create_model_matrix(
     dt: pd.DataFrame,
     outcome_var: str,
     confounder_groups: Optional[Dict[str, List[str]]] = None,
-    include_source_ecoli: bool = False,
-    include_child_controls: bool = False,
-    include_robustness: bool = False,
 ) -> Tuple[np.ndarray, pd.DataFrame]:
     """
     Build the confounder matrix X for DoubleML estimation.
-
-    All dummies (country, water source, risk_source) must be pre-constructed
-    in prepare_hh_data/prepare_u5_data before calling this function.
 
     Parameters
     ----------
@@ -209,9 +213,6 @@ def create_model_matrix(
     outcome_var : Name of the outcome variable (used for selecting columns).
     confounder_groups : Dict mapping group names to lists of column names.
         If None, uses BASE_CONFOUNDERS.
-    include_source_ecoli : Whether to include risk_source dummies (for diarrhea only).
-    include_child_controls : Whether to include child age/sex (U5 only).
-    include_robustness : Whether to include water storage + handwashing.
 
     Returns
     -------
@@ -227,28 +228,17 @@ def create_model_matrix(
     for group_name, group_cols in confounder_groups.items():
         for col in group_cols:
             if col == "water_source":
-                # Use pre-constructed WS1_g dummies
-                ws1g_cols = [c for c in dt.columns if c.startswith("ws1g_")]
-                columns.extend(ws1g_cols)
+                # Drop first water-source dummy to avoid perfect multicollinearity
+                ws1g_cols = sorted([c for c in dt.columns if c.startswith("ws1g_")])
+                if len(ws1g_cols) > 1:
+                    columns.extend(ws1g_cols[1:])
+                elif ws1g_cols:
+                    columns.extend(ws1g_cols)
             elif col == "country":
-                # Use pre-constructed country dummies
                 country_cols = [c for c in dt.columns if c.startswith("country_")]
                 columns.extend(country_cols)
             else:
                 columns.append(col)
-
-    # Source E.coli risk dummies (for diarrhea only)
-    if include_source_ecoli:
-        columns.extend(["risk_source_0", "risk_source_1", "risk_source_2"])
-
-    # Child-level controls (U5 only)
-    if include_child_controls:
-        columns.extend(["child_age", "child_sex_male"])
-
-    # Robustness controls (water storage, handwashing)
-    if include_robustness:
-        columns.extend(["water_stored_covered", "water_stored_uncovered",
-                        "water_straight_from_source", "SoapandWater"])
 
     # Filter to columns that actually exist in the data, preserving order and removing duplicates
     seen = set()

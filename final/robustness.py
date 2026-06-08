@@ -10,19 +10,15 @@ Includes:
 
 from typing import Dict, List, Optional, Any
 
-import numpy as np
-import pandas as pd
-
 from config import (
-    BASE_CONFOUNDERS, ROBUSTNESS_CONFOUNDERS, U5_ADDITIONAL_CONFOUNDERS,
+    BASE_CONFOUNDERS, U5_ADDITIONAL_CONFOUNDERS,
     STABILITY_GROUPS, U5_STABILITY_GROUPS, LOO_GROUPS_HH, LOO_GROUPS_U5,
-    ANY_TREATMENT, ALL_TREATMENTS, HH_OUTCOMES, U5_OUTCOMES,
-    LEARNER_NAMES, SUBGROUP_VAR, SUBGROUP_LABELS,
+    ANY_TREATMENT, HH_OUTCOMES, U5_OUTCOMES,
+    SUBGROUP_VAR,
     logger,
 )
-from data import prepare_hh_data, prepare_u5_data
 from learners import create_learners
-from models import estimate_effect, run_analysis, export_results
+from models import estimate_effect, run_analysis
 
 
 def _is_u5_outcome(outcome_var: str) -> bool:
@@ -35,28 +31,25 @@ def run_falsification(
     outcomes: List[Dict[str, str]],
     treatments: List[Dict[str, str]],
     learners: Dict[str, Dict],
+    confounder_groups: Optional[Dict[str, List[str]]] = None,
     dataset_type: str = "HH",
-    include_source_ecoli: bool = False,
-    include_child_controls: bool = False,
 ) -> List[Dict[str, Any]]:
     """
     Falsification test: estimate treatment effects on RiskSource=0 subsample.
-
-    When source water has no E.coli contamination, treatment should have
-    little or no effect on home contamination. A significant positive effect
-    here would suggest confounding bias.
     """
     logger.info("=" * 60)
     logger.info("FALSIFICATION TEST: RiskSource=0 (No Risk at Source)")
     logger.info("=" * 60)
+
+    if confounder_groups is None:
+        confounder_groups = BASE_CONFOUNDERS.copy()
 
     results = run_analysis(
         dt=dt,
         outcomes=outcomes,
         treatments=treatments,
         learners=learners,
-        include_source_ecoli=include_source_ecoli,
-        include_child_controls=include_child_controls,
+        confounder_groups=confounder_groups,
         subgroup_var=SUBGROUP_VAR,
         subgroup_val=0,
         confounder_set="falsification",
@@ -76,9 +69,6 @@ def run_coefficient_stability(
 ) -> List[Dict[str, Any]]:
     """
     Coefficient stability: progressively add confounder groups.
-
-    Shows how the ATE changes as more confounders are controlled for.
-    Uses only the stacked learner for computational efficiency.
     """
     logger.info("=" * 60)
     logger.info("COEFFICIENT STABILITY: Progressive addition of confounders")
@@ -92,25 +82,16 @@ def run_coefficient_stability(
 
     for treat in treatments:
         for group_label, group_keys in stability_groups:
-            # Build confounder dict from group keys
             if len(group_keys) == 0:
-                # No controls: just intercept
                 confounder_groups = {}
             else:
                 confounder_groups = {k: BASE_CONFOUNDERS[k] for k in group_keys if k in BASE_CONFOUNDERS}
-                # Add U5-specific groups
                 if is_u5:
                     for k in group_keys:
                         if k in U5_ADDITIONAL_CONFOUNDERS:
                             confounder_groups[k] = U5_ADDITIONAL_CONFOUNDERS[k]
 
-            include_source_ecoli = "source_ecoli" in group_keys
-            include_child_controls = "child" in group_keys
-
             for outcome in outcomes:
-                include_src = include_source_ecoli if _is_u5_outcome(outcome["var"]) else False
-                include_child = include_child_controls if _is_u5_outcome(outcome["var"]) else False
-
                 res = estimate_effect(
                     dt=dt,
                     outcome_var=outcome["var"],
@@ -118,8 +99,6 @@ def run_coefficient_stability(
                     learner_name=learner_name,
                     learner=learners[learner_name],
                     confounder_groups=confounder_groups,
-                    include_source_ecoli=include_src,
-                    include_child_controls=include_child,
                     confounder_set=f"stability_{group_label}",
                     dataset_type=dataset_type,
                 )
@@ -139,8 +118,7 @@ def run_leave_one_out(
     dataset_type: str = "HH",
 ) -> List[Dict[str, Any]]:
     """
-    Leave-one-out confounders: drop one confounder group at a time
-    from the full specification to check robustness.
+    Leave-one-out confounders: drop one confounder group at a time.
     """
     logger.info("=" * 60)
     logger.info("LEAVE-ONE-OUT: Dropping one confounder group at a time")
@@ -152,15 +130,10 @@ def run_leave_one_out(
 
     all_results = []
 
-    # Full specification first
-    full_groups_hh = BASE_CONFOUNDERS.copy()
-    full_groups_u5 = {**BASE_CONFOUNDERS, **U5_ADDITIONAL_CONFOUNDERS}
-
     for treat in treatments:
-        # Full specification
         for outcome in outcomes:
             is_u5_out = _is_u5_outcome(outcome["var"])
-            fg = full_groups_u5 if is_u5_out else full_groups_hh
+            fg = {**BASE_CONFOUNDERS, **U5_ADDITIONAL_CONFOUNDERS} if is_u5_out else BASE_CONFOUNDERS.copy()
 
             res = estimate_effect(
                 dt=dt,
@@ -169,8 +142,6 @@ def run_leave_one_out(
                 learner_name=learner_name,
                 learner=learners[learner_name],
                 confounder_groups=fg,
-                include_source_ecoli=is_u5_out,
-                include_child_controls=is_u5_out,
                 confounder_set="loo_full",
                 dataset_type=dataset_type,
             )
@@ -178,7 +149,6 @@ def run_leave_one_out(
                 res["loo_dropped"] = "Full"
                 all_results.append(res)
 
-        # Leave-one-out
         for dropped_group, remaining_keys in loo_groups.items():
             if is_u5:
                 confounder_groups = {}
@@ -187,15 +157,10 @@ def run_leave_one_out(
                         confounder_groups[k] = BASE_CONFOUNDERS[k]
                     if k in U5_ADDITIONAL_CONFOUNDERS:
                         confounder_groups[k] = U5_ADDITIONAL_CONFOUNDERS[k]
-                include_src = "source_ecoli" in remaining_keys
-                include_child = "child" in remaining_keys
             else:
                 confounder_groups = {k: BASE_CONFOUNDERS[k] for k in remaining_keys if k in BASE_CONFOUNDERS}
-                include_src = False
-                include_child = False
 
             for outcome in outcomes:
-                is_u5_out = _is_u5_outcome(outcome["var"])
                 res = estimate_effect(
                     dt=dt,
                     outcome_var=outcome["var"],
@@ -203,8 +168,6 @@ def run_leave_one_out(
                     learner_name=learner_name,
                     learner=learners[learner_name],
                     confounder_groups=confounder_groups,
-                    include_source_ecoli=include_src if is_u5_out else False,
-                    include_child_controls=include_child if is_u5_out else False,
                     confounder_set=f"loo_no_{dropped_group}",
                     dataset_type=dataset_type,
                 )
@@ -221,6 +184,7 @@ def run_water_storage_handwashing(
     treatments: List[Dict[str, str]],
     learners: Dict[str, Dict],
     dataset_type: str = "HH",
+    confounder_groups: Optional[Dict[str, List[str]]] = None,
 ) -> List[Dict[str, Any]]:
     """
     Add water storage and handwashing controls as a robustness check.
@@ -232,12 +196,18 @@ def run_water_storage_handwashing(
     logger.info("WATER STORAGE + HANDWASHING: Adding WQ12 + SoapandWater")
     logger.info("=" * 60)
 
+    # Merge base confounders with robustness variables
+    from config import ROBUSTNESS_CONFOUNDERS
+    if confounder_groups is None:
+        confounder_groups = BASE_CONFOUNDERS.copy()
+    cg = {**confounder_groups, **ROBUSTNESS_CONFOUNDERS}
+
     results = run_analysis(
         dt=dt,
         outcomes=outcomes,
         treatments=treatments,
         learners=learners,
-        include_robustness=True,
+        confounder_groups=cg,
         confounder_set="water_hw",
         dataset_type=dataset_type,
         prefix="water_hw",
@@ -251,6 +221,7 @@ def run_all_robustness(
     dataset_type: str = "HH",
     outcomes: Optional[List[Dict[str, str]]] = None,
     treatments: Optional[List[Dict[str, str]]] = None,
+    confounder_groups: Optional[Dict[str, List[str]]] = None,
 ) -> Dict[str, List[Dict[str, Any]]]:
     """
     Run all robustness checks for a given dataset.
@@ -261,9 +232,12 @@ def run_all_robustness(
         outcomes = HH_OUTCOMES if dataset_type == "HH" else U5_OUTCOMES
     if treatments is None:
         treatments = [ANY_TREATMENT]
+    if confounder_groups is None:
+        confounder_groups = BASE_CONFOUNDERS.copy()
+        if dataset_type == "U5":
+            confounder_groups = {**confounder_groups, **U5_ADDITIONAL_CONFOUNDERS}
 
     learners = create_learners()
-    is_u5 = dataset_type == "U5"
 
     all_results = {}
 
@@ -272,8 +246,7 @@ def run_all_robustness(
         all_results["falsification"] = run_falsification(
             dt=dt, outcomes=outcomes, treatments=treatments,
             learners=learners, dataset_type=dataset_type,
-            include_source_ecoli=is_u5,
-            include_child_controls=is_u5,
+            confounder_groups=confounder_groups,
         )
     except Exception as e:
         logger.warning(f"    Falsification failed: {e}")
@@ -305,9 +278,13 @@ def run_all_robustness(
             dt=dt, outcomes=outcomes, treatments=treatments,
             learners={"stacked": learners["stacked"]},
             dataset_type=dataset_type,
+            confounder_groups=confounder_groups,
         )
     except Exception as e:
         logger.warning(f"    Water storage + handwashing failed: {e}")
         all_results["water_hw"] = []
 
     return all_results
+
+
+import pandas as pd

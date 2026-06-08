@@ -13,29 +13,15 @@ Runs:
 """
 
 import argparse
-import sys
-import warnings
-from pathlib import Path
-
-warnings.filterwarnings("ignore", category=FutureWarning, module="sklearn")
-warnings.filterwarnings("ignore", category=UserWarning)
-
-sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from config import (
-    HH_DATA_FILE, U5_DATA_FILE, HH_OUTCOMES, U5_OUTCOMES,
-    ANY_TREATMENT, SPECIFIC_TREATMENTS, ALL_TREATMENTS,
-    LEARNER_NAMES, SUBGROUP_VAR, SUBGROUP_LABELS,
-    OUTPUT_DIR, CHECKPOINT_DIR,
-    logger, setup_logging,
+    HH_OUTCOMES, U5_OUTCOMES,
+    ANY_TREATMENT, SPECIFIC_TREATMENTS,
+    LEARNER_NAMES, N_FOLDS, N_REP,
+    OUTPUT_DIR, logger,
 )
-from data import prepare_hh_data, prepare_u5_data, get_summary, validate_data
-from learners import create_learners
-from models import run_analysis, export_results, export_results_csv, print_significant_effects
-from tables import create_main_table
-from figures import plot_overlap_from_results
-
-import pickle
+from models import run_analysis
+from runners import setup_environment, load_data, select_learners, save_results
 
 
 def main():
@@ -61,36 +47,47 @@ def main():
         default=None,
         help="Override N_REP (default from config.py).",
     )
+    parser.add_argument(
+        "--parallel",
+        type=int,
+        default=None,
+        help="Number of parallel jobs across learners (default: 1, sequential).",
+    )
     args = parser.parse_args()
 
-    setup_logging()
+    setup_environment()
 
-    # Determine learner subset
+    n_folds = args.n_folds if args.n_folds is not None else N_FOLDS
+    n_rep = args.n_rep if args.n_rep is not None else N_REP
+    n_jobs = args.parallel if args.parallel is not None else 1
+
     selected_learners = args.learners if args.learners else LEARNER_NAMES
 
     logger.info("=" * 70)
     logger.info("MICS DDML: MAIN ANALYSIS")
     logger.info(f"Learners: {selected_learners}")
+    if args.n_folds is not None:
+        logger.info(f"N_FOLDS (override) = {n_folds}")
+    if args.n_rep is not None:
+        logger.info(f"N_REP (override) = {n_rep}")
+    if n_jobs > 1:
+        logger.info(f"Parallel jobs (learners) = {n_jobs}")
     logger.info("=" * 70)
 
     # =========================================================================
     # 1. Load and prepare data
     # =========================================================================
-    logger.info("--- Loading HH dataset (E.coli outcomes) ---")
-    hh_dt = prepare_hh_data(HH_DATA_FILE)
-    hh_summary = get_summary(hh_dt, dataset_type="HH")
-
-    logger.info("--- Loading U5 dataset (diarrhea outcome) ---")
-    u5_dt = prepare_u5_data(U5_DATA_FILE)
-    u5_summary = get_summary(u5_dt, dataset_type="U5")
+    hh_dt, u5_dt = load_data()
 
     # =========================================================================
     # 2. Create learners
     # =========================================================================
-    logger.info("--- Creating ML learners ---")
-    all_learners = create_learners()
-    learners = {k: all_learners[k] for k in selected_learners if k in all_learners}
-    logger.info(f"  Learners: {list(learners.keys())}")
+    learners = select_learners(names=selected_learners)
+
+    # Confounder groups
+    from config import BASE_CONFOUNDERS, U5_ADDITIONAL_CONFOUNDERS
+    hh_confounders = BASE_CONFOUNDERS.copy()
+    u5_confounders = {**BASE_CONFOUNDERS, **U5_ADDITIONAL_CONFOUNDERS}
 
     # =========================================================================
     # 3. Analysis 1: Any Treatment on HH (E.coli outcomes)
@@ -104,8 +101,12 @@ def main():
         outcomes=HH_OUTCOMES,
         treatments=[ANY_TREATMENT],
         learners=learners,
+        confounder_groups=hh_confounders,
         dataset_type="HH",
         prefix="hh_any",
+        n_folds=n_folds,
+        n_rep=n_rep,
+        n_jobs=n_jobs,
     )
 
     # =========================================================================
@@ -120,10 +121,12 @@ def main():
         outcomes=U5_OUTCOMES,
         treatments=[ANY_TREATMENT],
         learners=learners,
-        include_source_ecoli=True,
-        include_child_controls=True,
+        confounder_groups=u5_confounders,
         dataset_type="U5",
         prefix="u5_any",
+        n_folds=n_folds,
+        n_rep=n_rep,
+        n_jobs=n_jobs,
     )
 
     # =========================================================================
@@ -138,8 +141,13 @@ def main():
         outcomes=HH_OUTCOMES,
         treatments=SPECIFIC_TREATMENTS,
         learners=learners,
+        confounder_groups=hh_confounders,
         dataset_type="HH",
         prefix="hh_specific",
+        restrict_single_method=True,
+        n_folds=n_folds,
+        n_rep=n_rep,
+        n_jobs=n_jobs,
     )
 
     # =========================================================================
@@ -154,10 +162,13 @@ def main():
         outcomes=U5_OUTCOMES,
         treatments=SPECIFIC_TREATMENTS,
         learners=learners,
-        include_source_ecoli=True,
-        include_child_controls=True,
+        confounder_groups=u5_confounders,
         dataset_type="U5",
         prefix="u5_specific",
+        restrict_single_method=True,
+        n_folds=n_folds,
+        n_rep=n_rep,
+        n_jobs=n_jobs,
     )
 
     # =========================================================================
@@ -166,18 +177,11 @@ def main():
     all_results = (hh_any_results + u5_any_results +
                    hh_specific_results + u5_specific_results)
 
-    logger.info("=" * 70)
-    logger.info("SIGNIFICANT EFFECTS SUMMARY")
-    logger.info("=" * 70)
-    print_significant_effects(all_results)
+    save_results(all_results, tag="main")
 
-    # Save results
-    export_results(all_results, "results_main.pkl")
-    export_results_csv(all_results, "results_main.csv")
-
-    # Generate main tables
-    logger.info("--- Generating tables ---")
+    # Generate tables
     try:
+        from tables import create_main_table
         create_main_table(hh_any_results + hh_specific_results,
                           filename="table_hh_main.tex", dataset_type="HH")
         create_main_table(u5_any_results + u5_specific_results,
