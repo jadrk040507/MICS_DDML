@@ -1,0 +1,20 @@
+\begin{table}
+\caption{SomeRiskHome - Robustness Analysis: 10 ML Models}
+\label{tab:robustness_somerisk}
+\begin{tabular}{lllllll}
+\toprule
+Model & Train_Acc & Test_Acc & Train_F1 & Test_F1 & Train_AUC & Test_AUC \\
+\midrule
+XGBoost & 0.8534 & 0.8470 & 0.9044 & 0.9003 & 0.9041 & 0.8962 \\
+LightGBM & 0.8488 & 0.8455 & 0.9010 & 0.8989 & 0.8989 & 0.8943 \\
+RandomForest & 0.8729 & 0.8435 & 0.9173 & 0.8987 & 0.9386 & 0.8872 \\
+Lasso & 0.8401 & 0.8388 & 0.8974 & 0.8966 & 0.8844 & 0.8804 \\
+ElasticNet & 0.8399 & 0.8388 & 0.8973 & 0.8966 & 0.8843 & 0.8803 \\
+OLS & 0.8400 & 0.8387 & 0.8973 & 0.8965 & 0.8843 & 0.8803 \\
+Ridge & 0.8400 & 0.8387 & 0.8973 & 0.8965 & 0.8843 & 0.8803 \\
+Logistic & 0.8422 & 0.8381 & 0.8973 & 0.8943 & 0.8886 & 0.8853 \\
+AdaBoost & 0.8400 & 0.8374 & 0.8954 & 0.8935 & 0.8843 & 0.8815 \\
+NaiveBayes & 0.6747 & 0.6746 & 0.7447 & 0.7436 & 0.8107 & 0.8109 \\
+\bottomrule
+\end{tabular}
+\end{table}

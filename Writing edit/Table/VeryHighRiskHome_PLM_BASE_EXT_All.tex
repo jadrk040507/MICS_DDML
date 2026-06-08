@@ -1,0 +1,23 @@
+\begin{table}[htbp]\centering
+\caption{Effect of Household Water Treatment on Very High E.coli Risk (VeryHighRiskHome)}
+\newcommand{\sym}[1]{\ifmmode^{#1}\else\(^{#1}\)\fi}
+\begin{tabular}{l*{8}{c}}
+\toprule
+            &\multicolumn{1}{c}{(1)}&\multicolumn{1}{c}{(2)}&\multicolumn{1}{c}{(3)}&\multicolumn{1}{c}{(4)}&\multicolumn{1}{c}{(5)}&\multicolumn{1}{c}{(6)}&\multicolumn{1}{c}{(7)}&\multicolumn{1}{c}{(8)}\\
+            &\multicolumn{1}{c}{OLS (LPM)}&\multicolumn{1}{c}{Logit}&\multicolumn{1}{c}{Lasso}&\multicolumn{1}{c}{Ridge}&\multicolumn{1}{c}{Elastic net}&\multicolumn{1}{c}{Random forest}&\multicolumn{1}{c}{Gradient boost}&\multicolumn{1}{c}{Best (stacked)}\\
+\multicolumn{9}{l}{\textbf{Panel A: Base controls}}\\
+\midrule
+water\_treatment&      -0.050\sym{***}&      -0.041\sym{***}&      -0.044\sym{***}&      -0.045\sym{***}&      -0.044\sym{***}&      -0.062\sym{***}&      -0.053\sym{***}&      -0.057\sym{***}\\
+            &     (0.006)         &     (0.006)         &     (0.006)         &     (0.006)         &     (0.006)         &     (0.006)         &     (0.006)         &     (0.006)         \\
+\midrule
+Observations&      56,721         &      56,721         &      56,721         &      56,721         &      56,721         &      56,721         &      56,721         &      56,721         \\
+
+\midrule
+\multicolumn{9}{l}{\textbf{Panel B: Extended controls}}\\
+\midrule
+
+water\_treatment&      -0.046\sym{***}&      -0.039\sym{***}&      -0.042\sym{***}&      -0.039\sym{***}&      -0.041\sym{***}&      -0.057\sym{***}&      -0.046\sym{***}&      -0.050\sym{***}\\
+            &     (0.006)         &     (0.006)         &     (0.006)         &     (0.006)         &     (0.006)         &     (0.006)         &     (0.006)         &     (0.006)         \\
+\midrule
+Observations&      55,510         &      55,510         &      55,510         &      55,510         &      55,510         &      55,510         &      55,510         &      55,510         \\
+\bottomrule\end{tabular}\end{table}

@@ -1,0 +1,15 @@
+\begin{table}[htbp]\centering
+\def\sym#1{\ifmmode^{#1}\else\(^{#1}\)\fi}
+\caption{Diarrhea: OLS vs. DDML (LASSO / RF) and BEST — Partial Effect of $D$ on $Y$}
+\begin{tabular}{l*{4}{c}}
+\toprule
+                &\multicolumn{1}{c}{(1)}&\multicolumn{1}{c}{(2)}&\multicolumn{1}{c}{(3)}&\multicolumn{1}{c}{(4)}\\
+                &\multicolumn{1}{c}{OLS}&\multicolumn{1}{c}{LASSO}&\multicolumn{1}{c}{Random Forest}&\multicolumn{1}{c}{Best}\\
+\midrule
+VeryHighRiskHome&    0.017\sym{***}&    0.017\sym{***}&    0.014\sym{**} &    0.015\sym{**} \\
+                &  (0.006)         &  (0.006)         &  (0.007)         &  (0.006)         \\
+\midrule
+Observations    &   22,036         &   22,410         &   22,410         &   22,410         \\
+\bottomrule
+\end{tabular}
+\end{table}

@@ -1,30 +1,21 @@
+# --- Never commit: virtualenv, caches, build artifacts, tool/local config ---
 .venv/
 __pycache__/
 *.pyc
 *.pyo
 *.egg-info/
 .ipynb_checkpoints/
+.pytest_cache/
 .mypy_cache/
 .dmypy.json
-.pytest_cache/
-
-Data/
-Output/
-*.dta
-*.pkl
-*.log
-
-.dropboxignore
-desktop.ini
-nul
-
-Literature/
-Questionaire/
-Writing edit/
-Do file/
-Figures/
-
-skills-lock.json
-
 .agents/
 .claude/
+.dropboxignore
+skills-lock.json
+
+# --- Raw data (large .dta files) ---
+Data/
+
+# --- OS cruft ---
+desktop.ini
+nul

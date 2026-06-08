@@ -1,0 +1,19 @@
+\begin{table}[htbp]\centering
+\def\sym#1{\ifmmode^{#1}\else\(^{#1}\)\fi}
+\caption{Diarrhea: OLS vs. DDML (LASSO / RF) and BEST — Partial Effect of $D$ on $Y$}
+\begin{tabular}{l*{1}{c}}
+\toprule
+                &\multicolumn{1}{c}{(1)}\\
+                &\multicolumn{1}{c}{OLS}\\
+\midrule
+Any treatment (Water tested)&   -0.084\sym{***}\\
+                &  (0.016)         \\
+\midrule
+Observations    &   19,562         \\
+Reps            &        5         \\
+D\_water\_treatment\_ss\_mse&                  \\
+Y\_SomeRiskHome\_ss1\_mse&                  \\
+Y\_SomeRiskHome\_ss0\_mse&                  \\
+\bottomrule
+\end{tabular}
+\end{table}

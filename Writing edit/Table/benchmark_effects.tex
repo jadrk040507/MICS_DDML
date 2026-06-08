@@ -1,0 +1,38 @@
+
+%========================================================
+% TABLE: Benchmark effects, OLS vs PLM vs Interactive
+%========================================================
+
+\begin{table}[htbp]\centering
+\caption{Effect of Household Water Treatment on E.coli Risk: OLS, PLM, and IRM DDML}
+\label{tab:benchmark_main}
+\begin{tabular}{lcccccc}
+\toprule \toprule
+& \multicolumn{3}{c}{SomeRiskHome} & \multicolumn{3}{c}{VeryHighRiskHome} \\
+\cmidrule(lr){2-4} \cmidrule(lr){5-7}
+& OLS & PLM & IRM & OLS & PLM & IRM \\
+\midrule
+\multicolumn{7}{l}{\textbf{Panel A: Base controls}} \\
+\midrule
+HWT ($D$) &
+$-0.074^{***}$ & $-0.072^{***}$ & $-0.073^{***}$ &
+$-0.050^{***}$ & $-0.057^{***}$ & $-0.058^{***}$ \\
+& $(0.005)$ & $(0.005)$ & $(0.005)$ & $(0.006)$ & $(0.006)$ & $(0.006)$ \\
+Observations &
+56{,}721 & 56{,}721 & 56{,}721 & 56{,}721 & 56{,}721 & 56{,}721 \\
+\midrule
+\multicolumn{7}{l}{\textbf{Panel B: Extended controls}} \\
+\midrule
+HWT ($D$) &
+$-0.071^{***}$ & $-0.065^{***}$ & $-0.066^{***}$ &
+$-0.046^{***}$ & $-0.050^{***}$ & $-0.050^{***}$ \\
+& $(0.005)$ & $(0.005)$ & $(0.005)$ & $(0.006)$ & $(0.006)$ & $(0.006)$ \\
+Observations &
+55{,}510 & 55{,}510 & 55{,}510 & 55{,}510 & 55{,}510 & 55{,}510 \\
+\bottomrule \bottomrule
+\end{tabular}
+\begin{flushleft}
+\footnotesize
+Notes: Entries report coefficients on the household water treatment indicator from OLS linear probability models, DDML partially linear model (PLM) estimators, and DDML interactive (IRM) estimators using stacked machine learning. All specifications include country fixed effects and the indicated sets of controls. Robust standard errors in parentheses. $^{*} p<0.10$, $^{**} p<0.05$, $^{***} p<0.01$.
+\end{flushleft}
+\end{table}

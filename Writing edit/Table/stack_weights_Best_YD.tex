@@ -1,0 +1,24 @@
+\begin{table}[htbp]\centering
+\caption{Stacking weights for Best (stacked) for \(E[Y \mid X]\) and \(E[D \mid X]\)}
+\begin{tabular}{lcccccc}
+\toprule
+\multicolumn{7}{l}{\textbf{Panel A: Outcome equation \(E[Y \mid X]\)}}\\
+\midrule
+Specification & logit & lassocv & ridgecv & elasticcv & rf & gradboost \\
+\midrule
+SomeRiskHome, base &  0.196 &  0.000 &  0.000 &  0.000 &  0.449 &  0.355 \\
+SomeRiskHome, extended &  0.180 &  0.000 &  0.000 &  0.000 &  0.159 &  0.661 \\
+VeryHighRiskHome, base &  0.354 &  0.002 &  0.000 &  0.000 &  0.273 &  0.371 \\
+VeryHighRiskHome, extended &  0.325 &  0.000 &  0.000 &  0.000 &  0.081 &  0.594 \\
+\midrule
+\multicolumn{7}{l}{\textbf{Panel B: Treatment equation \(E[D \mid X]\)}}\\
+\midrule
+Specification & logit & lassocv & ridgecv & elasticcv & rf & gradboost \\
+\midrule
+SomeRiskHome, base &  0.194 &  0.000 &  0.000 &  0.000 &  0.563 &  0.243 \\
+SomeRiskHome, extended &  0.104 &  0.000 &  0.000 &  0.000 &  0.273 &  0.623 \\
+VeryHighRiskHome, base &  0.188 &  0.000 &  0.000 &  0.000 &  0.550 &  0.262 \\
+VeryHighRiskHome, extended &  0.108 &  0.000 &  0.000 &  0.000 &  0.275 &  0.616 \\
+\bottomrule
+\end{tabular}
+\end{table}

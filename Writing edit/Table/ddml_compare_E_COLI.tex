@@ -1,0 +1,15 @@
+\begin{table}[htbp]\centering
+\def\sym#1{\ifmmode^{#1}\else\(^{#1}\)\fi}
+\caption{E-Coli: OLS vs. DDML (LASSO / RF) and BEST — Partial Effect of $D$ on $Y$}
+\begin{tabular}{l*{4}{c}}
+\toprule
+                &\multicolumn{1}{c}{(1)}&\multicolumn{1}{c}{(2)}&\multicolumn{1}{c}{(3)}&\multicolumn{1}{c}{(4)}\\
+                &\multicolumn{1}{c}{OLS}&\multicolumn{1}{c}{LASSO}&\multicolumn{1}{c}{Random Forest}&\multicolumn{1}{c}{Best}\\
+\midrule
+Any treatment (Water tested)&  -17.153\sym{***}&  -17.156\sym{***}&  -17.490\sym{***}&  -17.243\sym{***}\\
+                &  (0.380)         &  (0.380)         &  (0.377)         &  (0.378)         \\
+\midrule
+Observations    &   52,956         &   58,238         &   58,238         &   58,238         \\
+\bottomrule
+\end{tabular}
+\end{table}

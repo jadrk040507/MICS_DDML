@@ -1,0 +1,47 @@
+
+%========================================================
+% TABLE: Heterogeneity by source risk
+%========================================================
+
+\begin{table}[htbp]\centering
+\caption{Effect of Household Water Treatment on E.coli Risk, by Source Contamination: OLS, PLM, and IRM DDML}
+\label{tab:risk_main}
+\begin{tabular}{lcccccc}
+\toprule \toprule
+& \multicolumn{3}{c}{SomeRiskHome} & \multicolumn{3}{c}{VeryHighRiskHome} \\
+\cmidrule(lr){2-4} \cmidrule(lr){5-7}
+& OLS & PLM & IRM & OLS & PLM & IRM \\
+\midrule
+\multicolumn{7}{l}{\textbf{Panel A: RiskSource = 0 (low risk source)}} \\
+\midrule
+HWT ($D$) &
+$-0.077^{***}$ & $-0.067^{***}$ & $-0.068^{***}$ &
+$-0.003$ & $-0.005$ & $-0.006$ \\
+& $(0.010)$ & $(0.010)$ & $(0.010)$ & $(0.007)$ & $(0.007)$ & $(0.007)$ \\
+Observations &
+23{,}595 & 23{,}595 & 23{,}595 & 23{,}595 & 23{,}595 & 23{,}595 \\
+\midrule
+\multicolumn{7}{l}{\textbf{Panel B: RiskSource = 1 (moderate risk source)}} \\
+\midrule
+HWT ($D$) &
+$-0.123^{***}$ & $-0.115^{***}$ & $-0.117^{***}$ &
+$-0.049^{***}$ & $-0.041^{***}$ & $-0.043^{***}$ \\
+& $(0.006)$ & $(0.006)$ & $(0.006)$ & $(0.009)$ & $(0.009)$ & $(0.009)$ \\
+Observations &
+21{,}064 & 21{,}064 & 21{,}064 & 21{,}064 & 21{,}064 & 21{,}064 \\
+\midrule
+\multicolumn{7}{l}{\textbf{Panel C: RiskSource = 2 (very high risk source)}} \\
+\midrule
+HWT ($D$) &
+$-0.090^{***}$ & $-0.084^{***}$ & $-0.086^{***}$ &
+$-0.218^{***}$ & $-0.217^{***}$ & $-0.219^{***}$ \\
+& $(0.005)$ & $(0.005)$ & $(0.005)$ & $(0.010)$ & $(0.010)$ & $(0.010)$ \\
+Observations &
+12{,}062 & 12{,}062 & 12{,}062 & 12{,}062 & 12{,}062 & 12{,}062 \\
+\bottomrule \bottomrule
+\end{tabular}
+\begin{flushleft}
+\footnotesize
+Notes: Entries report coefficients on the household water treatment indicator from OLS linear probability models, DDML PLM estimators, and DDML interactive estimators using stacked machine learning, with base controls. RiskSource is defined by \emph{E.~coli} counts in the household's source water sample: 0 CFU (low risk), 1--100 CFU (moderate risk), and $>$ 100 CFU per 100 mL (very high risk). All specifications include country fixed effects. Robust standard errors in parentheses. $^{*} p<0.10$, $^{**} p<0.05$, $^{***} p<0.01$.
+\end{flushleft}
+\end{table}

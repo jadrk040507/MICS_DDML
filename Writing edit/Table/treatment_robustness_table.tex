@@ -1,0 +1,20 @@
+\begin{table}
+\caption{Treatment (water_treatment) - Robustness Analysis: 10 ML Models}
+\label{tab:robustness_treatment}
+\begin{tabular}{lllllll}
+\toprule
+Model & Train_Acc & Test_Acc & Train_F1 & Test_F1 & Train_AUC & Test_AUC \\
+\midrule
+RandomForest & 0.8979 & 0.8870 & 0.7071 & 0.6721 & 0.9516 & 0.8912 \\
+XGBoost & 0.8839 & 0.8873 & 0.6611 & 0.6707 & 0.9060 & 0.8988 \\
+Logistic & 0.8779 & 0.8860 & 0.6429 & 0.6684 & 0.8754 & 0.8821 \\
+LightGBM & 0.8823 & 0.8861 & 0.6529 & 0.6640 & 0.8955 & 0.8948 \\
+AdaBoost & 0.8770 & 0.8848 & 0.6297 & 0.6557 & 0.8707 & 0.8775 \\
+OLS & 0.8773 & 0.8841 & 0.6318 & 0.6538 & 0.8703 & 0.8778 \\
+Ridge & 0.8772 & 0.8841 & 0.6317 & 0.6538 & 0.8703 & 0.8778 \\
+Lasso & 0.8772 & 0.8840 & 0.6316 & 0.6534 & 0.8702 & 0.8778 \\
+ElasticNet & 0.8772 & 0.8840 & 0.6315 & 0.6534 & 0.8702 & 0.8778 \\
+NaiveBayes & 0.7015 & 0.7116 & 0.5234 & 0.5321 & 0.8501 & 0.8555 \\
+\bottomrule
+\end{tabular}
+\end{table}
