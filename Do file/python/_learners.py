@@ -23,8 +23,25 @@ from sklearn.base import BaseEstimator, RegressorMixin, clone
 from xgboost import XGBRegressor, XGBClassifier
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
+from _config import RANDOM_STATE, N_JOBS
 
-from config import RANDOM_STATE, N_JOBS
+import inspect as _inspect
+
+# sklearn 1.9 warns that LogisticRegressionCV fitted attributes will be
+# simplified in 1.10.  use_legacy_attributes=True silences the warning while
+# keeping the current behavior (no change to coef_, etc.).  Version-guarded so
+# older sklearn (without the kwarg) still works.
+_LRCV_EXTRA = (
+    {"use_legacy_attributes": True}
+    if "use_legacy_attributes" in _inspect.signature(LogisticRegressionCV).parameters
+    else {}
+)
+
+
+def _LogitCV(_cls=LogisticRegressionCV, **kwargs):
+    """LogisticRegressionCV with the legacy-attributes warning suppressed."""
+    return _cls(**kwargs, **_LRCV_EXTRA)
+
 
 _CS_FAST = np.logspace(-3, 3, 7)
 
@@ -79,7 +96,7 @@ def _rf_regressor(n_jobs=N_JOBS):
 
 
 def _lasso_classifier(n_jobs=N_JOBS):
-    return LogisticRegressionCV(
+    return _LogitCV(
         cv=3, Cs=_CS_FAST, solver="liblinear", max_iter=500,
         tol=1e-2, n_jobs=n_jobs, random_state=RANDOM_STATE, scoring="roc_auc",
         l1_ratios=(1,),
@@ -87,7 +104,7 @@ def _lasso_classifier(n_jobs=N_JOBS):
 
 
 def _ridge_classifier(n_jobs=N_JOBS):
-    return LogisticRegressionCV(
+    return _LogitCV(
         cv=3, Cs=_CS_FAST, solver="lbfgs", max_iter=1000,
         tol=1e-2, n_jobs=n_jobs, random_state=RANDOM_STATE, scoring="roc_auc",
         l1_ratios=(0,),
@@ -98,6 +115,49 @@ def _rf_classifier(n_jobs=N_JOBS):
     return RandomForestClassifier(
         n_estimators=200, max_depth=15, min_samples_leaf=5,
         random_state=RANDOM_STATE, n_jobs=n_jobs,
+    )
+
+
+def _ols_classifier(n_jobs=N_JOBS):
+    # Genuinely UNPENALIZED logit (the binary analogue of OLS), so it is distinct
+    # from ridge (L2 logit).  LogisticRegressionCV always penalizes, so we use a
+    # plain LogisticRegression with penalty=None.
+    return LogisticRegression(penalty=None, solver="lbfgs", max_iter=1000)
+
+
+def _enet_classifier(n_jobs=N_JOBS):
+    return _LogitCV(
+        cv=3, Cs=_CS_FAST, solver="saga", max_iter=2000,
+        tol=1e-2, n_jobs=n_jobs, random_state=RANDOM_STATE, scoring="roc_auc",
+        l1_ratios=[0.2, 0.5, 0.8],
+    )
+
+
+def _xgb_classifier(n_jobs=N_JOBS):
+    return XGBClassifier(
+        n_estimators=150, max_depth=4, learning_rate=0.1,
+        subsample=0.8, random_state=RANDOM_STATE, n_jobs=n_jobs,
+        eval_metric="logloss", verbosity=0, use_label_encoder=False,
+    )
+
+
+def _ols_regressor():
+    return LinearRegression()
+
+
+def _enet_regressor(n_jobs=N_JOBS):
+    return Pipeline([
+        ("scaler", StandardScaler()),
+        ("enet", ElasticNetCV(cv=3, l1_ratio=0.5, n_jobs=n_jobs,
+                              random_state=RANDOM_STATE, max_iter=3000)),
+    ])
+
+
+def _xgb_regressor(n_jobs=N_JOBS):
+    return XGBRegressor(
+        n_estimators=150, max_depth=4, learning_rate=0.1,
+        subsample=0.8, random_state=RANDOM_STATE, n_jobs=n_jobs,
+        eval_metric="rmse", verbosity=0,
     )
 
 
@@ -112,18 +172,8 @@ def create_learners() -> dict:
     learners = {}
 
     learners["ols"] = {
-        "g": ProbaRegressor(
-            LogisticRegressionCV(
-                cv=3, Cs=_CS_FAST, solver="lbfgs", max_iter=1000,
-                tol=1e-2, n_jobs=N_JOBS, random_state=RANDOM_STATE, scoring="roc_auc",
-                l1_ratios=(0,),
-            )
-        ),
-        "m": LogisticRegressionCV(
-            cv=3, Cs=_CS_FAST, solver="lbfgs", max_iter=1000,
-            tol=1e-2, n_jobs=N_JOBS, random_state=RANDOM_STATE, scoring="roc_auc",
-            l1_ratios=(0,),
-        ),
+        "g": ProbaRegressor(_ols_classifier(n_jobs=N_JOBS)),  # unpenalized logit
+        "m": _ols_classifier(n_jobs=N_JOBS),
     }
 
     learners["lasso"] = {
@@ -142,7 +192,7 @@ def create_learners() -> dict:
             ("enet", ElasticNetCV(cv=3, l1_ratio=0.5,
                                     n_jobs=N_JOBS, random_state=RANDOM_STATE, max_iter=3000)),
         ]),
-        "m": LogisticRegressionCV(
+        "m": _LogitCV(
             cv=3, Cs=_CS_FAST, solver="saga", max_iter=2000,
             tol=1e-2, n_jobs=N_JOBS, random_state=RANDOM_STATE, scoring="roc_auc",
             l1_ratios=[0.2, 0.5, 0.8],
@@ -187,23 +237,13 @@ def create_learners_for_binary() -> dict:
     learners = {}
 
     learners["ols"] = {
-        "g": ProbaRegressor(
-            LogisticRegressionCV(
-                cv=3, Cs=_CS_FAST, solver="lbfgs", max_iter=1000,
-                tol=1e-2, n_jobs=N_JOBS, random_state=RANDOM_STATE, scoring="roc_auc",
-                l1_ratios=(0,),
-            )
-        ),
-        "m": LogisticRegressionCV(
-            cv=3, Cs=_CS_FAST, solver="lbfgs", max_iter=1000,
-            tol=1e-2, n_jobs=N_JOBS, random_state=RANDOM_STATE, scoring="roc_auc",
-            l1_ratios=(0,),
-        ),
+        "g": ProbaRegressor(_ols_classifier(n_jobs=N_JOBS)),  # unpenalized logit
+        "m": _ols_classifier(n_jobs=N_JOBS),
     }
 
     learners["lasso"] = {
         "g": ProbaRegressor(
-            LogisticRegressionCV(
+            _LogitCV(
                 cv=3, Cs=_CS_FAST, solver="liblinear", max_iter=500,
                 tol=1e-2, n_jobs=N_JOBS, random_state=RANDOM_STATE, scoring="roc_auc",
                 l1_ratios=(1,),
@@ -215,7 +255,7 @@ def create_learners_for_binary() -> dict:
 
     learners["ridge"] = {
         "g": ProbaRegressor(
-            LogisticRegressionCV(
+            _LogitCV(
                 cv=3, Cs=_CS_FAST, solver="lbfgs", max_iter=1000,
                 tol=1e-2, n_jobs=N_JOBS, random_state=RANDOM_STATE, scoring="roc_auc",
                 l1_ratios=(0,),
@@ -226,14 +266,14 @@ def create_learners_for_binary() -> dict:
 
     learners["enet"] = {
         "g": ProbaRegressor(
-            LogisticRegressionCV(
+            _LogitCV(
                 cv=3, Cs=_CS_FAST, solver="saga", max_iter=2000,
                 tol=1e-2, n_jobs=N_JOBS, random_state=RANDOM_STATE, scoring="roc_auc",
                 l1_ratios=[0.2, 0.5, 0.8],
                 penalty="elasticnet",
             )
         ),
-        "m": LogisticRegressionCV(
+        "m": _LogitCV(
             cv=3, Cs=_CS_FAST, solver="saga", max_iter=2000,
             tol=1e-2, n_jobs=N_JOBS, random_state=RANDOM_STATE, scoring="roc_auc",
             l1_ratios=[0.2, 0.5, 0.8],
@@ -273,18 +313,26 @@ def create_learners_for_binary() -> dict:
 def _base_learners_regressor() -> list:
     # Use N_JOBS_BASE=1 because StackingRegressor already parallelizes
     # across folds and base learners via its own n_jobs parameter.
+    # Six base learners (names match the table columns) so every non-stacked
+    # learner receives a meta-weight.
     return [
+        ("ols", _ols_regressor()),
         ("lasso", _lasso_regressor(n_jobs=N_JOBS_BASE)),
         ("ridge", _ridge_regressor()),
+        ("enet", _enet_regressor(n_jobs=N_JOBS_BASE)),
         ("rf", _rf_regressor(n_jobs=N_JOBS_BASE)),
+        ("xgb", _xgb_regressor(n_jobs=N_JOBS_BASE)),
     ]
 
 
 def _base_learners_classifier() -> list:
     return [
+        ("ols", _ols_classifier(n_jobs=N_JOBS_BASE)),
         ("lasso", _lasso_classifier(n_jobs=N_JOBS_BASE)),
         ("ridge", _ridge_classifier(n_jobs=N_JOBS_BASE)),
+        ("enet", _enet_classifier(n_jobs=N_JOBS_BASE)),
         ("rf", _rf_classifier(n_jobs=N_JOBS_BASE)),
+        ("xgb", _xgb_classifier(n_jobs=N_JOBS_BASE)),
     ]
 
 
@@ -296,7 +344,7 @@ def _create_stacked_ensemble() -> dict:
     _RIDGE_ALPHAS = np.logspace(-3, 3, 5)
 
     final_g = RidgeCV(alphas=_RIDGE_ALPHAS, cv=3)
-    final_m = LogisticRegressionCV(
+    final_m = _LogitCV(
         cv=3, Cs=_CS_FAST[:5], solver="lbfgs", max_iter=1000,
         tol=1e-2, n_jobs=N_JOBS, random_state=RANDOM_STATE, scoring="roc_auc",
         l1_ratios=(0,),
@@ -324,17 +372,16 @@ def _create_stacked_ensemble_binary() -> dict:
     _RIDGE_ALPHAS = np.logspace(-3, 6, 10)
 
     final_g = RidgeCV(alphas=_RIDGE_ALPHAS, cv=5)
-    final_m = LogisticRegressionCV(
+    final_m = _LogitCV(
         cv=5, Cs=_CS_FAST, solver="lbfgs", max_iter=1000,
         tol=1e-2, n_jobs=N_JOBS, random_state=RANDOM_STATE, scoring="roc_auc",
         l1_ratios=(0,),
     )
+    # Outcome model g: each of the six base classifiers wrapped to return
+    # probabilities (names match the table columns).
     stacked_g = StackingRegressor(
-        estimators=[
-            ("lasso", ProbaRegressor(_lasso_classifier(n_jobs=N_JOBS_BASE))),
-            ("ridge", ProbaRegressor(_ridge_classifier(n_jobs=N_JOBS_BASE))),
-            ("rf", ProbaRegressor(_rf_classifier(n_jobs=N_JOBS_BASE))),
-        ],
+        estimators=[(name, ProbaRegressor(clf))
+                    for name, clf in _base_learners_classifier()],
         final_estimator=final_g,
         cv=3, n_jobs=N_JOBS,
     )
@@ -346,7 +393,7 @@ def _create_stacked_ensemble_binary() -> dict:
     return {"g": stacked_g, "m": stacked_m}
 
 
-def get_stacking_weights(stacked_model, X=None, y=None) -> dict:
+def get_stacking_weights(stacked_model) -> dict:
     """Extract stacking weights from a fitted StackingRegressor/StackingClassifier.
 
     For Pipeline meta-learners, navigates through the pipeline to find coef_.
@@ -373,3 +420,4 @@ def get_stacking_weights(stacked_model, X=None, y=None) -> dict:
     except Exception:
         pass
     return {}
+

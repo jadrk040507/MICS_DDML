@@ -88,12 +88,12 @@ tabplot Country WQ15_g, showval(format(%9.0f)) bfcolor(blue*0.6) subtitle("Frequ
     xla(, angle(45) labsize(small)) yla(, labsize(small)) xsize(10) ysize(12)
 graph export "${Figures}Freq_Country_Treatment_Child.eps", replace
 
-
-
 *-----------------------------
 *  Table 0b: Extended descriptive statistics by source contamination
 *-----------------------------
-start_final_U5			   
+start_final_U5	
+replace diarrhea=diarrhea*100		   
+
 global U5Main diarrhea NumU5 age male
 			   
 tab1 $U5Main	
@@ -102,7 +102,7 @@ mdesc $U5Main
 
 local U5Main  "Child Characteristics by Water Source Contamination Level among Households with U5 children"
 local LabelU5Main "Desc2"
-local noteU5Main  "Notes: The table presents extended household characteristics across 25 countries. The number of CFUs per 100mL of E. coli is capped at 101 if the number is higher than 100. The mean of the blank water test is 0.67 CFUs per 100mL."
+local noteU5Main  "Notes: The table presents summary statistics for children under five years of age from 25 countries included in the analysis sample. Diarrhea is measured as a binary indicator and is reported as a percentage of children who experienced diarrhea in the past two weeks."
 
 foreach k in U5Main {
     * Means by contamination level
@@ -113,6 +113,8 @@ foreach k in U5Main {
 	
 	* Min
 start_final_U5	
+replace diarrhea=diarrhea*100		   
+
 	foreach i in $`k' {
 	egen min_`i'=min(`i')
 	replace `i'=min_`i'
@@ -121,6 +123,8 @@ start_final_U5
 	
 * Max
 start_final_U5	
+replace diarrhea=diarrhea*100		   
+
 	foreach i in $`k' {
 	egen max_`i'=max(`i')
 	replace `i'=max_`i'
@@ -129,6 +133,7 @@ start_final_U5
 	
 * Missing 
 start_final_U5	
+replace diarrhea=diarrhea*100		   
 	
 	foreach i in $`k' {
 	egen `i'_Miss=rowmiss(`i')
@@ -143,16 +148,16 @@ start_final_U5
         mtitles("All" "Low risk" "Moderate risk" "High risk") nonum ///
         substitute( ///
             ".00" "" ///
-            "{l}{\footnotesize" "{p{0.96\linewidth}}{\footnotesize" ///
+            "{l}{\footnotesize" "{p{0.8\linewidth}}{\footnotesize" ///
             "&           _&           _&           _&           _\\" "" ///
-            ///
+            "Diarrhea" "Diarrhea (percent)" ///
             "Piped water" "\textbf{Primary water source} \\\hline Piped connection" ///
             "12,271" "12,062 (21.3\%)" ///
             "-0 " "0" ///
             "Treat:" "~~~" ///
             "Location:" "~~~" ///
         ) ///
-        label note("`noteExt'") ///
+        label note("`note`k''") ///
         replace
 }
 
@@ -246,7 +251,7 @@ start_final
             "Chlorinate" "Chlorine / Aquatabs / PUR" ///
             "Solar disinfection" "Strain or settle" ///
             "Other treatment" "Other method" ///
-            "Girls_less_than15" "Girls younger than 15" "Boys_15or_less" "Boys younger than 15" ///
+            "Girls_less_than15" "Water carrier: Girls younger than 15" "Boys_15or_less" "Water carrier: Boys younger than 15" ///
             "No education" "\textbf{HH Education} \\\hline No education" ///
             "Have U5 children " "\textbf{Household Demographic} \\\hline Have any children under age 5" ///
             "PipedWater" "Piped source" ///

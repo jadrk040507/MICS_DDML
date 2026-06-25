@@ -7,8 +7,8 @@ Provides:
 - Learner creation with CLI / program overrides.
 - Result export + summary logging.
 
-Usage in run_main.py, run_robustness.py, etc.:
-    from runners import setup_environment, load_data, select_learners, save_results
+Usage in 10_run_irm.py, 20_run_apos.py, etc.:
+from _runners import setup_environment, load_data, select_learners, save_results
 
     setup_environment()
     hh_dt, u5_dt = load_data()
@@ -17,24 +17,31 @@ Usage in run_main.py, run_robustness.py, etc.:
     save_results(results, tag="main")
 """
 
+import os
 import sys
 import warnings
 from pathlib import Path
 from typing import Dict, List, Optional, Any
 
+# In-process filters (main process).
 warnings.filterwarnings("ignore", category=FutureWarning, module="sklearn")
 warnings.filterwarnings("ignore", category=UserWarning)
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
+# Parallel learner fits run in loky subprocesses that do NOT import these
+# filters, so sklearn FutureWarnings (e.g. LogisticRegressionCV attribute
+# simplification in 1.10) leak from the workers.  PYTHONWARNINGS is read at
+# interpreter startup, so children spawned by this process inherit it.
+os.environ.setdefault("PYTHONWARNINGS", "ignore::FutureWarning")
 
-from config import (
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from _config import (
     HH_DATA_FILE, U5_DATA_FILE,
     LEARNER_NAMES, N_FOLDS, N_REP,
     OUTPUT_DIR, logger, setup_logging,
 )
-from data import prepare_hh_data, prepare_u5_data, get_summary
-from learners import create_learners, create_learners_for_binary
-from models import export_results, export_results_csv, print_significant_effects
+from _data import prepare_hh_data, prepare_u5_data, get_summary
+from _learners import create_learners, create_learners_for_binary
+from _models import export_results, export_results_csv, print_significant_effects
 
 
 def setup_environment(log_to_file: bool = True) -> None:
@@ -66,6 +73,21 @@ def load_data(
     u5_dt = prepare_u5_data(u5_file)
     if summaries:
         get_summary(u5_dt, dataset_type="U5")
+
+    # Rob_1 overlap-robustness mirror: when MICS_ROB1=1, restrict every analysis
+    # to households outside weak-support country cells (identical code path, the
+    # only change is the sample).  Outputs go to the MICS_OUTPUT_DIR/MICS_FIGURE_DIR
+    # set for the run, so headline results are never overwritten.
+    import os as _os
+    if _os.environ.get("MICS_ROB1") == "1":
+        from _data import construct_rob1
+        hh_dt = construct_rob1(hh_dt)
+        u5_dt = construct_rob1(u5_dt)
+        n_hh, n_u5 = len(hh_dt), len(u5_dt)
+        hh_dt = hh_dt[hh_dt["Rob_1"] == 0].copy()
+        u5_dt = u5_dt[u5_dt["Rob_1"] == 0].copy()
+        logger.info(f"[MICS_ROB1] restricted sample: HH {len(hh_dt):,}/{n_hh:,}, "
+                    f"U5 {len(u5_dt):,}/{n_u5:,}")
 
     return hh_dt, u5_dt
 
@@ -113,3 +135,4 @@ def save_results(
     logger.info(f"SIGNIFICANT EFFECTS SUMMARY — {tag.upper()}")
     logger.info("=" * 70)
     print_significant_effects(results)
+

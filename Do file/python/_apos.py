@@ -15,8 +15,14 @@ conservative sqrt(V_d + V_0) approximation), with the same Chernozhukov et al.
 Note: ``DoubleMLAPOS`` does not support clustered standard errors in
 doubleml 0.11.x, so APOS is estimated i.i.d.; this is recorded on each result
 (``clustered=False``).  The clustered IRM results remain the headline estimates.
+
+For U5 (child-level), an influence-function cluster-robust SE on HHID was
+evaluated but discarded: households average only ~1.4 children (mostly
+singletons), so the clustered SE moves <11% versus i.i.d. and changes no
+conclusion — not worth the added complexity.
 """
 
+import pickle
 from typing import List, Dict, Any, Optional
 
 import numpy as np
@@ -24,17 +30,34 @@ import pandas as pd
 import doubleml as dml
 from scipy.stats import norm as _norm
 from sklearn.base import clone
-from sklearn.ensemble import StackingClassifier
-from sklearn.linear_model import LogisticRegressionCV
+from _config import (
+    N_FOLDS, N_REP, MIN_OBSERVATIONS, CHECKPOINT_DIR, logger,
+)
+from _data import create_model_matrix
+from _learners import create_learners_for_binary
+from _models import _extract_stacking_weights
 
-from config import (
-    N_FOLDS, N_REP, RANDOM_STATE, N_JOBS, MIN_OBSERVATIONS, logger,
-)
-from data import create_model_matrix
-from learners import (
-    create_learners_for_binary,
-    _lasso_classifier, _ridge_classifier, _rf_classifier,
-)
+
+def _avg_apo_weights(modellist, prefix: str):
+    """Average stacked base-learner weights over per-level APO models.
+
+    prefix='ml_g' aggregates the outcome-model keys (ml_g_d_lvl0/1); 'ml_m' the
+    propensity. Returns {base: mean_weight} or None.
+    """
+    acc, cnt = {}, 0
+    for apo in modellist:
+        mods = getattr(apo, "models", None)
+        if not mods:
+            continue
+        keys = [k for k in mods if k.startswith(prefix)]
+        w = _extract_stacking_weights(mods, keys)
+        if w:
+            for base, val in w.items():
+                acc[base] = acc.get(base, 0.0) + val
+            cnt += 1
+    if cnt == 0:
+        return None
+    return {base: round(v / cnt, 3) for base, v in acc.items()}
 
 # WQ15_g -> integer APOS level (98 "other" recoded to 4 for contiguous coding)
 APOS_LEVEL_MAP = {0: 0, 1: 1, 2: 2, 3: 3, 98: 4}
@@ -49,27 +72,6 @@ SENS_RHO = 1.0
 APOS_MIN_LEVEL_N = 50
 
 
-def _stacked_multiclass_m() -> StackingClassifier:
-    """Stacked multi-class propensity learner P(D=d | X) for APOS.
-
-    Base learners (penalised logit + RF) are all natively multi-class; the
-    meta-learner is a multinomial logit.  Keeps the APOS treatment model on the
-    stacked ensemble, consistent with the IRM headline learner.
-    """
-    final_m = LogisticRegressionCV(
-        cv=3, solver="lbfgs", max_iter=1000, n_jobs=N_JOBS, random_state=RANDOM_STATE,
-    )
-    return StackingClassifier(
-        estimators=[
-            ("lasso", _lasso_classifier(n_jobs=1)),
-            ("ridge", _ridge_classifier(n_jobs=1)),
-            ("rf", _rf_classifier(n_jobs=1)),
-        ],
-        final_estimator=final_m,
-        cv=3, n_jobs=N_JOBS,
-    )
-
-
 def _build_treat_cat(dt: pd.DataFrame) -> pd.Series:
     """Map WQ15_g to a contiguous integer treatment level (0..4)."""
     return dt["WQ15_g"].fillna(0).map(APOS_LEVEL_MAP).astype("Int64")
@@ -79,16 +81,37 @@ def estimate_apos(
     dt: pd.DataFrame,
     outcome_var: str,
     dataset_type: str,
+    learner_name: str = "stacked",
     confounder_groups: Optional[Dict[str, List[str]]] = None,
     reference: int = 0,
     n_folds: int = N_FOLDS,
     n_rep: int = N_REP,
+    skip_checkpoint: bool = False,
 ) -> List[Dict[str, Any]]:
-    """Fit APOS for one outcome and return ATE(d vs reference) contrast rows.
+    """Fit APOS for one outcome+learner and return ATE(d vs reference) rows.
+
+    ``ml_g`` is the binary-outcome regressor and ``ml_m`` the (multi-class)
+    propensity classifier for ``learner_name`` from ``create_learners_for_binary``
+    (LogisticRegressionCV / RF / XGB / StackingClassifier all support multi-class
+    ``predict_proba`` over the treatment levels).
+
+    Successful result lists are cached to ``Output/Checkpoints`` keyed by
+    ``(dataset, outcome, learner)``; delete those files to force a refit (e.g.
+    after changing the confounders, folds, or learner definitions).
 
     Returns one result dict per non-reference treatment level, using the same
     key schema as ``models.estimate_effect`` so the table writers can consume it.
     """
+    cp_file = CHECKPOINT_DIR / f"apos_{dataset_type}_{outcome_var}_{learner_name}.pkl"
+    if not skip_checkpoint and cp_file.is_file():
+        try:
+            with open(cp_file, "rb") as f:
+                cached = pickle.load(f)
+            logger.info(f"    Loaded APOS checkpoint: {cp_file.name}")
+            return cached
+        except Exception as e:  # noqa: BLE001
+            logger.warning(f"    Could not load APOS checkpoint {cp_file.name}: {e}")
+
     dt = dt.copy()
     dt["treat_cat"] = _build_treat_cat(dt)
 
@@ -129,8 +152,9 @@ def estimate_apos(
         logger.error(f"    APOS {outcome_var}: insufficient treatment levels {levels}")
         return []
 
-    ml_g = create_learners_for_binary()["stacked"]["g"]  # StackingRegressor of ProbaRegressor
-    ml_m = _stacked_multiclass_m()
+    lset = create_learners_for_binary()[learner_name]
+    ml_g = lset["g"]            # outcome regressor (ProbaRegressor for binary Y)
+    ml_m = lset["m"]            # multi-class propensity classifier P(D=d | X)
 
     data = dml.DoubleMLData.from_arrays(x=X, y=y, d=d)
     apos = dml.DoubleMLAPOS(
@@ -140,8 +164,15 @@ def estimate_apos(
         n_folds=n_folds, n_rep=n_rep,
         trimming_rule="truncate", trimming_threshold=0.01,
     )
-    logger.info(f"    APOS {outcome_var}: fitting (levels={levels}, N={n:,}) ...")
-    apos.fit()
+    logger.info(f"    APOS {outcome_var} [{learner_name}]: fitting (levels={levels}, N={n:,}) ...")
+    store_models = (learner_name == "stacked")
+    apos.fit(store_models=store_models)
+
+    # Stacking weights (averaged over per-level APO models and folds)
+    weights_g = weights_m = None
+    if store_models and getattr(apos, "modellist", None):
+        weights_g = _avg_apo_weights(apos.modellist, prefix="ml_g")
+        weights_m = _avg_apo_weights(apos.modellist, prefix="ml_m")
 
     contrast = apos.causal_contrast(reference_levels=reference)
     csum = contrast.summary
@@ -167,7 +198,7 @@ def estimate_apos(
             "outcome": outcome_var,
             "treatment": APOS_LEVEL_LABELS.get(lv, str(lv)),
             "treatment_level": lv,
-            "learner": "stacked",
+            "learner": learner_name,
             "method": "APOS",
             "dataset_type": dataset_type,
             "clustered": False,
@@ -180,10 +211,22 @@ def estimate_apos(
             "rv_qa": float(rva[i]) if rva is not None and i < len(rva) else None,
             "n": n,
             "n_treated": int((d == lv).sum()),
+            "y_mean": float(np.mean(y)),
+            "weights_g": weights_g,
+            "weights_m": weights_m,
         })
         logger.info(
             f"      {APOS_LEVEL_LABELS.get(lv, lv):<10} ATE={coefs[i]:+.4f} ({ses[i]:.4f})"
         )
+
+    if not skip_checkpoint and results:
+        try:
+            with open(cp_file, "wb") as f:
+                pickle.dump(results, f)
+            logger.info(f"    Saved APOS checkpoint: {cp_file.name}")
+        except Exception as e:  # noqa: BLE001
+            logger.warning(f"    Could not save APOS checkpoint {cp_file.name}: {e}")
+
     return results
 
 
@@ -191,20 +234,30 @@ def run_apos(
     dt: pd.DataFrame,
     outcomes: List[Dict[str, str]],
     dataset_type: str,
+    learner_names: Optional[List[str]] = None,
     confounder_groups: Optional[Dict[str, List[str]]] = None,
     n_folds: int = N_FOLDS,
     n_rep: int = N_REP,
+    skip_checkpoint: bool = False,
 ) -> List[Dict[str, Any]]:
-    """Run APOS over every outcome in a dataset."""
+    """Run APOS over every outcome x learner in a dataset (checkpointed)."""
+    from _config import LEARNER_NAMES
+    learner_names = learner_names or LEARNER_NAMES
     results = []
     for out in outcomes:
         out_var = out["var"]
         if out_var not in dt.columns:
             logger.warning(f"APOS: outcome '{out_var}' not found, skipping")
             continue
-        logger.info(f"APOS | {out.get('label', out_var)} ({dataset_type})")
-        results += estimate_apos(
-            dt=dt, outcome_var=out_var, dataset_type=dataset_type,
-            confounder_groups=confounder_groups, n_folds=n_folds, n_rep=n_rep,
-        )
+        for ln in learner_names:
+            logger.info(f"APOS | {out.get('label', out_var)} ({dataset_type}) | {ln}")
+            try:
+                results += estimate_apos(
+                    dt=dt, outcome_var=out_var, dataset_type=dataset_type,
+                    learner_name=ln, confounder_groups=confounder_groups,
+                    n_folds=n_folds, n_rep=n_rep, skip_checkpoint=skip_checkpoint,
+                )
+            except Exception as exc:  # noqa: BLE001
+                logger.warning(f"    APOS {out_var} [{ln}] failed: {exc}")
     return results
+

@@ -10,14 +10,40 @@ from typing import Optional, List, Dict, Any, Tuple
 
 import numpy as np
 import pandas as pd
-
-from config import (
+from _config import (
     OUTPUT_DIR, CHECKPOINT_DIR, N_FOLDS, N_REP, RANDOM_STATE,
-    MIN_OBSERVATIONS, CLUSTER_VAR, USE_CLUSTERING, LEARNER_NAMES,
+    MIN_OBSERVATIONS, cluster_var_for, LEARNER_NAMES,
     logger,
 )
-from data import create_model_matrix
-from learners import create_learners
+from _data import create_model_matrix
+from _learners import create_learners, get_stacking_weights
+
+
+def _extract_stacking_weights(models: dict, keys: List[str]) -> Optional[Dict[str, float]]:
+    """Average base-learner meta-weights over all cross-fit folds/reps.
+
+    ``models`` is the dict stored by DoubleML when ``store_models=True``; each
+    key maps to {treat_col: [[fold estimators] per rep]}.  Returns the mean
+    normalized weight per base learner, or None if no stacking models found.
+    """
+    acc: Dict[str, float] = {}
+    cnt = 0
+    for k in keys:
+        node = models.get(k)
+        if node is None:
+            continue
+        treat_vals = node.values() if isinstance(node, dict) else [node]
+        for per_rep in treat_vals:
+            for fold_list in per_rep:
+                for est in fold_list:
+                    w = get_stacking_weights(est)
+                    if w:
+                        for base, val in w.items():
+                            acc[base] = acc.get(base, 0.0) + float(val)
+                        cnt += 1
+    if cnt == 0:
+        return None
+    return {base: round(v / cnt, 3) for base, v in acc.items()}
 
 import doubleml as dml
 from joblib import Parallel, delayed
@@ -53,8 +79,10 @@ def prepare_model_data(
     treatment_var: str,
     confounder_groups: Optional[Dict[str, List[str]]] = None,
     restrict_single_method: bool = False,
+    vs_none: bool = False,
     subgroup_var: Optional[str] = None,
     subgroup_val: Optional[Any] = None,
+    dataset_type: str = "HH",
 ) -> Optional[Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, pd.DataFrame]]:
     """
     Prepare clean data matrices for DoubleML estimation.
@@ -63,6 +91,16 @@ def prepare_model_data(
     ----------
     restrict_single_method : If True and treatment_var is a specific treatment
         (e.g. treat_chlorine), restrict to households using exactly one method.
+        Treated = that method; control = the OTHER single methods (a method
+        horse-race, NOT vs. no treatment).
+    vs_none : If True and treatment_var is a specific treatment, estimate the
+        clean method-vs-no-treatment ATE: subsample = {method-only households}
+        ∪ {no-treatment households}.  Treated = method-only (the method as
+        primary AND single_method==1, so the dose is unambiguous); control =
+        no treatment (water_treatment==0).  Other-method and multi-method
+        households are dropped.  Takes precedence over restrict_single_method.
+        N differs per method (treated count varies; control = the full no-
+        treatment pool).
 
     Returns
     -------
@@ -70,9 +108,21 @@ def prepare_model_data(
     """
     dt_work = dt.copy()
 
-    # Restrict to single-method households for specific treatment analysis
     treatment_is_specific = treatment_var.startswith("treat_")
-    if restrict_single_method and treatment_is_specific:
+    if vs_none and treatment_is_specific:
+        # Clean method-vs-none contrast: method-only treated, no-treatment control.
+        missing = [c for c in ("single_method", "water_treatment") if c not in dt_work.columns]
+        if missing:
+            logger.error(f"    vs_none requires columns {missing}; aborting spec")
+            return None
+        treated_mask = (dt_work[treatment_var] == 1) & (dt_work["single_method"] == 1)
+        control_mask = (dt_work["water_treatment"] == 0)
+        dt_work = dt_work[treated_mask | control_mask].copy()
+        if len(dt_work) < MIN_OBSERVATIONS:
+            logger.error(f"    Too few method-only+none obs (N={len(dt_work)})")
+            return None
+    elif restrict_single_method and treatment_is_specific:
+        # Restrict to single-method households for specific treatment analysis
         if "single_method" in dt_work.columns:
             n_before = len(dt_work)
             dt_work = dt_work[dt_work["single_method"] == 1].copy()
@@ -125,10 +175,11 @@ def prepare_model_data(
         logger.error(f"    Insufficient treatment variation (treated={n_treated}, untreated={n_untreated})")
         return None
 
-    # Cluster variable
+    # Cluster variable (per dataset: HH unclustered, U5 -> HHID)
     cluster_vars = None
-    if USE_CLUSTERING and CLUSTER_VAR in dt_clean.columns:
-        cluster_vars = dt_clean[CLUSTER_VAR].values
+    cluster_name = cluster_var_for(dataset_type)
+    if cluster_name is not None and cluster_name in dt_clean.columns:
+        cluster_vars = dt_clean[cluster_name].values
         n_clusters = len(np.unique(cluster_vars))
         if n_clusters < 10:
             logger.warning(f"    Only {n_clusters} clusters, clustering may be unreliable")
@@ -144,6 +195,7 @@ def estimate_effect(
     learner: Dict[str, Any],
     confounder_groups: Optional[Dict[str, List[str]]] = None,
     restrict_single_method: bool = False,
+    vs_none: bool = False,
     subgroup_var: Optional[str] = None,
     subgroup_val: Optional[Any] = None,
     confounder_set: str = "base",
@@ -208,8 +260,10 @@ def estimate_effect(
             treatment_var=treatment_var,
             confounder_groups=confounder_groups,
             restrict_single_method=restrict_single_method,
+            vs_none=vs_none,
             subgroup_var=subgroup_var,
             subgroup_val=subgroup_val,
+            dataset_type=dataset_type,
         )
         if prep is None:
             return None
@@ -220,63 +274,37 @@ def estimate_effect(
     n_untreated = n_complete - n_treated
 
     # -------------------------------------------------------------------------
-    # Fit DoubleML IRM
+    # Fit DoubleML IRM  (single attempt — NO silent downgrade)
     # -------------------------------------------------------------------------
-    # Strategy (defensible + robust):
-    #   1. Start with default n_folds and cluster_vars.
-    #   2. If fit fails for structural reasons (empty folds, cluster splits),
-    #      fall back to fewer folds (n_folds=2).
-    #   3. If that still fails, drop clustering as a last resort.
-    #   This guarantees every specification gets a fair shot without manual
-    #   split construction, which is brittle with clusters.
+    # The spec is fit at exactly the requested (n_folds, n_rep, cluster_vars).
+    # If the fit fails, the spec is reported as failed (returns None) and the
+    # estimate is NOT recomputed with fewer folds or with clustering dropped:
+    # a quietly unclustered / under-folded estimate would misrepresent the SEs.
     # -------------------------------------------------------------------------
 
-    def _fit_dml(n_folds_try, cluster_try):
-        data = dml.DoubleMLData.from_arrays(
-            x=X_clean, y=y, d=d,
-            cluster_vars=cluster_try,
+    data = dml.DoubleMLData.from_arrays(
+        x=X_clean, y=y, d=d, cluster_vars=cluster_vars,
+    )
+    dml_model = dml.DoubleMLIRM(
+        obj_dml_data=data,
+        ml_g=clone(learner["g"]),
+        ml_m=clone(learner["m"]),
+        n_folds=n_folds,
+        n_rep=n_rep,
+        score="ATE",
+        trimming_rule="truncate",
+        trimming_threshold=0.01,
+        draw_sample_splitting=True,
+    )
+    store_models = (learner_name == "stacked")
+    try:
+        dml_model.fit(store_models=store_models)
+    except Exception as exc:
+        logger.error(
+            f"    IRM fit FAILED (n_folds={n_folds}, "
+            f"clusters={'yes' if cluster_vars is not None else 'no'}); "
+            f"not downgrading. {exc}"
         )
-        model = dml.DoubleMLIRM(
-            obj_dml_data=data,
-            ml_g=clone(learner["g"]),
-            ml_m=clone(learner["m"]),
-            n_folds=n_folds_try,
-            n_rep=n_rep,
-            score="ATE",
-            trimming_rule="truncate",
-            trimming_threshold=0.01,
-            draw_sample_splitting=True,
-        )
-        model.fit()
-        return model
-
-    fallback_log = []
-    dml_model = None
-
-    for attempt, (nf, cl) in enumerate([
-        (n_folds, cluster_vars),
-        (2, cluster_vars),
-        (2, None),
-    ], 1):
-        try:
-            dml_model = _fit_dml(nf, cl)
-            if attempt > 1:
-                logger.info(
-                    f"    Fallback succeeded: attempt {attempt} "
-                    f"(n_folds={nf}, clusters={'yes' if cl is not None else 'no'})"
-                )
-            break
-        except Exception as exc:
-            msg = str(exc)
-            if "zero-dimensional" in msg or "all_smpls_cluster" in msg or "empty" in msg.lower():
-                fallback_log.append(f"attempt {attempt} (n_folds={nf}, clusters={'yes' if cl is not None else 'no'}): {msg}")
-                continue
-            else:
-                logger.error(f"    Unexpected error on attempt {attempt}: {msg}")
-                return None
-
-    if dml_model is None:
-        logger.error(f"    Fitting failed after all attempts: {'; '.join(fallback_log)}")
         return None
 
     # Extract results
@@ -321,11 +349,20 @@ def estimate_effect(
         "n": n_complete,
         "n_treated": n_treated,
         "n_untreated": n_untreated,
+        "y_mean": float(np.mean(y)),
         "n_clusters": len(np.unique(cluster_vars)) if cluster_vars is not None else None,
-        "cluster_var": CLUSTER_VAR if USE_CLUSTERING else None,
+        "cluster_var": cluster_var_for(dataset_type),
         "rv_q": rv_q,
         "rv_qa": rv_qa,
     }
+
+    # Stacking weights (base-learner meta-weights for g and m nuisances)
+    if store_models and getattr(dml_model, "models", None) is not None:
+        try:
+            result["weights_g"] = _extract_stacking_weights(dml_model.models, ["ml_g0", "ml_g1"])
+            result["weights_m"] = _extract_stacking_weights(dml_model.models, ["ml_m"])
+        except Exception as exc:  # noqa: BLE001
+            logger.warning(f"    Stacking weight extraction failed: {exc}")
 
     # Save checkpoint
     if not skip_checkpoint:
@@ -346,6 +383,7 @@ def run_analysis(
     learners: Dict[str, Dict],
     confounder_groups: Optional[Dict[str, List[str]]] = None,
     restrict_single_method: bool = False,
+    vs_none: bool = False,
     subgroup_var: Optional[str] = None,
     subgroup_val: Optional[Any] = None,
     confounder_set: str = "base",
@@ -386,8 +424,10 @@ def run_analysis(
                 treatment_var=trt_var,
                 confounder_groups=confounder_groups,
                 restrict_single_method=restrict_single_method,
+                vs_none=vs_none,
                 subgroup_var=subgroup_var,
                 subgroup_val=subgroup_val,
+                dataset_type=dataset_type,
             )
             if prepped is None:
                 continue
@@ -403,6 +443,7 @@ def run_analysis(
                         learner=ln,
                         confounder_groups=confounder_groups,
                         restrict_single_method=restrict_single_method,
+                        vs_none=vs_none,
                         subgroup_var=subgroup_var,
                         subgroup_val=subgroup_val,
                         confounder_set=confounder_set,
@@ -427,6 +468,7 @@ def run_analysis(
                         learner=ln,
                         confounder_groups=confounder_groups,
                         restrict_single_method=restrict_single_method,
+                        vs_none=vs_none,
                         subgroup_var=subgroup_var,
                         subgroup_val=subgroup_val,
                         confounder_set=confounder_set,
@@ -493,3 +535,4 @@ def print_significant_effects(results: List[Dict[str, Any]]) -> None:
             f"{r['n']:>7}{sub}"
         )
     logger.info("\n".join(lines))
+

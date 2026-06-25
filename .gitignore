@@ -16,6 +16,10 @@ skills-lock.json
 # --- Raw data (large .dta files) ---
 Data/
 
+# --- Editor temp + run logs ---
+*.tmp.*
+*.log
+
 # --- OS cruft ---
 desktop.ini
 nul

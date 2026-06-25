@@ -12,8 +12,7 @@ from typing import Optional, List, Dict, Tuple
 import numpy as np
 import pandas as pd
 import pyreadstat
-
-from config import (
+from _config import (
     HH_DATA_FILE, U5_DATA_FILE, WQ15G_TREATMENT_MAP, HELEVEL_CODES,
     RISKSOURCE_CODES, BASE_CONFOUNDERS,
     U5_ADDITIONAL_CONFOUNDERS, CLUSTER_VAR,
@@ -29,7 +28,6 @@ def prepare_hh_data(filepath: Optional[Path] = None) -> pd.DataFrame:
     dt = _construct_ecoli_outcomes(dt)
     dt = _construct_treatment_variables(dt)
     dt = _construct_hh_confounders(dt)
-    dt = _construct_robustness_variables(dt)
     dt["dataset"] = "HH"
     return dt
 
@@ -42,7 +40,6 @@ def prepare_u5_data(filepath: Optional[Path] = None) -> pd.DataFrame:
     dt = _construct_ecoli_outcomes(dt)
     dt = _construct_treatment_variables(dt)
     dt = _construct_hh_confounders(dt)
-    dt = _construct_robustness_variables(dt)
     dt = _construct_u5_variables(dt)
     dt["dataset"] = "U5"
     return dt
@@ -72,27 +69,57 @@ def _construct_common_variables(dt: pd.DataFrame) -> pd.DataFrame:
     dt["num_children"] = dt["HHCHILDREN"].fillna(0).astype(int)
     dt.loc[dt["num_children"] > 10, "num_children"] = 10
 
-    # Water source dummies from WS1_g (grouped)
+    # Water source dummies from WS1_g (grouped) — i.WS1_g
     ws1g_cats = sorted(dt["WS1_g"].dropna().unique())
     for cat in ws1g_cats:
         dt[f"ws1g_{int(cat)}"] = (dt["WS1_g"] == cat).astype(int)
 
-    # Country dummies (drop first to avoid collinearity)
-    country_dummies = pd.get_dummies(dt["Country"], prefix="country", drop_first=True)
+    # Country fixed effects from country_cat (drop first) — i.country_cat
+    country_dummies = pd.get_dummies(
+        dt["country_cat"].astype("Int64"), prefix="country_cat", drop_first=True
+    ).astype(int)
     dt = pd.concat([dt, country_dummies], axis=1)
 
-    # Risk source dummies
+    # WQ27 decile dummies (drop first) — i.wq27_decile
+    wq27_dummies = pd.get_dummies(
+        dt["wq27_decile"].astype("Int64"), prefix="wq27_d", drop_first=True
+    ).astype(int)
+    dt = pd.concat([dt, wq27_dummies], axis=1)
+
+    # Household demographic indicators (binary 0/1) — enter as-is
+    for col in ["Any_U5", "Girls_less_than15", "Boys_15or_less"]:
+        if col in dt.columns:
+            dt[col] = dt[col].fillna(0).astype(int)
+
+    # Risk source dummies (kept for GATE splitting / diagnostics; NOT a control)
     for rs_val in [0, 1, 2]:
         dt[f"risk_source_{rs_val}"] = (dt["RiskSource"] == rs_val).astype(int)
 
-    # Cluster variable
-    dt[CLUSTER_VAR] = dt[CLUSTER_VAR].fillna(-1)
+    # Binned child count (0,1,2,3,4+) for a stable one-hot CATE moderator:
+    # the raw count has integer-only support, so a spline basis is unstable.
+    if "num_children" in dt.columns:
+        dt["num_children_bin"] = dt["num_children"].clip(upper=4).astype(int)
+
+    # Continuous wealth factor score (for CATE moderator)
+    if "wscore" in dt.columns:
+        dt["wscore"] = dt["wscore"].astype(float)
+
+    # Cluster variable (U5 only): cluster on HHID when present
+    if CLUSTER_VAR in dt.columns:
+        dt[CLUSTER_VAR] = dt[CLUSTER_VAR].fillna(-1)
 
     # RiskSource as integer
     dt["risk_source"] = dt["RiskSource"].astype(int)
 
     # Region
     dt["region"] = dt["Region"].fillna(0).astype(int)
+
+    # Diarrhea outcome: HH-level child diarrhea is only in the HH dataset,
+    # while U5 already has a diarrhea variable.
+    if "diarrhea" in dt.columns:
+        dt["diarrhea"] = dt["diarrhea"].astype("Int64")
+    elif "HH_child_diarrhea" in dt.columns:
+        dt["diarrhea"] = dt["HH_child_diarrhea"].astype("Int64")
 
     return dt
 
@@ -149,6 +176,36 @@ def _construct_treatment_variables(dt: pd.DataFrame) -> pd.DataFrame:
     return dt
 
 
+def construct_rob1(
+    dt: pd.DataFrame,
+    country_col: str = "country_cat",
+    share_lo: float = 0.05,
+    min_count: int = 10,
+) -> pd.DataFrame:
+    """Add ``Rob_1`` = 1 for TREATED households in weak-support country cells.
+
+    A (country, treatment-level) cell is weak-support when the method's within-
+    country share is below ``share_lo`` or fewer than ``min_count`` households use
+    it.  Only treated levels (WQ15_g level != 0) are flagged; the no-treatment
+    baseline is never dropped for being dominant.  This isolates the orphan-
+    treated, no-overlap observations (notably chlorine, concentrated in a few
+    countries).  The Rob_1 overlap-robustness mirror re-estimates on Rob_1 == 0.
+    """
+    from _apos import _build_treat_cat
+    d = dt.copy()
+    d["_lvl"] = _build_treat_cat(d)
+    valid = d[country_col].notna() & d["_lvl"].notna()
+    cnt = d[valid].groupby([country_col, "_lvl"]).size().rename("cnt").reset_index()
+    tot = d[valid].groupby(country_col).size().rename("ctot").reset_index()
+    cell = cnt.merge(tot, on=country_col)
+    cell["share"] = cell["cnt"] / cell["ctot"]
+    cell["weak"] = (((cell["share"] < share_lo) | (cell["cnt"] < min_count))
+                    & (cell["_lvl"] != 0)).astype(int)
+    d = d.merge(cell[[country_col, "_lvl", "weak"]], on=[country_col, "_lvl"], how="left")
+    d["Rob_1"] = d["weak"].fillna(0).astype(int)
+    return d.drop(columns=["_lvl", "weak"])
+
+
 def _construct_hh_confounders(dt: pd.DataFrame) -> pd.DataFrame:
     """Construct household-level confounders (toilet dummies)."""
     dt = dt.copy()
@@ -161,35 +218,18 @@ def _construct_hh_confounders(dt: pd.DataFrame) -> pd.DataFrame:
     return dt
 
 
-def _construct_robustness_variables(dt: pd.DataFrame) -> pd.DataFrame:
-    """Construct variables for robustness checks (water storage, handwashing)."""
-    dt = dt.copy()
-
-    # Water storage: WQ12=1 straight from source, 2=stored covered, 3=stored uncovered
-    # Already have dummies: water_straight_from_source, water_stored_covered, water_stored_uncovered
-    for var in ["water_stored_covered", "water_stored_uncovered", "water_straight_from_source"]:
-        if var in dt.columns:
-            dt[var] = dt[var].fillna(0).astype(int)
-        else:
-            dt[var] = 0
-
-    # Handwashing: SoapandWater (binary, many missings)
-    if "SoapandWater" in dt.columns:
-        dt["SoapandWater"] = dt["SoapandWater"].fillna(0).astype(int)
-    else:
-        dt["SoapandWater"] = 0
-
-    return dt
-
-
 def _construct_u5_variables(dt: pd.DataFrame) -> pd.DataFrame:
     """Construct child-level variables for the U5 dataset."""
     dt = dt.copy()
 
-    # Child age
+    # Child age (years, 0-4) — raw value kept for CATE moderator
     dt["child_age"] = dt["age"].fillna(0).astype(int)
 
-    # Child sex: male variable (1=male, 0=female)
+    # Child age dummies (drop first) — i.age, used as a control
+    age_dummies = pd.get_dummies(dt["child_age"], prefix="child_age", drop_first=True).astype(int)
+    dt = pd.concat([dt, age_dummies], axis=1)
+
+    # Child sex: male variable (1=male, 0=female) — i.male
     dt["child_sex_male"] = dt["male"].fillna(0).astype(int)
 
     # Girls under 15 and Boys under 15 (binary indicators)
@@ -203,7 +243,8 @@ def create_model_matrix(
     dt: pd.DataFrame,
     outcome_var: str,
     confounder_groups: Optional[Dict[str, List[str]]] = None,
-) -> Tuple[np.ndarray, pd.DataFrame]:
+    return_names: bool = False,
+):
     """
     Build the confounder matrix X for DoubleML estimation.
 
@@ -225,18 +266,29 @@ def create_model_matrix(
     dt = dt.copy()
     columns = []
 
+    def _expand(prefix: str, drop_first: bool) -> list:
+        cols = sorted(
+            [c for c in dt.columns if c.startswith(prefix)],
+            key=lambda c: (len(c), c),
+        )
+        if drop_first and len(cols) > 1:
+            return cols[1:]
+        return cols
+
     for group_name, group_cols in confounder_groups.items():
         for col in group_cols:
             if col == "water_source":
-                # Drop first water-source dummy to avoid perfect multicollinearity
-                ws1g_cols = sorted([c for c in dt.columns if c.startswith("ws1g_")])
-                if len(ws1g_cols) > 1:
-                    columns.extend(ws1g_cols[1:])
-                elif ws1g_cols:
-                    columns.extend(ws1g_cols)
-            elif col == "country":
-                country_cols = [c for c in dt.columns if c.startswith("country_")]
-                columns.extend(country_cols)
+                # i.WS1_g -> ws1g_* dummies, drop first (avoid collinearity)
+                columns.extend(_expand("ws1g_", drop_first=True))
+            elif col == "country_cat":
+                # i.country_cat -> country_cat_* dummies (already drop-first built)
+                columns.extend(_expand("country_cat_", drop_first=False))
+            elif col == "wq27_decile":
+                # i.wq27_decile -> wq27_d_* dummies (already drop-first built)
+                columns.extend(_expand("wq27_d_", drop_first=False))
+            elif col == "child_age":
+                # i.age -> child_age_* dummies (already drop-first built)
+                columns.extend(_expand("child_age_", drop_first=False))
             else:
                 columns.append(col)
 
@@ -254,6 +306,8 @@ def create_model_matrix(
     # Replace inf with nan
     X[np.isinf(X)] = np.nan
 
+    if return_names:
+        return X, dt, available_columns
     return X, dt
 
 
@@ -306,32 +360,3 @@ def get_summary(dt: pd.DataFrame, dataset_type: str = "HH") -> dict:
     logger.info("\n".join(lines))
 
     return summary
-
-
-def validate_data(dt: pd.DataFrame, outcome_var: str, treatment_var: str) -> bool:
-    """Validate that required variables exist and have sufficient observations."""
-    issues = []
-
-    if outcome_var not in dt.columns:
-        issues.append(f"Outcome '{outcome_var}' not found in data")
-    elif dt[outcome_var].notna().sum() < 50:
-        issues.append(f"Outcome '{outcome_var}' has < 50 non-missing observations")
-
-    if treatment_var not in dt.columns:
-        issues.append(f"Treatment '{treatment_var}' not found in data")
-    else:
-        treated = dt[treatment_var].sum()
-        untreated = len(dt) - treated
-        if treated < 50:
-            issues.append(f"Treatment '{treatment_var}' has < 50 treated units")
-        if untreated < 50:
-            issues.append(f"Treatment '{treatment_var}' has < 50 untreated units")
-
-    if CLUSTER_VAR not in dt.columns:
-        issues.append(f"Cluster variable '{CLUSTER_VAR}' not found in data")
-
-    if issues:
-        for issue in issues:
-            logger.warning(f"  {issue}")
-        return False
-    return True

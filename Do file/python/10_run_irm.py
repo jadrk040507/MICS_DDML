@@ -1,27 +1,34 @@
 """
-Main analysis: DDML IRM estimation for HH (E.coli) and U5 (diarrhea) datasets.
+Step 1 of the workflow: DDML IRM estimation for HH (E.coli) and U5 (diarrhea).
 
 Usage:
-    python run_main.py              # Full analysis (7 learners)
-    python run_main.py --learners ols lasso rf  # Custom learner subset
+    python 10_run_irm.py              # Full analysis (7 learners)
+    python 10_run_irm.py --learners ols lasso rf  # Custom learner subset
 
-Runs:
-- Any treatment effect on all outcomes
-- Specific treatment methods (boil, chlorine, filter, other) on all outcomes
-- Sensitivity analysis (RV/RVa)
-- Stacking weight extraction
+Runs ONLY the any-treatment effect (water_treatment vs. none, full sample) on
+every outcome, plus its sensitivity (RV/RVa) and stacking-weight extraction.
+Specific-method effects are reported by APOS (20_run_apos.py); the any-treatment
+IRM estimated here is loaded by that step and shown as the top row of the
+combined E.coli / diarrhea results tables.
 """
 
 import argparse
-
-from config import (
-    HH_OUTCOMES, U5_OUTCOMES,
-    ANY_TREATMENT, SPECIFIC_TREATMENTS,
+from _config import (
+    ANY_TREATMENT,
     LEARNER_NAMES, N_FOLDS, N_REP,
     OUTPUT_DIR, logger,
 )
-from models import run_analysis
-from runners import setup_environment, load_data, select_learners, save_results
+from _models import run_analysis
+from _runners import setup_environment, load_data, select_learners, save_results
+
+# E.coli outcomes belong to the HH dataset; diarrhea to U5.  (SomeRiskHome /
+# VeryHighRiskHome also exist as columns in the U5 file, so estimating them
+# there would just duplicate the HH specs — restrict each dataset to its own.)
+HH_OUTCOMES = [
+    {"var": "SomeRiskHome", "label": "Some Risk Home"},
+    {"var": "VeryHighRiskHome", "label": "Very High Risk Home"},
+]
+U5_OUTCOMES = [{"var": "diarrhea", "label": "Diarrhea"}]
 
 
 def main():
@@ -50,8 +57,14 @@ def main():
     parser.add_argument(
         "--parallel",
         type=int,
-        default=None,
-        help="Number of parallel jobs across learners (default: 1, sequential).",
+        default=1,
+        help=(
+            "Parallel jobs ACROSS learners (default: 1). Keep at 1: the stacked "
+            "learner already parallelizes internally over its base learners/folds "
+            "(n_jobs=N_JOBS), so an outer pool would oversubscribe the CPU. Raise "
+            "only when running many single-threaded learners and the inner "
+            "parallelism is idle."
+        ),
     )
     args = parser.parse_args()
 
@@ -85,7 +98,7 @@ def main():
     learners = select_learners(names=selected_learners)
 
     # Confounder groups
-    from config import BASE_CONFOUNDERS, U5_ADDITIONAL_CONFOUNDERS
+    from _config import BASE_CONFOUNDERS, U5_ADDITIONAL_CONFOUNDERS
     hh_confounders = BASE_CONFOUNDERS.copy()
     u5_confounders = {**BASE_CONFOUNDERS, **U5_ADDITIONAL_CONFOUNDERS}
 
@@ -130,65 +143,22 @@ def main():
     )
 
     # =========================================================================
-    # 5. Analysis 3: Specific Treatments on HH (E.coli outcomes)
+    # 5. Tag contrast, combine, export
     # =========================================================================
-    logger.info("=" * 70)
-    logger.info("ANALYSIS 3: HH Dataset — Specific Treatments on E.coli Outcomes")
-    logger.info("=" * 70)
+    any_results = hh_any_results + u5_any_results
+    for r in any_results:
+        r["contrast"] = "vs_none"
 
-    hh_specific_results = run_analysis(
-        dt=hh_dt,
-        outcomes=HH_OUTCOMES,
-        treatments=SPECIFIC_TREATMENTS,
-        learners=learners,
-        confounder_groups=hh_confounders,
-        dataset_type="HH",
-        prefix="hh_specific",
-        restrict_single_method=True,
-        n_folds=n_folds,
-        n_rep=n_rep,
-        n_jobs=n_jobs,
-    )
-
-    # =========================================================================
-    # 6. Analysis 4: Specific Treatments on U5 (diarrhea)
-    # =========================================================================
-    logger.info("=" * 70)
-    logger.info("ANALYSIS 4: U5 Dataset — Specific Treatments on Diarrhea")
-    logger.info("=" * 70)
-
-    u5_specific_results = run_analysis(
-        dt=u5_dt,
-        outcomes=U5_OUTCOMES,
-        treatments=SPECIFIC_TREATMENTS,
-        learners=learners,
-        confounder_groups=u5_confounders,
-        dataset_type="U5",
-        prefix="u5_specific",
-        restrict_single_method=True,
-        n_folds=n_folds,
-        n_rep=n_rep,
-        n_jobs=n_jobs,
-    )
-
-    # =========================================================================
-    # 7. Combine and export results
-    # =========================================================================
-    all_results = (hh_any_results + u5_any_results +
-                   hh_specific_results + u5_specific_results)
-
+    all_results = any_results
     save_results(all_results, tag="main")
 
     # Generate tables
     try:
-        from tables import create_main_table, create_sensitivity_table
-        create_main_table(hh_any_results + hh_specific_results,
-                          filename="table_hh_main.tex", dataset_type="HH")
-        create_main_table(u5_any_results + u5_specific_results,
-                          filename="table_u5_main.tex", dataset_type="U5")
-        # Sensitivity (RV / RVa) for the stacked IRM, any-treatment specs
-        create_sensitivity_table(hh_any_results + u5_any_results,
-                                 filename="table_sensitivity.tex")
+        from _tables import create_sensitivity_table
+        # Sensitivity (RV / RVa) for the stacked IRM, any-treatment specs.
+        # The any-treatment IRM point estimates are tabulated by 20_run_apos.py,
+        # which loads results_main.pkl and renders them atop the APOS panel.
+        create_sensitivity_table(any_results, filename="table_sensitivity.tex")
     except Exception as e:
         logger.info(f"Warning: Table generation failed: {e}")
 
@@ -200,3 +170,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
