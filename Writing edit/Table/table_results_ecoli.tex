@@ -1,0 +1,56 @@
+% Requires: \usepackage{booktabs, pdflscape, graphicx, adjustbox}
+\begin{landscape}
+\begin{table}[htbp]
+\centering
+\caption{DDML estimates: Water treatment and household E.coli contamination}
+\label{tab:results-ecoli}
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{0.94}
+\begin{adjustbox}{max width=\linewidth, max totalheight=0.70\textwidth, center}
+\begin{tabular}{l|ccccccc|ccccccc}
+\toprule
+ & \multicolumn{7}{c|}{Some Risk Home (E.coli 1--100 CFU)} & \multicolumn{7}{c}{Very High Risk Home (E.coli $\geq$ 101 CFU)} \\
+\cmidrule(lr){2-8} \cmidrule(lr){9-15}
+ & OLS & Lasso & Ridge & Elastic Net & Random Forest & XGBoost & Stacked & OLS & Lasso & Ridge & Elastic Net & Random Forest & XGBoost & Stacked \\
+\midrule
+Any Treatment & -0.025*** & -0.023*** & -0.023*** & -0.022*** & -0.008 & -0.013* & -0.019*** & -0.061*** & -0.069*** & -0.070*** & -0.072*** & -0.066*** & -0.071*** & -0.070*** \\
+ & (0.009) & (0.006) & (0.004) & (0.004) & (0.005) & (0.008) & (0.005) & (0.008) & (0.005) & (0.003) & (0.003) & (0.004) & (0.006) & (0.006) \\
+\quad RV & 0.01 & 0.01 & 0.02 & 0.02 & 0.00 & 0.01 & 0.01 & 0.04 & 0.05 & 0.06 & 0.06 & 0.04 & 0.04 & 0.04 \\
+\quad RV$_\alpha$ & 0.00 & 0.01 & 0.01 & 0.01 & 0.00 & 0.00 & 0.01 & 0.03 & 0.04 & 0.06 & 0.06 & 0.04 & 0.03 & 0.03 \\
+\quad $N$ & \multicolumn{7}{c|}{59,620} & \multicolumn{7}{c}{59,620} \\
+\midrule
+Boil & -0.009 & -0.040*** & -0.020*** & -0.039*** & -0.041*** & -0.029*** & -0.035*** & -0.103*** & -0.111*** & -0.108*** & -0.111*** & -0.100*** & -0.104*** & -0.106*** \\
+ & (0.012) & (0.007) & (0.006) & (0.007) & (0.007) & (0.010) & (0.006) & (0.009) & (0.006) & (0.005) & (0.005) & (0.006) & (0.008) & (0.005) \\
+\quad RV & 0.00 & 0.01 & 0.01 & 0.01 & 0.01 & 0.01 & 0.02 & 0.03 & 0.04 & 0.04 & 0.04 & 0.03 & 0.03 & 0.08 \\
+\quad RV$_\alpha$ & 0.00 & 0.01 & 0.00 & 0.01 & 0.01 & 0.00 & 0.02 & 0.02 & 0.04 & 0.04 & 0.04 & 0.03 & 0.02 & 0.07 \\
+\quad $N$ & \multicolumn{7}{c|}{59,620} & \multicolumn{7}{c}{59,620} \\
+\midrule
+Chlorine & 0.025* & 0.018 & 0.027** & 0.018 & 0.008 & 0.021 & 0.005 & -0.063*** & -0.060*** & -0.065*** & -0.057*** & -0.065*** & -0.061*** & -0.027** \\
+ & (0.013) & (0.012) & (0.012) & (0.012) & (0.011) & (0.013) & (0.013) & (0.010) & (0.010) & (0.010) & (0.010) & (0.009) & (0.011) & (0.011) \\
+\quad RV & 0.01 & 0.00 & 0.01 & 0.00 & 0.00 & 0.00 & 0.00 & 0.02 & 0.02 & 0.02 & 0.02 & 0.02 & 0.02 & 0.01 \\
+\quad RV$_\alpha$ & 0.00 & 0.00 & 0.00 & 0.00 & 0.00 & 0.00 & 0.00 & 0.01 & 0.01 & 0.01 & 0.01 & 0.01 & 0.01 & 0.00 \\
+\quad $N$ & \multicolumn{7}{c|}{59,620} & \multicolumn{7}{c}{59,620} \\
+\midrule
+Filter & -0.003 & 0.038*** & 0.022*** & 0.039*** & -0.006 & -0.006 & 0.047*** & -0.017 & -0.031*** & -0.026*** & -0.031*** & -0.017* & -0.010 & -0.026*** \\
+ & (0.013) & (0.009) & (0.008) & (0.009) & (0.010) & (0.013) & (0.007) & (0.012) & (0.008) & (0.007) & (0.007) & (0.009) & (0.012) & (0.006) \\
+\quad RV & 0.00 & 0.01 & 0.01 & 0.01 & 0.00 & 0.00 & 0.02 & 0.00 & 0.01 & 0.01 & 0.01 & 0.01 & 0.00 & 0.01 \\
+\quad RV$_\alpha$ & 0.00 & 0.01 & 0.00 & 0.01 & 0.00 & 0.00 & 0.01 & 0.00 & 0.01 & 0.00 & 0.01 & 0.00 & 0.00 & 0.01 \\
+\quad $N$ & \multicolumn{7}{c|}{59,620} & \multicolumn{7}{c}{59,620} \\
+\midrule
+Other & 0.008 & 0.009 & 0.010 & 0.010 & 0.019 & 0.013 & -0.037*** & -0.092*** & -0.105*** & -0.103*** & -0.100*** & -0.090*** & -0.087*** & -0.133*** \\
+ & (0.013) & (0.011) & (0.011) & (0.011) & (0.012) & (0.013) & (0.008) & (0.010) & (0.009) & (0.009) & (0.009) & (0.010) & (0.011) & (0.006) \\
+\quad RV & 0.00 & 0.00 & 0.00 & 0.00 & 0.00 & 0.00 & 0.01 & 0.02 & 0.03 & 0.03 & 0.03 & 0.02 & 0.02 & 0.06 \\
+\quad RV$_\alpha$ & 0.00 & 0.00 & 0.00 & 0.00 & 0.00 & 0.00 & 0.01 & 0.02 & 0.03 & 0.03 & 0.03 & 0.02 & 0.02 & 0.05 \\
+\quad $N$ & \multicolumn{7}{c|}{59,620} & \multicolumn{7}{c}{59,620} \\
+\midrule
+Outcome mean $\bar Y$ & \multicolumn{7}{c|}{0.429} & \multicolumn{7}{c}{0.308} \\
+Treated (\%) & \multicolumn{7}{c|}{21.2} & \multicolumn{7}{c}{21.2} \\
+Clusters & \multicolumn{7}{c|}{---} & \multicolumn{7}{c}{---} \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\par\vspace{3pt}
+\begin{minipage}{\linewidth}\scriptsize \textit{Notes:} Each coefficient is reported with significance stars over its standard error. Any treatment is the IRM ATE of any household water treatment versus none. Boil, chlorine, filter, and other are APOS contrasts relative to no treatment. RV and RV$_\alpha$ are the robustness value and its 95\% confidence-interval-adjusted version. All models control for wealth, education, country fixed effects, urban residence, water source, household composition, sanitation, and source-water E.coli decile; the under-5 model also controls for child age and sex. IRM cross-fitting uses 5 folds $\times$ 3 repetitions; APOS uses 5 folds $\times$ 1 repetition. Propensities are trimmed to $[0.01,0.99]$. IRM standard errors cluster by HHID for diarrhea; APOS contrasts use i.i.d. standard errors. $^{***}p<0.01$, $^{**}p<0.05$, $^{*}p<0.10$.\end{minipage}
+\end{table}
+\end{landscape}

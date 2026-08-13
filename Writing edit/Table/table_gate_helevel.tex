@@ -1,0 +1,39 @@
+% Requires: \usepackage{booktabs, pdflscape, graphicx, adjustbox}
+\begin{table}[p]
+\centering
+\caption{Group average treatment effects by household education}
+\label{tab:gate_helevel}
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{adjustbox}{max width=\linewidth, center}
+\begin{tabular}{lcccc}
+\toprule
+\multicolumn{5}{l}{\textbf{Panel A: Some Risk Home (E.coli 1--100 CFU) (HH)}} \\
+Method vs. no treatment & None & Primary & Secondary & Missing \\
+\midrule
+Boil & 0.016* (0.009) & -0.025** (0.011) & -0.077*** (0.009) & 0.008 (0.037) \\
+Chlorine & 0.056** (0.023) & -0.037 (0.024) & -0.009 (0.021) & 0.182*** (0.044) \\
+Filter & 0.043*** (0.016) & 0.049*** (0.013) & 0.049*** (0.011) & 0.041 (0.031) \\
+Other & -0.064*** (0.013) & -0.013 (0.015) & -0.032** (0.014) & -0.104* (0.053) \\
+\addlinespace
+\multicolumn{5}{l}{\textbf{Panel B: Very High Risk Home (E.coli $\geq$ 101 CFU) (HH)}} \\
+Method vs. no treatment & None & Primary & Secondary & Missing \\
+\midrule
+Boil & -0.155*** (0.008) & -0.109*** (0.009) & -0.077*** (0.007) & -0.093*** (0.021) \\
+Chlorine & -0.094*** (0.022) & -0.038* (0.022) & 0.003 (0.018) & 0.155*** (0.031) \\
+Filter & -0.071*** (0.014) & -0.043*** (0.012) & 0.008 (0.009) & 0.036 (0.026) \\
+Other & -0.166*** (0.012) & -0.172*** (0.012) & -0.093*** (0.009) & -0.048 (0.029) \\
+\addlinespace
+\multicolumn{5}{l}{\textbf{Panel C: Diarrhea (under-5) (U5)}} \\
+Method vs. no treatment & None & Primary & Secondary & Missing \\
+\midrule
+Boil & -0.025*** (0.009) & -0.034*** (0.011) & -0.027*** (0.010) & -0.042 (0.027) \\
+Chlorine & -0.037* (0.021) & -0.004 (0.022) & 0.031 (0.022) & 0.018 (0.013) \\
+Filter & 0.032 (0.019) & -0.001 (0.017) & 0.019 (0.015) & 0.060 (0.058) \\
+Other & -0.026* (0.016) & -0.047*** (0.015) & -0.046*** (0.015) & -0.041 (0.058) \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\par\vspace{3pt}
+\begin{minipage}{\linewidth}\footnotesize \textit{Notes:} Cells report APOS-based group average treatment effects relative to no treatment. Standard errors are in parentheses. $^{***}p<0.01$, $^{**}p<0.05$, $^{*}p<0.10$.\end{minipage}
+\end{table}

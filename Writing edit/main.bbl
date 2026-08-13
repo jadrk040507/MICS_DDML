@@ -1,0 +1,637 @@
+\begin{thebibliography}{}
+
+\bibitem [\protect \citeauthoryear {%
+Arnold%
+, Colford~Jr%
+\BCBL {}\ \protect \BOthers {.}}{%
+Arnold%
+\ \protect \BOthers {.}}{%
+{\protect \APACyear {2007}}%
+}]{%
+arnold2007treating}
+\APACinsertmetastar {%
+arnold2007treating}%
+\begin{APACrefauthors}%
+Arnold, B\BPBI F.%
+, Colford~Jr, J\BPBI M.%
+\BCBL {}\ \BOthersPeriod {.}\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYearMonthDay{2007}{}{}.
+\newblock
+{\BBOQ}\APACrefatitle {{Treating water with chlorine at point-of-use to improve water quality and reduce child diarrhea in developing countries: a systematic review and meta-analysis}} {{Treating water with chlorine at point-of-use to improve water quality and reduce child diarrhea in developing countries: a systematic review and meta-analysis}}.{\BBCQ}
+\newblock
+\APACjournalVolNumPages{American Journal of Tropical Medicine and Hygiene}{76}{2}{354--364}.
+\newblock
+\begin{APACrefURL} \url{https://doi.org/10.4269/ajtmh.2007.76.354} \end{APACrefURL}
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+Athey%
+\ \BBA {} Imbens%
+}{%
+Athey%
+\ \BBA {} Imbens%
+}{%
+{\protect \APACyear {2017}}%
+}]{%
+athey2017state}
+\APACinsertmetastar {%
+athey2017state}%
+\begin{APACrefauthors}%
+Athey, S.%
+\BCBT {}\ \BBA {} Imbens, G\BPBI W.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYearMonthDay{2017}{}{}.
+\newblock
+{\BBOQ}\APACrefatitle {The state of applied econometrics: Causality and policy evaluation} {The state of applied econometrics: Causality and policy evaluation}.{\BBCQ}
+\newblock
+\APACjournalVolNumPages{Journal of Economic Perspectives}{31}{2}{3--32}.
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+Bach%
+, Chernozhukov%
+, Kurz%
+\BCBL {}\ \BBA {} Spindler%
+}{%
+Bach%
+\ \protect \BOthers {.}}{%
+{\protect \APACyear {2022}}%
+}]{%
+doubleml2022}
+\APACinsertmetastar {%
+doubleml2022}%
+\begin{APACrefauthors}%
+Bach, P.%
+, Chernozhukov, V.%
+, Kurz, M\BPBI S.%
+\BCBL {}\ \BBA {} Spindler, M.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYearMonthDay{2022}{}{}.
+\newblock
+{\BBOQ}\APACrefatitle {{DoubleML} -- {A}n Object-Oriented Implementation of Double Machine Learning in {P}ython} {{DoubleML} -- {A}n object-oriented implementation of double machine learning in {P}ython}.{\BBCQ}
+\newblock
+\APACjournalVolNumPages{Journal of Machine Learning Research}{23}{53}{1--6}.
+\newblock
+\begin{APACrefURL} \url{http://jmlr.org/papers/v23/21-0862.html} \end{APACrefURL}
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+Chernozhukov%
+\ \protect \BOthers {.}}{%
+Chernozhukov%
+\ \protect \BOthers {.}}{%
+{\protect \APACyear {2018}}%
+}]{%
+chernozhukov2018dml}
+\APACinsertmetastar {%
+chernozhukov2018dml}%
+\begin{APACrefauthors}%
+Chernozhukov, V.%
+, Chetverikov, D.%
+, Demirer, M.%
+, Duflo, E.%
+, Hansen, C.%
+, Newey, W\BPBI K.%
+\BCBL {}\ \BBA {} Robins, J.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYearMonthDay{2018}{}{}.
+\newblock
+{\BBOQ}\APACrefatitle {Double/debiased machine learning for treatment and structural parameters} {Double/debiased machine learning for treatment and structural parameters}.{\BBCQ}
+\newblock
+\APACjournalVolNumPages{The Econometrics Journal}{21}{1}{C1--C68}.
+\newblock
+\begin{APACrefDOI} \doi{10.1111/ectj.12097} \end{APACrefDOI}
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+Chernozhukov%
+, Cinelli%
+, Newey%
+, Sharma%
+\BCBL {}\ \BBA {} Syrgkanis%
+}{%
+Chernozhukov%
+\ \protect \BOthers {.}}{%
+{\protect \APACyear {2022}}%
+}]{%
+chernozhukov2022long}
+\APACinsertmetastar {%
+chernozhukov2022long}%
+\begin{APACrefauthors}%
+Chernozhukov, V.%
+, Cinelli, C.%
+, Newey, W.%
+, Sharma, A.%
+\BCBL {}\ \BBA {} Syrgkanis, V.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYearMonthDay{2022}{}{}.
+\newblock
+\APACrefbtitle {Long Story Short: Omitted Variable Bias in Causal Machine Learning.} {Long story short: Omitted variable bias in causal machine learning.}
+\newblock
+\begin{APACrefURL} \url{https://arxiv.org/abs/2112.13398v3} \end{APACrefURL}
+\newblock
+\APACrefnote{Version 3, revised May 2022}
+\newblock
+\begin{APACrefDOI} \doi{10.48550/arXiv.2112.13398} \end{APACrefDOI}
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+Clasen%
+, Thao%
+, Boisson%
+\BCBL {}\ \BBA {} Shipin%
+}{%
+Clasen%
+\ \protect \BOthers {.}}{%
+{\protect \APACyear {2008}}%
+}]{%
+clasen2008microbiological}
+\APACinsertmetastar {%
+clasen2008microbiological}%
+\begin{APACrefauthors}%
+Clasen, T\BPBI F.%
+, Thao, D\BPBI H.%
+, Boisson, S.%
+\BCBL {}\ \BBA {} Shipin, O.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYearMonthDay{2008}{}{}.
+\newblock
+{\BBOQ}\APACrefatitle {Microbiological effectiveness and cost of boiling to disinfect drinking water in rural Vietnam} {Microbiological effectiveness and cost of boiling to disinfect drinking water in rural vietnam}.{\BBCQ}
+\newblock
+\APACjournalVolNumPages{Environmental Science \& Technology}{42}{12}{4255--4260}.
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+Cohen%
+\ \BBA {} Colford%
+}{%
+Cohen%
+\ \BBA {} Colford%
+}{%
+{\protect \APACyear {2017}}%
+}]{%
+cohen2017effects}
+\APACinsertmetastar {%
+cohen2017effects}%
+\begin{APACrefauthors}%
+Cohen, A.%
+\BCBT {}\ \BBA {} Colford, J\BPBI J\BPBI M.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYearMonthDay{2017}{}{}.
+\newblock
+{\BBOQ}\APACrefatitle {Effects of boiling drinking water on diarrhea and pathogen-specific infections in low-and middle-income countries: a systematic review and meta-analysis} {Effects of boiling drinking water on diarrhea and pathogen-specific infections in low-and middle-income countries: a systematic review and meta-analysis}.{\BBCQ}
+\newblock
+\APACjournalVolNumPages{The American Journal of Tropical Medicine and Hygiene}{97}{5}{1362}.
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+{Commissioners of the Lancet Commission on Water, Sanitation and Hygiene, and Health}%
+}{%
+{Commissioners of the Lancet Commission on Water, Sanitation and Hygiene, and Health}%
+}{%
+{\protect \APACyear {2021}}%
+}]{%
+lancet2021commission}
+\APACinsertmetastar {%
+lancet2021commission}%
+\begin{APACrefauthors}%
+{Commissioners of the Lancet Commission on Water, Sanitation and Hygiene, and Health}.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYearMonthDay{2021}{}{}.
+\newblock
+{\BBOQ}\APACrefatitle {{The Lancet Commission on water, sanitation, and hygiene, and health}} {{The Lancet Commission on water, sanitation, and hygiene, and health}}.{\BBCQ}
+\newblock
+\APACjournalVolNumPages{The Lancet}{398}{10304}{1315--1348}.
+\newblock
+\begin{APACrefURL} \url{DOI: 10.1016/S0140-6736(21)02005-5} \end{APACrefURL}
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+Fagerli%
+\ \protect \BOthers {.}}{%
+Fagerli%
+\ \protect \BOthers {.}}{%
+{\protect \APACyear {2017}}%
+}]{%
+fagerli2017comparison}
+\APACinsertmetastar {%
+fagerli2017comparison}%
+\begin{APACrefauthors}%
+Fagerli, K.%
+, Trivedi, K.%
+, Sodha, S.%
+, Blanton, E.%
+, Ati, A.%
+, Nguyen, T.%
+\BDBL {}others%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYearMonthDay{2017}{}{}.
+\newblock
+{\BBOQ}\APACrefatitle {Comparison of boiling and chlorination on the quality of stored drinking water and childhood diarrhoea in Indonesian households} {Comparison of boiling and chlorination on the quality of stored drinking water and childhood diarrhoea in indonesian households}.{\BBCQ}
+\newblock
+\APACjournalVolNumPages{Epidemiology \& Infection}{145}{15}{3294--3302}.
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+Floess%
+, Ercumen%
+, Harris%
+\BCBL {}\ \BBA {} Grieshop%
+}{%
+Floess%
+\ \protect \BOthers {.}}{%
+{\protect \APACyear {2025}}%
+}]{%
+floess2025health}
+\APACinsertmetastar {%
+floess2025health}%
+\begin{APACrefauthors}%
+Floess, E.%
+, Ercumen, A.%
+, Harris, A\BPBI R.%
+\BCBL {}\ \BBA {} Grieshop, A\BPBI P.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYearMonthDay{2025}{}{}.
+\newblock
+{\BBOQ}\APACrefatitle {Health trade-offs of boiling drinking water with solid fuels: A modeling study} {Health trade-offs of boiling drinking water with solid fuels: A modeling study}.{\BBCQ}
+\newblock
+\APACjournalVolNumPages{Environmental Health Perspectives}{133}{6}{067021}.
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+{GBD 2023 Diarrhoeal Disease and Enteric Infectious Diseases Collaborators}%
+}{%
+{GBD 2023 Diarrhoeal Disease and Enteric Infectious Diseases Collaborators}%
+}{%
+{\protect \APACyear {2026}}%
+}]{%
+GBD2023Diarrhoeal2026}
+\APACinsertmetastar {%
+GBD2023Diarrhoeal2026}%
+\begin{APACrefauthors}%
+{GBD 2023 Diarrhoeal Disease and Enteric Infectious Diseases Collaborators}.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYearMonthDay{2026}{}{}.
+\newblock
+{\BBOQ}\APACrefatitle {Global burden of enteric infectious diseases, diarrhoeal diseases, and corresponding aetiologies, 1990--2023: A systematic analysis for the Global Burden of Disease Study 2023} {Global burden of enteric infectious diseases, diarrhoeal diseases, and corresponding aetiologies, 1990--2023: A systematic analysis for the global burden of disease study 2023}.{\BBCQ}
+\newblock
+\APACjournalVolNumPages{The Lancet Infectious Diseases}{}{}{}.
+\newblock
+\APACrefnote{Online ahead of print}
+\newblock
+\begin{APACrefDOI} \doi{10.1016/S1473-3099(26)00194-5} \end{APACrefDOI}
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+Goddard%
+\ \protect \BOthers {.}}{%
+Goddard%
+\ \protect \BOthers {.}}{%
+{\protect \APACyear {2020}}%
+}]{%
+goddard2020faecal}
+\APACinsertmetastar {%
+goddard2020faecal}%
+\begin{APACrefauthors}%
+Goddard, F\BPBI G.%
+, Pickering, A\BPBI J.%
+, Ercumen, A.%
+, Brown, J.%
+, Chang, H\BPBI H.%
+\BCBL {}\ \BBA {} Clasen, T.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYearMonthDay{2020}{}{}.
+\newblock
+{\BBOQ}\APACrefatitle {Faecal contamination of the environment and child health: a systematic review and individual participant data meta-analysis} {Faecal contamination of the environment and child health: a systematic review and individual participant data meta-analysis}.{\BBCQ}
+\newblock
+\APACjournalVolNumPages{The Lancet Planetary Health}{4}{9}{e405--e415}.
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+Greenwood%
+\ \protect \BOthers {.}}{%
+Greenwood%
+\ \protect \BOthers {.}}{%
+{\protect \APACyear {2024}}%
+}]{%
+greenwood2024mapping}
+\APACinsertmetastar {%
+greenwood2024mapping}%
+\begin{APACrefauthors}%
+Greenwood, E\BPBI E.%
+, Lauber, T.%
+, van~den Hoogen, J.%
+, Donmez, A.%
+, Bain, R\BPBI E.%
+, Johnston, R.%
+\BDBL {}Julian, T\BPBI R.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYearMonthDay{2024}{}{}.
+\newblock
+{\BBOQ}\APACrefatitle {Mapping safe drinking water use in low-and middle-income countries} {Mapping safe drinking water use in low-and middle-income countries}.{\BBCQ}
+\newblock
+\APACjournalVolNumPages{Science}{385}{6710}{784--790}.
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+Hanif%
+, Nakano%
+\BCBL {}\ \BBA {} Matsushima%
+}{%
+Hanif%
+\ \protect \BOthers {.}}{%
+{\protect \APACyear {2024}}%
+}]{%
+hanif2024benefit}
+\APACinsertmetastar {%
+hanif2024benefit}%
+\begin{APACrefauthors}%
+Hanif, A.%
+, Nakano, Y.%
+\BCBL {}\ \BBA {} Matsushima, M.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYearMonthDay{2024}{}{}.
+\newblock
+{\BBOQ}\APACrefatitle {The benefit of clean water on child health: An empirical analysis with specific reference to Escherichia Coli water contamination} {The benefit of clean water on child health: An empirical analysis with specific reference to escherichia coli water contamination}.{\BBCQ}
+\newblock
+\APACjournalVolNumPages{Water Resources and Economics}{47}{}{100249}.
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+Husein%
+, Nounkeu%
+, Armah%
+\BCBL {}\ \BBA {} Dharod%
+}{%
+Husein%
+\ \protect \BOthers {.}}{%
+{\protect \APACyear {2023}}%
+}]{%
+husein2023examination}
+\APACinsertmetastar {%
+husein2023examination}%
+\begin{APACrefauthors}%
+Husein, M.%
+, Nounkeu, C\BPBI D.%
+, Armah, S.%
+\BCBL {}\ \BBA {} Dharod, J\BPBI M.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYearMonthDay{2023}{}{}.
+\newblock
+{\BBOQ}\APACrefatitle {{Examination of water quality at the household level and its association with diarrhea among young children in Ghana: Results from UNICEF-MICS6 survey}} {{Examination of water quality at the household level and its association with diarrhea among young children in Ghana: Results from UNICEF-MICS6 survey}}.{\BBCQ}
+\newblock
+\APACjournalVolNumPages{PLOS Water}{2}{6}{e0000049}.
+\newblock
+\begin{APACrefURL} \url{https://doi.org/10.1371/journal.pwat.0000049} \end{APACrefURL}
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+Luby%
+\ \protect \BOthers {.}}{%
+Luby%
+\ \protect \BOthers {.}}{%
+{\protect \APACyear {2018}}%
+}]{%
+luby2018effects}
+\APACinsertmetastar {%
+luby2018effects}%
+\begin{APACrefauthors}%
+Luby, S\BPBI P.%
+, Rahman, M.%
+, Arnold, B\BPBI F.%
+, Unicomb, L.%
+, Ashraf, S.%
+, Winch, P\BPBI J.%
+\BDBL {}others%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYearMonthDay{2018}{}{}.
+\newblock
+{\BBOQ}\APACrefatitle {{Effects of water quality, sanitation, handwashing, and nutritional interventions on diarrhoea and child growth in rural Bangladesh: a cluster randomised controlled trial}} {{Effects of water quality, sanitation, handwashing, and nutritional interventions on diarrhoea and child growth in rural Bangladesh: a cluster randomised controlled trial}}.{\BBCQ}
+\newblock
+\APACjournalVolNumPages{The Lancet Global Health}{6}{3}{e302--e315}.
+\newblock
+\begin{APACrefURL} \url{https://doi.org/10.1016/S2214-109X(18)30031-8} \end{APACrefURL}
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+Pickering%
+\ \protect \BOthers {.}}{%
+Pickering%
+\ \protect \BOthers {.}}{%
+{\protect \APACyear {2019}}%
+}]{%
+pickering2019wash}
+\APACinsertmetastar {%
+pickering2019wash}%
+\begin{APACrefauthors}%
+Pickering, A\BPBI J.%
+, Null, C.%
+, Winch, P\BPBI J.%
+, Mangwadu, G.%
+, Arnold, B\BPBI F.%
+, Prendergast, A\BPBI J.%
+\BDBL {}others%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYearMonthDay{2019}{}{}.
+\newblock
+{\BBOQ}\APACrefatitle {{The WASH Benefits and SHINE trials: interpretation of WASH intervention effects on linear growth and diarrhoea}} {{The WASH Benefits and SHINE trials: interpretation of WASH intervention effects on linear growth and diarrhoea}}.{\BBCQ}
+\newblock
+\APACjournalVolNumPages{The Lancet Global Health}{7}{8}{e1139--e1146}.
+\newblock
+\begin{APACrefURL} \url{https://doi.org/10.1016/S2214-109X(19)30268-2} \end{APACrefURL}
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+Rahman%
+, Kunwar%
+\BCBL {}\ \BBA {} Bohara%
+}{%
+Rahman%
+\ \protect \BOthers {.}}{%
+{\protect \APACyear {2021}}%
+}]{%
+rahman2021interconnection}
+\APACinsertmetastar {%
+rahman2021interconnection}%
+\begin{APACrefauthors}%
+Rahman, M\BPBI M.%
+, Kunwar, S\BPBI B.%
+\BCBL {}\ \BBA {} Bohara, A\BPBI K.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYearMonthDay{2021}{}{}.
+\newblock
+{\BBOQ}\APACrefatitle {The interconnection between water quality level and health status: An analysis of Escherichia coli contamination and drinking water from Nepal} {The interconnection between water quality level and health status: An analysis of escherichia coli contamination and drinking water from nepal}.{\BBCQ}
+\newblock
+\APACjournalVolNumPages{Water Resources and Economics}{34}{}{100179}.
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+Rice%
+, Clark%
+\BCBL {}\ \BBA {} Johnson%
+}{%
+Rice%
+\ \protect \BOthers {.}}{%
+{\protect \APACyear {1999}}%
+}]{%
+rice1999chlorine}
+\APACinsertmetastar {%
+rice1999chlorine}%
+\begin{APACrefauthors}%
+Rice, E\BPBI W.%
+, Clark, R\BPBI M.%
+\BCBL {}\ \BBA {} Johnson, C\BPBI H.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYearMonthDay{1999}{}{}.
+\newblock
+{\BBOQ}\APACrefatitle {Chlorine inactivation of Escherichia coli O157: H7} {Chlorine inactivation of escherichia coli o157: H7}.{\BBCQ}
+\newblock
+\APACjournalVolNumPages{Emerging Infectious Diseases}{5}{3}{461}.
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+{UNICEF}%
+\ \BBA {} {WHO}%
+}{%
+{UNICEF}%
+\ \BBA {} {WHO}%
+}{%
+{\protect \APACyear {2021}}%
+}]{%
+mics_ecoli}
+\APACinsertmetastar {%
+mics_ecoli}%
+\begin{APACrefauthors}%
+{UNICEF}%
+\BCBT {}\ \BBA {} {WHO}.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYearMonthDay{2021}{}{}.
+\newblock
+\APACrefbtitle {Multiple Indicator Cluster Surveys (MICS) -- Water Quality Module.} {Multiple indicator cluster surveys (mics) -- water quality module.}
+\newblock
+\APAChowpublished {Survey documentation and data}.
+\newblock
+\begin{APACrefURL} \url{https://mics.unicef.org/surveys} \end{APACrefURL}
+\newblock
+\APACrefnote{Accessed February 2026}
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+Usman%
+, Gerber%
+\BCBL {}\ \BBA {} von Braun%
+}{%
+Usman%
+\ \protect \BOthers {.}}{%
+{\protect \APACyear {2019}}%
+}]{%
+usman2019impact}
+\APACinsertmetastar {%
+usman2019impact}%
+\begin{APACrefauthors}%
+Usman, M\BPBI A.%
+, Gerber, N.%
+\BCBL {}\ \BBA {} von Braun, J.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYearMonthDay{2019}{}{}.
+\newblock
+{\BBOQ}\APACrefatitle {The impact of drinking water quality and sanitation on child health: evidence from rural Ethiopia} {The impact of drinking water quality and sanitation on child health: evidence from rural ethiopia}.{\BBCQ}
+\newblock
+\APACjournalVolNumPages{The Journal of Development Studies}{55}{10}{2193--2211}.
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+{World Health Organization}%
+}{%
+{World Health Organization}%
+}{%
+{\protect \APACyear {2011}}%
+}]{%
+who_water_guidelines}
+\APACinsertmetastar {%
+who_water_guidelines}%
+\begin{APACrefauthors}%
+{World Health Organization}.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYearMonthDay{2011}{}{}.
+\newblock
+\APACrefbtitle {Guidelines for Drinking-water Quality.} {Guidelines for drinking-water quality.}
+\newblock
+\APAChowpublished {Technical report}.
+\newblock
+\begin{APACrefURL} \url{https://www.who.int/publications/i/item/9789241549950} \end{APACrefURL}
+\newblock
+\APACrefnote{Microbiological water quality and \emph{E.~coli} risk categories}
+\PrintBackRefs{\CurrentBib}
+
+\bibitem [\protect \citeauthoryear {%
+Wright%
+, Gundry%
+\BCBL {}\ \BBA {} Conroy%
+}{%
+Wright%
+\ \protect \BOthers {.}}{%
+{\protect \APACyear {2004}}%
+}]{%
+wright2004household}
+\APACinsertmetastar {%
+wright2004household}%
+\begin{APACrefauthors}%
+Wright, J.%
+, Gundry, S.%
+\BCBL {}\ \BBA {} Conroy, R.%
+\end{APACrefauthors}%
+\unskip\
+\newblock
+\APACrefYearMonthDay{2004}{}{}.
+\newblock
+{\BBOQ}\APACrefatitle {Household drinking water in developing countries: a systematic review of microbiological contamination between source and point-of-use} {Household drinking water in developing countries: a systematic review of microbiological contamination between source and point-of-use}.{\BBCQ}
+\newblock
+\APACjournalVolNumPages{Tropical medicine \& international health}{9}{1}{106--117}.
+\PrintBackRefs{\CurrentBib}
+
+\end{thebibliography}

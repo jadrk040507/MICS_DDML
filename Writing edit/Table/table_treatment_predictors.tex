@@ -1,0 +1,41 @@
+% Requires: \usepackage{booktabs}
+\begin{table}[htbp]
+\centering
+\caption{Characteristics associated with water-treatment adoption}
+\label{tab:treatment-predictors}
+\small\setlength{\tabcolsep}{5pt}
+\begin{tabular}{lccccc}
+\toprule
+Covariate & Logit & Lasso & E.\,net & RF & XGB \\
+ & (log-odds) & \multicolumn{2}{c}{(penalized coef.)} & \multicolumn{2}{c}{(importance $\times100$)} \\
+\cmidrule(lr){3-4}\cmidrule(lr){5-6}
+\midrule
+Packaged/bottled \textit{(Water source)} & -2.73*** & -1.95 & -1.78 & 6.5 & 4.4 \\
+Missing \textit{(Education (head))} & +0.46*** & +0.00 & +0.40 & 3.0 & 2.1 \\
+Tube/well/borehole \textit{(Water source)} & -0.36*** & -0.55 & -0.55 & 2.3 & 1.5 \\
+Protected well/spring \textit{(Water source)} & +0.58*** & +0.16 & +0.32 & 2.1 & 0.7 \\
+Pit Latrine \textit{(Sanitation)} & -0.15*** & -0.55 & -0.46 & 1.9 & 0.8 \\
+Open Defecation \textit{(Sanitation)} & -0.58*** & -0.82 & -0.72 & 1.4 & 1.2 \\
+Other \textit{(Water source)} & +0.03 & +0.00 & +0.00 & 1.1 & 0.8 \\
+Decile 8 \textit{(Source E.\,coli)} & +0.59*** & +0.19 & +0.25 & 0.9 & 0.3 \\
+Q5 (vs Q1) \textit{(Wealth quintile)} & +0.92*** & +0.04 & +0.08 & 0.7 & 0.4 \\
+Secondary or higher \textit{(Education (head))} & +0.29*** & +0.08 & +0.17 & 0.8 & 0.3 \\
+Surface/rain \textit{(Water source)} & +0.25*** & +0.00 & +0.00 & 0.7 & 0.4 \\
+Unprotected well/spring \textit{(Water source)} & +0.39*** & +0.00 & +0.00 & 0.6 & 0.3 \\
+Urban \textit{(Residence)} & -0.05 & +0.00 & +0.00 & 0.6 & 0.2 \\
+Q4 (vs Q1) \textit{(Wealth quintile)} & +0.44*** & +0.00 & +0.00 & 0.4 & 0.2 \\
+Q2 (vs Q1) \textit{(Wealth quintile)} & +0.10** & +0.00 & +0.00 & 0.4 & 0.2 \\
+Decile 7 \textit{(Source E.\,coli)} & +0.42*** & +0.00 & +0.06 & 0.2 & 0.2 \\
+Primary \textit{(Education (head))} & +0.12*** & +0.00 & +0.00 & 0.3 & 0.1 \\
+Any under-5 child \textit{(Household composition)} & +0.02 & +0.00 & -0.00 & 0.3 & 0.1 \\
+Q3 (vs Q1) \textit{(Wealth quintile)} & +0.28*** & +0.00 & +0.00 & 0.3 & 0.1 \\
+Missing \textit{(Sanitation)} & -0.10 & +0.00 & +0.00 & 0.1 & 0.2 \\
+Decile 6 \textit{(Source E.\,coli)} & +0.32*** & +0.00 & +0.00 & 0.2 & 0.1 \\
+Girl aged $<15$ \textit{(Household composition)} & -0.08 & +0.00 & +0.00 & 0.1 & 0.1 \\
+Decile 5 \textit{(Source E.\,coli)} & +0.24*** & +0.00 & +0.00 & 0.1 & 0.1 \\
+Boy aged $\leq15$ \textit{(Household composition)} & -0.20 & +0.00 & +0.00 & 0.0 & 0.2 \\
+\bottomrule
+\end{tabular}
+\par\vspace{3pt}
+\begin{minipage}{\linewidth}\footnotesize \textit{Notes:} Outcome is any household water treatment ($N=59,620$, adoption rate $0.212$). Rows are ordered by mean random-forest/XGBoost importance. All models include country fixed effects, which are omitted from the table. Reference categories are Q1 for wealth, no education, flush toilet, piped water, and rural residence. Logit reports signed log-odds; lasso and elastic net report penalized coefficients; RF and XGB report feature importance. $^{***}p<0.01$, $^{**}p<0.05$, $^{*}p<0.10$.\end{minipage}
+\end{table}

@@ -57,10 +57,83 @@ clear all
 set graph off
 set graph on	
 
+use "${Data_Clean}MASTER_MICS_DDML_FINAL.dta", clear
+* Akito: Education of Mongolia needs to be changed
+tab country_cat if helevel==.
 
-/*---------------------------------------------------     E-Coli - Water Treatment ---------------------------------------------------*/
-	
-	use "${Data_Clean}Cleaned_Pooled_MICS6_Africa_Latam_Asia_2.dta", clear
+*====================================================================
+* 3. DATA CLEANING & RECODING
+*====================================================================
+
+* 10 tiles (deciles) of WQ27
+xtile wq27_decile = WQ27, nq(10)
+
+* Education: collapse into 3 categories
+drop helevel_*
+tab    helevel
+recode helevel (2/4 = 2) (.=98)
+label define helevell 0 "No education" 1 "Primary" 2 "Secondary or higher" 98 "Missing", modify
+label values helevel helevell
+
+* replace water_treatment=0 if WQ15_g_3==1 
+gen    SomeRiskHome=RiskHome
+recode SomeRiskHome 1 2=1 0=0
+
+* Check the need for WQ11
+foreach v in urban helevel country_cat urban WS1_g wq27_decile {
+    drop if missing(`v')
+}
+
+gen     Toilet=.
+replace Toilet=1 if Flush==1
+replace Toilet=2 if Pit_latrine==1
+replace Toilet=3 if Open_defecation==1
+replace Toilet=98 if WS11==.
+drop Flush Pit_latrine Open_defecation
+
+label define Toilet_lbl ///
+    1 "Flush toilet" ///
+    2 "Pit latrine" ///
+    3 "Open defecation" ///
+    98 "Missing / not observed"
+
+label values Toilet Toilet_lbl
+label variable Toilet "Type of sanitation facility"
+
+	* Create Dummy
+	foreach v in Toilet helevel {
+	levelsof `v'
+	foreach value in `r(levels)' {
+		gen     `v'_`value'=0
+		replace `v'_`value'=1 if `v'==`value'
+		replace `v'_`value'=. if `v'==.
+		label var `v'_`value' "`: label (`v') `value''"
+	}
+	}
+
+save "${Data_Final}MASTER_MICS_FINAL.dta", replace
+
+use  "${Data_Final}MASTER_MICS_FINAL.dta", clear
+merge 1:m country_cat HH1 HH2 using "/Users/akitokamei/Library/CloudStorage/Dropbox/MICS_DDML/Data/3. Final/MASTER_MICS_U4_INDIV_U5_AAL_CLEAN.dta"
+keep if _merge==3
+drop HH_child_fever  HH_child_diarrhea
+egen HHID=group(HH1 HH2 country_cat)
+
+label var male "Male"
+label define age_lbl 0 "Age 0" 1 "Age 1" 2 "Age 2" 3 "Age 3" 4 "Age 4"
+label values age age_lbl
+
+label var diarrhea "Diarrhea"
+label var age "Age in years"
+label var male "Male"
+
+ bys Country HH1 HH2: gen NumU5=_N
+ label var NumU5 "Number of U5 children"
+
+save "${Data_Final}MASTER_MICS_FINAL_U5.dta", replace
+
+/*---------------------------------------------------     E-Coli - Water Treatment ---------------------------------------------------	
+use "${Data_Clean}Cleaned_Pooled_MICS6_Africa_Latam_Asia_2.dta", clear
 	* Dropping
 	* Tonga (27), Tuvalu (30), Kiribati (17), Turks (29)
 	drop if country_cat==30   | country_cat==17  | country_cat==27 | country_cat==29
@@ -99,6 +172,7 @@ set graph on
 	
 	* Grouping water treatment
 	gen    WQ15_g=WQ15
+	* French 7 is aquatab
 	recode WQ15_g 2 7=2 3 6=3
 	label define WQ15_gl 0 "Treat: Nothing" 1 "Treat: Boil" 2 "Treat: Chlorine/Aquatabs/PUR" 3 "Treat: Strain/Settle" 4 "Treat: Filter" 5 "Treat: Soler" 8 "Treat: Add tablet" 98 "Treat: Other" 99 "Treat: Do not know/missing", modify
 	label values WQ15_g WQ15_gl

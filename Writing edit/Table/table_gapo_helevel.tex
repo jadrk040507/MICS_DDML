@@ -1,0 +1,42 @@
+% Requires: \usepackage{booktabs, pdflscape, graphicx, adjustbox}
+\begin{table}[p]
+\centering
+\caption{Group average potential outcomes by household education}
+\label{tab:gapo_helevel}
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{adjustbox}{max width=\linewidth, center}
+\begin{tabular}{lcccc}
+\toprule
+\multicolumn{5}{l}{\textbf{Panel A: Some Risk Home (E.coli 1--100 CFU) (HH)}} \\
+Treatment level & None & Primary & Secondary & Missing \\
+\midrule
+No Treatment & 0.444 {\scriptsize$[0.434,0.455]$} & 0.468 {\scriptsize$[0.458,0.477]$} & 0.437 {\scriptsize$[0.429,0.444]$} & 0.271 {\scriptsize$[0.251,0.290]$} \\
+Boil & 0.460 {\scriptsize$[0.445,0.476]$} & 0.443 {\scriptsize$[0.424,0.462]$} & 0.360 {\scriptsize$[0.343,0.377]$} & 0.279 {\scriptsize$[0.208,0.351]$} \\
+Chlorine & 0.500 {\scriptsize$[0.456,0.544]$} & 0.431 {\scriptsize$[0.385,0.476]$} & 0.428 {\scriptsize$[0.387,0.468]$} & 0.453 {\scriptsize$[0.368,0.538]$} \\
+Filter & 0.488 {\scriptsize$[0.459,0.517]$} & 0.517 {\scriptsize$[0.493,0.541]$} & 0.486 {\scriptsize$[0.465,0.506]$} & 0.312 {\scriptsize$[0.252,0.371]$} \\
+Other & 0.380 {\scriptsize$[0.357,0.404]$} & 0.455 {\scriptsize$[0.427,0.484]$} & 0.404 {\scriptsize$[0.377,0.431]$} & 0.167 {\scriptsize$[0.064,0.271]$} \\
+\addlinespace
+\multicolumn{5}{l}{\textbf{Panel B: Very High Risk Home (E.coli $\geq$ 101 CFU) (HH)}} \\
+Treatment level & None & Primary & Secondary & Missing \\
+\midrule
+No Treatment & 0.461 {\scriptsize$[0.451,0.470]$} & 0.360 {\scriptsize$[0.351,0.368]$} & 0.229 {\scriptsize$[0.223,0.235]$} & 0.107 {\scriptsize$[0.093,0.120]$} \\
+Boil & 0.306 {\scriptsize$[0.292,0.320]$} & 0.251 {\scriptsize$[0.234,0.267]$} & 0.152 {\scriptsize$[0.140,0.165]$} & 0.013 {\scriptsize$[-0.026,0.052]$} \\
+Chlorine & 0.366 {\scriptsize$[0.324,0.408]$} & 0.322 {\scriptsize$[0.281,0.364]$} & 0.232 {\scriptsize$[0.197,0.267]$} & 0.262 {\scriptsize$[0.202,0.322]$} \\
+Filter & 0.389 {\scriptsize$[0.363,0.416]$} & 0.317 {\scriptsize$[0.295,0.339]$} & 0.237 {\scriptsize$[0.219,0.255]$} & 0.142 {\scriptsize$[0.093,0.191]$} \\
+Other & 0.295 {\scriptsize$[0.273,0.316]$} & 0.188 {\scriptsize$[0.167,0.209]$} & 0.136 {\scriptsize$[0.119,0.154]$} & 0.059 {\scriptsize$[0.002,0.115]$} \\
+\addlinespace
+\multicolumn{5}{l}{\textbf{Panel C: Diarrhea (under-5) (U5)}} \\
+Treatment level & None & Primary & Secondary & Missing \\
+\midrule
+No Treatment & 0.157 {\scriptsize$[0.150,0.165]$} & 0.142 {\scriptsize$[0.135,0.149]$} & 0.126 {\scriptsize$[0.120,0.132]$} & 0.082 {\scriptsize$[0.064,0.101]$} \\
+Boil & 0.133 {\scriptsize$[0.118,0.148]$} & 0.109 {\scriptsize$[0.089,0.128]$} & 0.099 {\scriptsize$[0.081,0.117]$} & 0.040 {\scriptsize$[-0.010,0.090]$} \\
+Chlorine & 0.121 {\scriptsize$[0.080,0.161]$} & 0.138 {\scriptsize$[0.096,0.180]$} & 0.157 {\scriptsize$[0.115,0.199]$} & 0.101 {\scriptsize$[0.083,0.118]$} \\
+Filter & 0.189 {\scriptsize$[0.151,0.226]$} & 0.142 {\scriptsize$[0.109,0.175]$} & 0.144 {\scriptsize$[0.115,0.174]$} & 0.142 {\scriptsize$[0.030,0.255]$} \\
+Other & 0.131 {\scriptsize$[0.101,0.162]$} & 0.095 {\scriptsize$[0.067,0.123]$} & 0.080 {\scriptsize$[0.051,0.108]$} & 0.041 {\scriptsize$[-0.071,0.153]$} \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\par\vspace{3pt}
+\begin{minipage}{\linewidth}\footnotesize \textit{Notes:} Cells report APOS-based group average potential outcomes. Brackets contain pointwise 95\% confidence intervals.\end{minipage}
+\end{table}

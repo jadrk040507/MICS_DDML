@@ -20,6 +20,25 @@ Data/
 *.tmp.*
 *.log
 
+# --- LaTeX build artifacts ---
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.out
+*.synctex.gz
+*.toc
+*.lof
+*.lot
+*.bcf
+*.run.xml
+latexbuild/
+Writing edit/main.pdf
+Writing edit/main_old.*
+Writing edit/main_full.pdf
+Writing edit/pdflatex*.fls
+
 # --- OS cruft ---
 desktop.ini
 nul

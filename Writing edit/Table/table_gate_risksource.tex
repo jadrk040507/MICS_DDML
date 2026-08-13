@@ -1,0 +1,39 @@
+% Requires: \usepackage{booktabs, pdflscape, graphicx, adjustbox}
+\begin{table}[p]
+\centering
+\caption{Group average treatment effects by source-water e.coli risk}
+\label{tab:gate_risksource}
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{adjustbox}{max width=\linewidth, center}
+\begin{tabular}{lccc}
+\toprule
+\multicolumn{4}{l}{\textbf{Panel A: Some Risk Home (E.coli 1--100 CFU) (HH)}} \\
+Method vs. no treatment & No risk & Moderate & Very high \\
+\midrule
+Boil & -0.124*** (0.008) & -0.050*** (0.010) & 0.176*** (0.013) \\
+Chlorine & -0.001 (0.016) & -0.043* (0.023) & 0.103*** (0.033) \\
+Filter & 0.002 (0.009) & 0.053*** (0.013) & 0.133*** (0.019) \\
+Other & -0.078*** (0.012) & -0.128*** (0.015) & 0.213*** (0.016) \\
+\addlinespace
+\multicolumn{4}{l}{\textbf{Panel B: Very High Risk Home (E.coli $\geq$ 101 CFU) (HH)}} \\
+Method vs. no treatment & No risk & Moderate & Very high \\
+\midrule
+Boil & -0.027*** (0.004) & -0.105*** (0.008) & -0.272*** (0.015) \\
+Chlorine & 0.059*** (0.012) & -0.064*** (0.020) & -0.142*** (0.034) \\
+Filter & 0.055*** (0.006) & -0.051*** (0.011) & -0.148*** (0.020) \\
+Other & -0.031*** (0.007) & -0.086*** (0.010) & -0.429*** (0.018) \\
+\addlinespace
+\multicolumn{4}{l}{\textbf{Panel C: Diarrhea (under-5) (U5)}} \\
+Method vs. no treatment & No risk & Moderate & Very high \\
+\midrule
+Boil & -0.034*** (0.008) & -0.033*** (0.009) & -0.015 (0.011) \\
+Chlorine & 0.023 (0.022) & -0.003 (0.019) & -0.027 (0.023) \\
+Filter & 0.011 (0.012) & 0.045** (0.018) & -0.013 (0.021) \\
+Other & -0.039** (0.015) & -0.064*** (0.012) & -0.008 (0.019) \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\par\vspace{3pt}
+\begin{minipage}{\linewidth}\footnotesize \textit{Notes:} Cells report APOS-based group average treatment effects relative to no treatment. Standard errors are in parentheses. $^{***}p<0.01$, $^{**}p<0.05$, $^{*}p<0.10$.\end{minipage}
+\end{table}

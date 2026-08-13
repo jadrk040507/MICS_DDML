@@ -1,0 +1,42 @@
+% Requires: \usepackage{booktabs, pdflscape, graphicx, adjustbox}
+\begin{table}[p]
+\centering
+\caption{Group average potential outcomes by source-water e.coli risk}
+\label{tab:gapo_risksource}
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{adjustbox}{max width=\linewidth, center}
+\begin{tabular}{lccc}
+\toprule
+\multicolumn{4}{l}{\textbf{Panel A: Some Risk Home (E.coli 1--100 CFU) (HH)}} \\
+Treatment level & No risk & Moderate & Very high \\
+\midrule
+No Treatment & 0.380 {\scriptsize$[0.372,0.388]$} & 0.671 {\scriptsize$[0.663,0.679]$} & 0.161 {\scriptsize$[0.154,0.169]$} \\
+Boil & 0.256 {\scriptsize$[0.243,0.269]$} & 0.621 {\scriptsize$[0.603,0.640]$} & 0.337 {\scriptsize$[0.312,0.363]$} \\
+Chlorine & 0.379 {\scriptsize$[0.350,0.409]$} & 0.629 {\scriptsize$[0.585,0.673]$} & 0.264 {\scriptsize$[0.200,0.328]$} \\
+Filter & 0.382 {\scriptsize$[0.366,0.397]$} & 0.724 {\scriptsize$[0.700,0.748]$} & 0.294 {\scriptsize$[0.258,0.330]$} \\
+Other & 0.302 {\scriptsize$[0.280,0.325]$} & 0.543 {\scriptsize$[0.514,0.572]$} & 0.374 {\scriptsize$[0.343,0.406]$} \\
+\addlinespace
+\multicolumn{4}{l}{\textbf{Panel B: Very High Risk Home (E.coli $\geq$ 101 CFU) (HH)}} \\
+Treatment level & No risk & Moderate & Very high \\
+\midrule
+No Treatment & 0.122 {\scriptsize$[0.117,0.127]$} & 0.266 {\scriptsize$[0.259,0.273]$} & 0.831 {\scriptsize$[0.823,0.839]$} \\
+Boil & 0.095 {\scriptsize$[0.088,0.102]$} & 0.161 {\scriptsize$[0.148,0.174]$} & 0.559 {\scriptsize$[0.531,0.587]$} \\
+Chlorine & 0.181 {\scriptsize$[0.158,0.204]$} & 0.202 {\scriptsize$[0.163,0.241]$} & 0.689 {\scriptsize$[0.623,0.755]$} \\
+Filter & 0.176 {\scriptsize$[0.166,0.187]$} & 0.215 {\scriptsize$[0.194,0.236]$} & 0.683 {\scriptsize$[0.646,0.720]$} \\
+Other & 0.091 {\scriptsize$[0.078,0.104]$} & 0.180 {\scriptsize$[0.161,0.199]$} & 0.402 {\scriptsize$[0.369,0.436]$} \\
+\addlinespace
+\multicolumn{4}{l}{\textbf{Panel C: Diarrhea (under-5) (U5)}} \\
+Treatment level & No risk & Moderate & Very high \\
+\midrule
+No Treatment & 0.131 {\scriptsize$[0.125,0.137]$} & 0.144 {\scriptsize$[0.138,0.150]$} & 0.143 {\scriptsize$[0.135,0.150]$} \\
+Boil & 0.097 {\scriptsize$[0.082,0.113]$} & 0.111 {\scriptsize$[0.093,0.128]$} & 0.128 {\scriptsize$[0.107,0.148]$} \\
+Chlorine & 0.154 {\scriptsize$[0.111,0.197]$} & 0.141 {\scriptsize$[0.105,0.177]$} & 0.116 {\scriptsize$[0.072,0.159]$} \\
+Filter & 0.142 {\scriptsize$[0.120,0.164]$} & 0.189 {\scriptsize$[0.154,0.224]$} & 0.130 {\scriptsize$[0.090,0.170]$} \\
+Other & 0.092 {\scriptsize$[0.064,0.121]$} & 0.080 {\scriptsize$[0.058,0.103]$} & 0.134 {\scriptsize$[0.098,0.171]$} \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\par\vspace{3pt}
+\begin{minipage}{\linewidth}\footnotesize \textit{Notes:} Cells report APOS-based group average potential outcomes. Brackets contain pointwise 95\% confidence intervals.\end{minipage}
+\end{table}

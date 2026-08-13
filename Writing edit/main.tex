@@ -9,29 +9,27 @@
 \usepackage{amsfonts}
 \usepackage[table]{xcolor} % For color
 \usepackage{graphicx}
-\usepackage{caption}
-\usepackage{subcaption}
-\usepackage{breqn}
-\usepackage{booktabs}
+\usepackage{caption}   
+\usepackage{subcaption}          
+\usepackage{breqn}                      
+\usepackage{booktabs}    
 \usepackage{tabularx}
 \usepackage{array} % Add this in your preamble
 \usepackage{float} % For table placement
-\usepackage[toc,page]{appendix}
-\usepackage{enumitem}
-\usepackage{lscape}
-%\usepackage{ascmac}
-\usepackage{rotating}
-% \usepackage[natbibapa]{apacite}
+\usepackage[toc,page]{appendix}     
+\usepackage{enumitem}  
+\usepackage{lscape} 
+%\usepackage{ascmac}     
+\usepackage{rotating}   
+% \usepackage[natbibapa]{apacite}    
 \usepackage{url}
-\usepackage{setspace}
-\usepackage{adjustbox}
+\usepackage{setspace}  
+\usepackage{adjustbox} 
 \usepackage{pdfpages}
-\usepackage{hyperref}
+\usepackage{hyperref} 
 \usepackage{tikz}
 \usepackage{pdflscape}
 \usepackage{amsmath, amssymb, amsthm, mathtools}
-\usepackage{tikz}
-\usetikzlibrary{positioning, arrows.meta, shapes.geometric}
 
 %============================
 % Theorems
@@ -65,18 +63,18 @@
 \newcommand{\ip}[2]{\left\langle #1,#2\right\rangle}
 \newcommand{\sym}[1]{\ifmmode^{#1}\else\(^{#1}\)\fi}
 
-\hypersetup{colorlinks=true, citecolor=blue, urlcolor  = blue, linkcolor = black}
+\hypersetup{colorlinks=true, citecolor=blue, urlcolor  = blue, linkcolor = black} 
 
 \usepackage[natbibapa]{apacite}
 \AtBeginDocument{%
    \renewcommand{\BRetrievedFrom}{}  % <=== This addresses your main request (no "Retrieved from")
 }
-
+ 
 \graphicspath{{Figure}}
-
+ 
 \begin{document}
 
-\title{Water Treatment, E. coli Reduction(, and Diarrhea):\\
+\title{Water Treatment, E. coli in Drinking Water, and Diarrhea:\\
 Causal Inference Using Double/Debiased Machine Learning%\footnote{I am grateful to ...Any errors are my own.}
 }
 
@@ -87,7 +85,7 @@ Akito Kamei\footnote{Universidad Panamericana, School of Government and Economic
 \textit{Universidad Panamericana}\\
 }
 \date{\today}
-\maketitle
+\maketitle  
 
 %%Key numbers used in the paper
 \newcommand{\ToTSample}{59,633}
@@ -96,44 +94,36 @@ Akito Kamei\footnote{Universidad Panamericana, School of Government and Economic
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{center}
 \textbf{Abstract}
-\end{center}
+\end{center}  
 \begin{singlespace}
-Household decisions to treat drinking water are shaped by numerous factors, making causal inference challenging in non-experimental settings. This paper estimates the causal effect of household water treatment on E. coli contamination\footnote{and the effect of contamination on child diarrhea} using Double/Debiased Machine Learning (DDML), a framework well suited for addressing high-dimensional confounding. The analysis draws on MICS data from \ToTSample{} households across 25 countries in Sub-Saharan Africa, Latin America, and Asia, incorporating objective measures of water quality. The DDML estimates refine the upward bias present in conventional OLS estimates while confirming a statistically significant causal effect of household water treatment in reducing E. coli contamination. The analysis also reveals substantial heterogeneity in treatment effects and in the magnitude of DDML correction: effects are larger in settings where source water is highly contaminated. Among households relying on highly contaminated source water, OLS estimates suggest that water treatment reduces the probability of highly contaminated drinking water by 21.2 percentage points. After applying DDML, the estimated effect is corrected to approximately 15 percentage points, representing nearly a 30 percent reduction relative to the OLS estimate.
-
-
+Household decisions to treat drinking water are endogenous to a wide range of socioeconomic, environmental, and behavioral factors, making causal inference challenging in observational settings. This paper estimates the causal effects of household water treatment on E. coli contamination and child diarrhea using Double/Debiased Machine Learning (DDML), a framework designed to address high-dimensional confounding. The analysis draws on MICS data from \ToTSample{} households across 25 countries in Sub-Saharan Africa, Latin America, and Asia and incorporates objective measures of water quality based on E. coli testing. The DDML estimates indicate that conventional OLS models slightly overstate the effectiveness of household water treatment in reducing E. coli contamination, while still confirming a statistically significant causal effect. Among treatment methods, boiling produces the largest reductions in E. coli contamination, whereas chlorination also yields statistically significant but smaller effects. The DDML estimates further suggest that household water treatment reduces the incidence of child diarrhea. However, predictive performance for diarrhea remains limited, with substantial residual variation reflecting the inherently complex and difficult-to-predict nature of diarrheal disease transmission. Overall, the findings provide robust cross-country evidence that household water treatment improves drinking water quality.
+\\(187 words)
 \end{singlespace}
 
-\doublespacing
+\doublespacing 
 
 \noindent
 \textbf{Funding:}
 No funding was received for this research.
 
-\noindent
-JEL Classification: I15 \\
+\noindent 
+JEL Classification: I12, I15 \\
+% I12 – Health Behavior
 % I15	Health and Economic Development
 % Q54: Weather; Natural Disasters and their Management; Global Warming
 \noindent
-Keywords: Water Treatment, Water Quality, WASH, E. Coli, Sub-Saharan Africa
+Keywords: Water Treatment, Water Quality, WASH, E. coli; Child diarrhea, Causal Inference
 
+\iffalse
 \begin{itemize}
 \item \href{https://docs.google.com/document/d/1VpyidSOLfcp7vShdWENKIl0B17a6ory5JjOUVZ8X8vY/edit?tab=t.0}{Google Docs}
 \item \href{https://www.dropbox.com/scl/fo/vn55vxpshgnggq5omz1fe/AFpfqHtUH1Q1MqyJ8SoMAQ8?rlkey=h3qh2m9d6pxrxe7q7e071ljeo&dl=0}{Dropbox}
 \item \href{https://docs.doubleml.org/stable/guide/guide.html}{Double ML}
 \end{itemize}
+\fi
 
 \clearpage
-Comments
 
-\begin{itemize}
-\item \textbf{Predictive performance (AUC):} The AUC appears relatively high even under OLS. Do you think this aligns with our finding that OLS and DDML estimates are similar? Do other DDML studies typically report these metrics? My recollection is that many bias-correction applications show only modest changes, so this pattern may be entirely consistent.
-
-\item \textbf{Coefficient differences across runs:} In the most recent document you shared via WhatsApp, the coefficients for ``SomeRiskHome with total population'' differ slightly from those shown in the single combined table. Could this be due to random seeds or related factors?
-
-\item \textbf{Minor comment:} Table D3 - Consider moving the treatment results into the first two columns for clarity.
-\end{itemize}
-
-\clearpage
 \section*{Journal}
 \begin{itemize}
 	\item High: The Lancet Global Health
@@ -146,9 +136,10 @@ Comments
 	\url{https://academic.oup.com/wbro/article-abstract/22/1/1/1655339}
 	\item Mid-high: World Bank Economic Review
 	\item Mid-high: Oxford
-	\item	BMC Public Health
+	\item World Development Perspectives
 	\item Oxford Development Studies
-	\item Environmental Health Perspectives - 10.1 (Robert Bain)
+	\item	BMC Public Health
+	\item Environmental Health Perspectives – 10.1 (Robert Bain)
 	\item BMC Public Health
 	\item BMJ\\
 Clasen, T., Schmidt, W.-P., Rabie, T., Roberts, I., \& Cairncross, S. (2007). Interventions to improve water quality for preventing diarrhoea: systematic review and meta-analysis. BMJ, 334(7597), 782. https://doi.org/10.1136/bmj.39118.489931.BE.
@@ -156,344 +147,254 @@ Clasen, T., Schmidt, W.-P., Rabie, T., Roberts, I., \& Cairncross, S. (2007). In
 
 \iffalse
 \clearpage
-\section*{LANCET Specific}
-\subsection{Research in context}
+\section*{LANCET Specific}  
+\subsection{Research in context}  
 Evidence before this study This section should include a description of all the evidence that the authors considered before undertaking this study. Authors should briefly state: the sources (databases, journal or
 book reference lists, etc) searched; the criteria used to include or exclude studies (including the exact start and end dates of the search), which should not be limited to English language publications; the search terms used; the quality (risk of bias) of that evidence; and the pooled estimate derived from meta-analysis of the evidence, if appropriate.
 
-\subsection{Added value of this study}
+\subsection{Added value of this study}  
 Authors should describe here how their findings add value to the existing evidence.
 
-\subsection{Implications of all the available evidence}
+\subsection{Implications of all the available evidence}  
 Authors should state the implications for practice or policy and future research of their study combined with existing evidence. Research in context panels should not contain references; key studies mentioned here should be referenced in the main text.
 \fi
 
 \clearpage
-\section{Introduction}
-Each year, an estimated 842,000 people die from diarrheal diseases due to unsafe drinking water, poor sanitation, and inadequate hand hygiene.
+\section{Introduction} 
+Despite substantial progress in global health, an estimated 4.4 billion people across 135 low- and middle-income countries still lack access to safe drinking water \cite{greenwood2024mapping}. Enteric infectious diseases continue to pose a major public health challenge, claiming more than 1 million lives worldwide in 2023 and remaining among the ten leading causes of death among children under five \citep{GBD2023Diarrhoeal2026}.
 
-%According to World Health Organization (WHO) estimates, 361,000 of those deaths are children under five, whose deaths could be prevented by addressing these risk factors. To combat these preventable deaths, governments from a lot of countries started increasing the availability of safe water sources by investing heavily in taps, tube wells, and hand pumps that reduce exposure to waterborne pathogens such as fecal coliform by accessing groundwater protected from surface contamination \cite{black2005water}. However, in some developing countries, improvements in source quality have yielded minimal reductions in diarrheal disease \cite{bennett2008does, jalan2003does}. This may be because improvements at the water source do not necessarily lead to significant quality gains at the point of consumption, as households may reduce private spending on in-home water treatment, offsetting the quality improvements achieved at the source \cite{jalan2003does}.
+Although laboratory studies demonstrate that household water treatment can effectively reduce E. coli contamination under controlled conditions \citep{rice1999chlorine}, its effectiveness under naturally occurring household behavior remains uncertain. Because households endogenously choose whether to treat their water, which treatment method to adopt, and how consistently to apply it, estimating the causal effects of household water treatment using observational data is challenging. As a result, while experimental evidence is abundant \citep{arnold2007treating,pickering2019wash,luby2018effects}, credible evidence on the causal effects of household water treatment in non-experimental settings remains limited.
 
-While scientific evidence shows that household water treatment can reduce E. coli contamination under controlled laboratory conditions (CITE), its effectiveness in real-world settings may be substantially more limited, as correct use, consistent adherence, and safe post-treatment storage are often difficult to maintain. Effective use of chlorine and other treatment technologies requires correct dosing and consistent adherence to recommended procedures, which can be challenging for households. The appropriate dosage varies with baseline contamination, water turbidity, and storage conditions, and chlorine may lose potency when stored for extended periods. Even boiling does not fully ensure pathogen removal if treated water is later recontaminated during handling or storage \citep{wright2004household}. As a result, real-world effectiveness may fall short of laboratory efficacy estimates.
+Using MICS data from a non-experimental setting, this paper estimates the causal impact of household water treatment on E. coli contamination and child diarrhea using Double/Debiased Machine Learning (DDML), a framework designed for settings with high-dimensional confounding. The analysis draws on 59,633 households across 25 countries in Sub-Saharan Africa, Latin America, and Asia and incorporates objective measures of water quality. By combining flexible machine-learning methods with robust causal inference techniques, the study addresses key identification challenges common in observational WASH data.
 
-A meta-analysis combining 21 studies finds a substantial effect of household chlorination on water quality and child health outcomes \citep{arnold2007treating}. The results show that the probability of stored water containing any detectable E. coli contamination was reduced by 80 percent (pooled relative risk: 0.20), while the risk of child diarrhea declined by 29 percent (pooled relative risk: 0.71). However, two subsequent large-scale randomized controlled trials conducted in rural Bangladesh and Kenya found that chlorination tablet interventions did not significantly reduce diarrheal disease incidence or improve anthropometric outcomes \citep{pickering2019wash, luby2018effects}. These findings suggest that while water treatment can improve measured water quality, translating these improvements into sustained health gains remains challenging in practice. [Ask results to Amy].
+The results suggest that standard OLS specifications modestly exaggerate the impact of household water treatment on E. coli contamination. After accounting for high-dimensional confounding using Double/Debiased Machine Learning (DDML), the estimated effects become smaller but remain statistically significant. Boiling emerges as the most effective treatment method for reducing E. coli, while chlorination also yields statistically significant, though smaller, reductions. The DDML estimates further suggest that household water treatment lowers the likelihood of childhood diarrhea, but predictive performance for diarrhea remains limited, highlighting the substantial residual variation and the multifactorial nature of diarrheal disease transmission.
 
-\begin{figure}[htbp]\centering
-\caption{Results from Meta-Analysis}\label{Desc_0}
-\begin{subfigure}[b]{1\textwidth}\includegraphics[width=\textwidth]{ArnoldEcoli.png}\end{subfigure}
-{\footnotesize  \begin{flushleft} Notes: .\end{flushleft}}
-\end{figure}
-
-Moreover, most causal evidence on household water treatment comes from experimental settings in which households are provided with new treatment products and, in some cases, complementary components such as education or behavior-change interventions. While these studies provide credible estimates of program impacts, the results may differ from non-experimental contexts, where households often use treatment methods inconsistently or incorrectly, and where compliance, monitoring, and supportive activities are more limited. As a result, treatment effects observed in observational settings may be smaller than those reported in controlled trials.
-
-% E. Coli to diarrhea prevalence is clear \citep{nataro1998diarrheagenic}, there is a lack of evidence on how much of this relationship is observed in real society.
-
-Using the MICS data that is collected in a non-experimental setting, this paper estimates the causal impact of household water treatment on E. coli contamination using Double/Debiased Machine Learning (DDML), a framework designed for settings with high-dimensional confounding. The analysis draws on MICS data from {\color{red} The new data set is at a child level 36,121 children across 25 countries in Sub-Saharan Africa, Latin America, and Asia} 59,633 households across 25 countries in Sub-Saharan Africa, Latin America, and Asia, incorporating objective measures of water quality. By combining flexible machine learning methods with robust causal inference techniques, the study addresses key identification challenges common in observational WASH data. A distinctive feature of the analysis is the use of direct measurements of source-water contamination, which permits estimation of treatment effects across varying baseline risk environments.
-
-The study finds that ABC.
-The OLS and DDML esitmates the reduction of having any E.coli of about 12 percent reduction from the mean. This estimate is
+The estimated effects of household water treatment on child diarrhea are considerably less robust than those for E. coli contamination. The robustness values are close to zero, indicating that relatively weak unobserved confounding could explain away the estimated effects. This likely reflects the multifactorial nature of diarrheal disease, which depends on numerous environmental, behavioral, and biological factors beyond drinking water quality. Consistent with this interpretation, the diarrhea models exhibit limited predictive performance, suggesting that while household water treatment may contribute to reducing diarrhea, the estimated effects are more sensitive to residual confounding and should therefore be interpreted with caution.
 
 The study contributes to the WASH and broader public health literature by advancing causal analysis in a non-experimental setting drawn from multiple countries.
 
-First, the study applies Double/Debiased Machine Learning (DDML) to large-scale {\color{child}} household survey data linked with scientifically measured E. coli contamination. Estimating the effects of household water treatment behaviors using observational data has long been challenged by endogeneity. In particular, omitted variables may jointly influence both treatment decisions and water quality outcomes. For example, wealthier households may be more likely to treat their water because they have better access to treatment products, greater health awareness, or stronger preferences for preventive health behaviors. At the same time, households with cleaner source water may have weaker incentives to adopt treatment, while those exposed to highly contaminated sources may be more likely to treat despite facing greater health risks. These opposing patterns imply that naïve estimates of the relationship between water treatment and water quality may either overestimate or underestimate the true causal effect, depending on how household characteristics and baseline contamination jointly influence treatment decisions. These factors limit the credibility of conventional OLS regression-based estimates. In addition to incorporating a high-dimensional set of observable household characteristics, a distinctive feature of the analysis is the use of direct measurements of source-water contamination as control variables. This allows comparisons among households facing similar baseline contamination risk. Controlling for source-water contamination helps mitigate concerns about unobservable confounding related to water and sanitation environments, as the contamination level of the source water captures important aspects of the underlying exposure to microbial risk. This paper contributes to the growing empirical literature employing DDML methods. [Add some papers]\footnote{In contrast to some of the earlier studies that rely on a single machine learning algorithm, the empirical strategy implements a stacked ensemble approach that combines multiple learners to improve predictive performance and robustness. This methodological choice highlights the practical advantages of modern machine learning integration for causal inference in applied microeconomic research.}
+First, this study applies Double/Debiased Machine Learning (DDML) to estimate the causal effects of household water treatment, addressing the complex and potentially endogenous nature of households’ treatment decisions. Previous observational studies have documented strong associations between household water treatment practices and drinking water quality \citep{cohen2017effects}. For example, \cite{fagerli2017comparison} measured both household water treatment practices and E. coli contamination, finding that households using chlorination had lower levels of E. coli in stored drinking water than those relying on boiling. However, these findings are based on observational comparisons, and households self-select not only whether to treat their water but also which treatment method to use. As a result, observed differences in water quality may reflect underlying household characteristics rather than the treatment methods themselves. Estimating the causal effects of household water treatment using observational data therefore remains challenging because treatment decisions are inherently endogenous.
 
-Second, another feature of the study is that the results are estimated in a non-experimental setting. Although randomized controlled trials (RCTs) and meta-analyses document substantial reductions in E. coli contamination from water treatment, experimental interventions often bundle multiple components-such as education, behavior change campaigns, or programmatic support-making it difficult to isolate specific mechanisms and assess external validity. By leveraging DDML in an observational context, this paper provides evidence on the impact of household water treatment on E. coli contamination under naturally occurring conditions.
+The direction of omitted variable bias in estimating the effects of household water treatment is ambiguous and depends on the context. On one hand, wealthier households may be more likely to treat their water because they have better access to treatment products, greater health awareness, and stronger preferences for preventive health behaviors. In this case, observational estimates may overstate the benefits of water treatment if these households also have better hygiene or sanitation practices. On the other hand, households relying on highly contaminated water sources may have stronger incentives to treat their water, while those with relatively clean source water may perceive little need for treatment. Similarly, when chlorine products are unaffordable, poorer households may rely on boiling, whereas the most resource-constrained households may not treat their water at all. These contrasting selection mechanisms imply that observational estimates may either overestimate or underestimate the true causal effect of household water treatment, depending on how socioeconomic characteristics, environmental conditions, and baseline water quality jointly influence treatment decisions. The complex and potentially endogenous nature of household water treatment decisions makes DDML particularly well suited to this setting. By flexibly accounting for high-dimensional confounding and nonlinear relationships, DDML provides a more credible framework for estimating the causal effects of household water treatment than conventional regression approaches.
 
-Third, the analysis conducts a heterogeneity assessment that leverages a distinctive feature of the data: direct measurements of E. coli contamination at the source-water level drawn from multiple countries. This design allows treatment-effect heterogeneity to be examined using objective microbiological conditions rather than conventional socioeconomic proxies such as wealth, education, or rural-urban status. By exploiting variation in baseline contamination levels, the study evaluates how the effectiveness of water treatment behaviors differs across environments characterized by differing initial risk profiles with large externality.
+Second, this study contributes by estimating the effects of household water treatment in a non-experimental setting. Because treatment decisions are inherently endogenous, most existing studies estimating the causal effects of household water treatment have relied on randomized controlled trials or other experimental designs \citep{arnold2007treating,pickering2019wash,luby2018effects}. While these studies provide valuable estimates of the intention-to-treat (ITT) effects of water treatment interventions, their findings may not reflect the effectiveness of water treatment behaviors as they occur under routine, real-world conditions \citep{athey2017state}. In practice, households choose whether to treat their water, which treatment method to adopt, and how consistently to apply it, all of which can differ substantially from behavior observed in experimental settings. By leveraging DDML in an observational setting, this study provides evidence on the effects of naturally occurring household water treatment practices on E. coli contamination, thereby complementing the existing experimental literature.
 
-% Recent studies suggest that passive chlorination at the point of water collection can be an effective intervention for reducing childhood diarrhoea in urban low-income settings \cite{pickering2019inline}. Automated chlorine dosers have been shown to disinfect drinking water without requiring electricity, leading to a significant reduction in diarrhoea prevalence as defined by WHO standards. Despite these technological advancements, other low-cost water treatment interventions, such as improved cookstoves and safe water devices, often fail to achieve their expected health benefits due to inconsistent adoption by low-income households \cite{ray2021towards}. This inconsistency hampers efforts to improve water quality, reduce E. Coli contamination, and decrease the prevalence of waterborne diseases such as diarrhoea. Additionally, the paper argues that shifting from household-scale interventions to utility-scale service models could ensure more reliable access to clean water and sanitation, which are vital in preventing diarrhoeal diseases. Overall, the global impact of inadequate WASH services is substantial, with an estimated 1.4 million deaths and 74 million disability-adjusted life years (DALYs) that could have been averted in 2019 through safe WASH practices \cite{Wolf2023Burden}. These findings underscore the importance of WASH interventions in addressing the global burden of diarrhoeal diseases linked to poor water quality and sanitation.
+Third, the study exploits a unique feature of the data: direct microbiological measurements of source-water contamination. In addition to controlling for a rich set of observable household characteristics, the analysis incorporates source-water E. coli contamination as a key control variable. This is particularly important because source-water quality is likely to influence both households’ decisions to treat their water and the microbial quality of stored drinking water. Moreover, source-water contamination reflects a broad range of otherwise unobserved environmental factors related to water and sanitation conditions, including watershed characteristics, sanitation infrastructure, and local contamination pathways. By conditioning on objectively measured baseline contamination, the analysis compares households facing similar underlying microbial exposure and reduces confounding from environmental differences that are difficult to capture using conventional socioeconomic or geographic controls.
+
+Furthermore, the availability of source-water contamination measurements enables an assessment of treatment-effect heterogeneity based on objective environmental risk rather than household socioeconomic characteristics. This allows the study to examine whether the effectiveness of household water treatment varies across baseline contamination levels, providing new evidence on where water treatment is most effective and offering insights for targeting interventions in high-risk environments.
+
+While this study uses a causal machine-learning estimation approach, the results should not be interpreted as definitive estimates. As with any observational study, identification ultimately relies on the assumption that observed covariates adequately account for confounding. To strengthen the credibility of the estimates, the analysis employs multiple machine-learning algorithms and a stacked ensemble approach, allowing the nuisance functions to be flexibly estimated while reducing the risk of relying on a single model specification. By comparing results across alternative learners and their stacked combination, the study aims to approximate the underlying causal effect as closely as possible and to assess the robustness of the findings across different modeling approaches.
 
 The remainder of this paper is organized as follows. Section 2 describes the data, sample construction, and empirical strategy, including the DDML framework, control variables, and the heterogeneity analysis by source-water contamination. Section 3 presents descriptive statistics on household characteristics, water treatment behavior, and microbiological water quality. Section 4 reports the main empirical results, comparing unadjusted estimates, OLS estimates, and DDML estimates, and examines heterogeneity in treatment effects across different contamination environments. Section 5 explores the relationship between water quality and child health outcomes, including diarrhea and fever. Section 6 concludes. Supporting materials, additional robustness checks, and the formal DDML framework are provided in the Appendix.
 
-\section{Methods (Follow PLOS One writing)}
-\subsection{Sample}
-To examine the relationship between source water contamination, household water treatment decisions, and contamination in stored drinking water, we analyze the MICS household survey  \citep{mics_ecoli}. The MICS, implemented by UNICEF, are nationally representative household surveys designed to collect high-quality data on living standards. MICS are conducted primarily in low- and middle-income countries, using standardized sampling methods that ensure population-level representativeness at both national and sub-national levels. In addition to detailed information on demographics, health, and water and sanitation, MICS began incorporating objectively measured water-quality testing starting in Round 6.
+\section{Background} 
 
-We use MICS 6 surveys collected between 2017 and 2021, in which a rapid water quality testing module is available. The surveys were implemented by UNICEF in collaboration with national ministries and statistics offices. From an initial sample of 29 countries, we excluded Tuvalu, Kiribati, Tonga, and the Turks and Caicos Islands, where fewer than 1,000 households completed the water testing module, to ensure sufficient data for reliable country-level statistics.
+Estimating the causal impact of household water treatment is complicated by endogeneity. Households that treat their drinking water may differ systematically from those that do not along both observable and unobservable dimensions, including socioeconomic status, education, access to infrastructure, and health knowledge/awareness. For example, wealthier households may be more likely to treat their water because they have better access to treatment products, greater health awareness, or stronger preferences for preventive health behaviors. At the same time, households with cleaner source water may have weaker incentives to adopt treatment, while those exposed to highly contaminated sources may be more likely to treat despite facing greater health risks. These opposing patterns imply that naïve estimates of the relationship between water treatment and water quality may either overestimate or underestimate the true causal effect, depending on how household characteristics and baseline contamination jointly influence treatment decisions.
 
-In each MICS survey, a random subsample of households within each cluster was selected for water-quality testing (typically 5 households per cluster). Depending on the country, approximately 10-25\% of a random subsample of households were selected for the rapid water quality testing module (Table 1). Overall, 92.6\% of households completed water testing with non-missing data, and in most countries, E. coli data are available for over 80-90\% of the selected households. While non-consent was low (N= 653), water testing was occasionally not conducted due to the household's inability to provide a water sample, partial completion, or errors in reading the test results. A comparison of household characteristics between those who completed the water testing and those who did not shows varying patterns across countries  (see online appendix in supporting document for further discussion). Thirteen additional observations were excluded from the final analytical sample because respondents reported that they did not know their household's water treatment method.
+Effective use of chlorine requires correct dosing and consistent adherence to recommended procedures, which can be challenging for households. The appropriate dosage varies with water contamination and turbidity, and chlorine may lose potency when stored for extended periods. Even boiling does not fully ensure pathogen removal if treated water is later recontaminated during handling or storage \citep{wright2004household, clasen2008microbiological}. As a result, real-world effectiveness may fall short of laboratory efficacy estimates.
 
-In households selected for water testing, interviewers requested permission to collect water samples from two locations: (1) the source from which the household collects water, and (2) the stored drinking water within the household. Interviewers first asked for a sample of drinking water by requesting a glass of drinking water, and then asked to be shown the water source location in order to collect a sample directly from the water source. These water samples were analyzed for the presence of E. coli, an indicator of fecal contamination.
+A meta-analysis combining 21 studies finds a substantial effect of household chlorination on water quality and child health outcomes \citep{arnold2007treating}. The results show that the probability of stored water containing any detectable E. coli contamination was reduced by 80 percent (pooled relative risk: 0.20), while the risk of child diarrhea declined by 29 percent (pooled relative risk: 0.71). However, two subsequent large-scale randomized controlled trials conducted in rural Bangladesh and Kenya found that chlorination tablet interventions did not significantly reduce diarrheal disease incidence or improve anthropometric outcomes \citep{pickering2019wash, luby2018effects}. These findings suggest that while water treatment can improve measured water quality, translating these improvements into sustained health gains remains challenging in practice.
 
-The MICS survey and drinking water quality module are standardized across the countries. The protocol is developed collaboratively by the Joint Monitoring Program (JMP) and the global MICS program. An international water quality trainer, with support from national experts, led the training of field teams. National experts from regulatory agencies, research labs, or ministries of health provided technical input and oversight during fieldwork through a few field visits. Field teams obtained 100 mL samples and used portable E. coli enumeration tests consistent with UNICEF/JMP guidance; PoC taps were flushed for around 30 seconds before sampling. Water samples were analyzed for E. Coli using portable membrane filtration. Field teams filtered 100mL of water through a 0.45-μm filter, placed it on CompactDry EC growth media plates, and rehydrated it with 1mL of sample water.
+Moreover, most causal evidence on household water treatment comes from experimental settings in which households are closely monitored or actively encouraged by the intervention. Participants often receive free treatment products, educational materials, and, in some cases, complementary behavior-change interventions. While these studies provide credible estimates of program impacts, the findings may not fully generalize to non-experimental settings, where households often use treatment methods inconsistently or incorrectly, and where compliance, monitoring, and supportive activities are more limited.
 
-Additionally, several observations were excluded due to missing information. Thirteen households were dropped because the reported water treatment method was "do not know," and a further 5,280 households were excluded due to missing data on key covariates such as household education or wealth. \textbf{The final analytical sample covers 25 countries and includes 54,340 households.}
+Various studies have documented an association between fecal contamination of drinking water and diarrhea. A meta-analysis by \cite{goddard2020faecal} finds that the risk of diarrhea increases with higher levels of fecal contamination. Similarly, \cite{usman2019impact} and \cite{hanif2024benefit} report that households with uncontaminated stored drinking water experience lower rates of diarrhea, with both studies aiming to identify causal effects using instrumental variable approaches. In the context of Nepal, \cite{rahman2021interconnection} employs a control function approach to address the potential endogeneity of microbial contamination and finds that the presence of E. coli in drinking water significantly increases diarrheal incidence.
 
-% The MICS survey reports \emph{E.~coli} counts censored at 100 colony-forming units (CFU) per 100 mL, so we construct two binary outcome variables: an indicator for \emph{some risk} (any contamination strictly between 0 and 100 CFU) and an indicator for \emph{very high risk} (contamination at or above the censoring threshold of 100 CFU), following international guidelines on microbiological water quality \citep{who_water_guidelines}. The treatment is a binary indicator for whether the household reports using any kind of water treatment; for tractability, we treat the different specific treatment methods as homogeneous.
+%According to World Health Organization (WHO) estimates, 361,000 of those deaths are children under five, whose deaths could be prevented by addressing these risk factors. To combat these preventable deaths, governments from a lot of countries started increasing the availability of safe water sources by investing heavily in taps, tube wells, and hand pumps that reduce exposure to waterborne pathogens such as fecal coliform by accessing groundwater protected from surface contamination \cite{black2005water}. However, in some developing countries, improvements in source quality have yielded minimal reductions in diarrheal disease \cite{bennett2008does, jalan2003does}. This may be because improvements at the water source do not necessarily lead to significant quality gains at the point of consumption, as households may reduce private spending on in-home water treatment, offsetting the quality improvements achieved at the source \cite{jalan2003does}.
 
-\subsection{Causal impact of water treatment on E. coli reduction in household water}
-Estimating the causal impact of household water treatment on E. coli contamination is complicated by endogeneity. Households that treat their drinking water may differ systematically from those that do not along both observable and unobservable dimensions, including socioeconomic status, education, access to infrastructure, and health knowledge/awareness. For example, wealthier households may be more likely to treat their water because they have better access to treatment products, greater health awareness, or stronger preferences for preventive health behaviors. At the same time, households with cleaner source water may have weaker incentives to adopt treatment, while those exposed to highly contaminated sources may be more likely to treat despite facing greater health risks. These opposing patterns imply that naïve estimates of the relationship between water treatment and water quality may either overestimate or underestimate the true causal effect, depending on how household characteristics and baseline contamination jointly influence treatment decisions.
+% E. coli to diarrhea prevalence is clear \citep{nataro1998diarrheagenic}, there is a lack of evidence on how much of this relationship is observed in real society.
 
-To address this concern, this paper employs DDML, a framework that combines the predictive power of machine learning with rigorous causal inference. The double/debiased machine-learning framework allows flexible adjustment for confounding factors by using machine-learning methods to estimate high-dimensional nuisance components. This approach accommodates nonlinearities and interactions among covariates without imposing restrictive functional-form assumptions (see Appendix \ref{DDMLTheo} for the formal explanation).
+% Recent studies suggest that passive chlorination at the point of water collection can be an effective intervention for reducing childhood diarrhoea in urban low-income settings \cite{pickering2019inline}. Automated chlorine dosers have been shown to disinfect drinking water without requiring electricity, leading to a significant reduction in diarrhoea prevalence as defined by WHO standards. Despite these technological advancements, other low-cost water treatment interventions, such as improved cookstoves and safe water devices, often fail to achieve their expected health benefits due to inconsistent adoption by low-income households \cite{ray2021towards}. This inconsistency hampers efforts to improve water quality, reduce E. coli contamination, and decrease the prevalence of waterborne diseases such as diarrhoea. Additionally, the paper argues that shifting from household-scale interventions to utility-scale service models could ensure more reliable access to clean water and sanitation, which are vital in preventing diarrhoeal diseases. Overall, the global impact of inadequate WASH services is substantial, with an estimated 1.4 million deaths and 74 million disability-adjusted life years (DALYs) that could have been averted in 2019 through safe WASH practices \cite{Wolf2023Burden}. These findings underscore the importance of WASH interventions in addressing the global burden of diarrhoeal diseases linked to poor water quality and sanitation.
 
-A naive application of machine learning to causal estimation faces three fundamental challenges. First, machine learning is not immune to omitted variable bias: even when flexible nonlinear relationships are captured, the model may still learn spurious associations driven by confounding factors, leading to biased estimates. Second, the bias-variance tradeoff that guides predictive models can be problematic for causal inference. Methods that improve prediction accuracy by fitting highly complex functions may overfit correlations induced by confounders rather than recover the true treatment effect. At the same time, naively plugging in machine learning predictions can introduce regularization bias: penalties such as L1 (lasso) or L2 (ridge) shrink nuisance parameter estimates to improve out-of-sample prediction, but this shrinkage can leak into the causal estimate and bias the treatment effect downward. While these choices may improve predictive performance, they can distort the parameter of interest and prevent consistent causal estimation. Third, standard ML algorithms are designed to minimize prediction error for the outcome variable, not to identify the causal effect of a specific treatment while properly controlling for confounders. As a result, their objective function does not distinguish between predictive correlations and true causal relationships.
+\section{Data}
+To examine the causal impact of household water treatment and contamination in stored drinking water on child diarrhea outcomes, we analyze data from the UNICEF Multiple Indicator Cluster Surveys (MICS) \citep{mics_ecoli}. The MICS are nationally representative household surveys conducted primarily in low- and middle-income countries using standardized sampling methods. In addition to detailed information on demographics, health, and water and sanitation, MICS began incorporating objectively measured water-quality testing in Round 6.
 
-The DDML framework addresses the second and third challenges-regularization bias arising from the bias-variance tradeoff and the mismatch between predictive objectives and causal estimation-through orthogonalization and cross-fitting. The "double" in DDML refers to the orthogonalization of both the outcome and treatment variables with respect to high-dimensional controls, extending the Frisch-Waugh-Lovell theorem to flexible machine-learning settings. Cross-fitting further reduces overfitting and regularization bias by separating nuisance estimation from treatment effect estimation.
+We use MICS 6 surveys collected between 2017 and 2021, in which a rapid water quality testing module is available. The surveys were implemented by UNICEF in collaboration with national ministries and statistics offices.\footnote{From an initial sample of 29 countries, we excluded Tuvalu, Kiribati, Tonga, and the Turks and Caicos Islands, where fewer than 1,000 households completed the water testing module, to ensure sufficient data for reliable country-level statistics.} In each MICS survey, a random subsample of households within each cluster was selected for water-quality testing (typically 5 households per cluster). Depending on the country, approximately 10–25\% of a random subsample of households were selected for the rapid water quality testing module. In households selected for water testing, interviewers requested permission to collect water samples from two locations: (1) the source from which the household collects water, and (2) the stored drinking water within the household. Interviewers first asked for a sample of drinking water by requesting a glass of drinking water, and then asked to be shown the water source location in order to collect a sample directly from the water source. These water samples were analyzed for the presence of E. coli, an indicator of fecal contamination.\footnote{The MICS survey and drinking water quality module are standardized across the countries. The protocol is developed collaboratively by the Joint Monitoring Program (JMP) and the global MICS program. An international water quality trainer, with support from national experts, led the training of field teams. National experts from regulatory agencies, research labs, or ministries of health provided technical input and oversight during fieldwork through a few field visits. Field teams obtained 100 mL samples and used portable E. coli enumeration tests consistent with UNICEF/JMP guidance; PoC taps were flushed for around 30 seconds before sampling. Water samples were analyzed for E. coli using portable membrane filtration. Field teams filtered 100mL of water through a 0.45-µm filter, placed it on CompactDry EC growth media plates, and rehydrated it with 1mL of sample water.}
+
+Overall, 92.6\% of households completed water testing with non-missing data, and in most countries, E. coli data are available for over 80–90\% of the selected households (Table \ref{SurNum}). While non-consent was low (N= 653), water testing was occasionally not conducted due to the household’s inability to provide a water sample, partial completion, or errors in reading the test results. A comparison of household characteristics between those who completed the water testing and those who did not shows varying patterns across countries  (see online appendix in supporting document for further discussion). Thirteen additional observations were excluded from the final analytical sample because respondents reported that they did not know their household’s water treatment method.
+
+Additionally, several observations were excluded due to missing information. Thirteen households were dropped because the reported water treatment method was “do not know,” and a further 5,280 households were excluded due to missing data on key covariates such as household education and wealth. The final analytical sample for the water-quality analysis covers 25 countries and includes 54,340 households. For the child diarrhea analysis, the sample was restricted to households with children under age five, resulting in a subsample of 25,202 households and 36,121 children.
+
+We stratify households according to baseline source-water contamination (rather than point-of-use samples), following international microbiological water-quality guidelines \citep{who_water_guidelines}. Low-risk sources are defined as 0 CFU of E. coli, moderate-risk sources as 1–100 CFU, and high-risk sources as more than 100 CFU per 100 mL, reflecting the censoring threshold used in the MICS survey. For households drawing from low-risk sources, we expect little or no treatment effect, as there is essentially no contamination to remove. In contrast, for households exposed to moderate or high contamination, larger reductions in E. coli are expected unless treatment practices are ineffective due to incorrect or inconsistent application, or because environmental contamination is severe enough to offset treatment effectiveness. In the full sample of 54,340 households, 23,079 households rely on low-risk sources, 19,648 households are exposed to moderate contamination, and 11,613 households draw from highly contaminated sources. 
+
+\section{Descriptive Statistics}\label{Descriptive}
+Table \ref{Desc1} presents household characteristics and water treatment behavior based on the contamination level of the source water. The final sample consists of \ToTSample{} households across 25 countries, with 25,518 households (43 percent) classified as low risk, 21,844 households (37 percent) as moderate risk, and 12,271 households (21 percent) as high risk based on contamination levels at the water source.
+
+%-------------------------------------------------------------%
+{\renewcommand\normalsize{}\normalsize\singlespacing  
+\input{Table/Descript_ExtMain_Risk_ext.tex}}
+%-------------------------------------------------------------% 
+
+The results show that households exposed to higher levels of water contamination tend to be socioeconomically more disadvantaged. Among households in the high-risk category, 31 percent belong to the poorest quintile, compared to only 13 percent in the low-risk category. In contrast, the richest quintile represents 28 percent of households in the low-risk category but only 10 percent among high-risk households. Educational attainment also differs substantially across contamination levels. Households in the high-risk category are less likely to have secondary education or higher (30 percent) compared to households in the low-risk category (53 percent).
+
+Water infrastructure and sanitation conditions also vary systematically with contamination risk. Households relying on piped connections are substantially more common in the low-risk category (41 percent) than in the high-risk category (17 percent), while unprotected wells, springs, and surface water sources are more prevalent among high-risk households. Similarly, households in high-risk areas are more likely to practice open defecation (36 percent compared to 6 percent in low-risk areas) and less likely to have flush toilets. 
+
+High-risk households are also more likely to have children under the age of five, suggesting that vulnerable populations face greater exposure to unsafe drinking water. Water collection responsibilities also differ systematically across contamination levels. Overall, girls under the age of 15 are more likely than boys to be the primary water carrier (4 percent versus 2 percent of households). Moreover, among households relying on highly contaminated water sources, 6 percent report a girl under the age of 15 as the primary water carrier, compared with only 2 percent among households whose source water is free of E. coli. Finally, urban households account for 54 percent of the low-risk group but only 24 percent of the high-risk group, indicating that exposure to microbiologically contaminated water is substantially more common in rural areas.
+
+Despite these differences in contamination levels, household water treatment practices do not vary substantially across categories. Approximately 22 percent of households report any type of water treatment overall, with boiling being the most common method. Chlorination remains relatively uncommon across all groups. This pattern suggests that even households facing high contamination levels may not fully adjust their water treatment behavior in response to objective water quality risks.
+
+Among the full sample, approximately 40 percent of households have at least one child under the age of five, and for these households the survey collected information on whether children experienced diarrhea during the two weeks prior to the interview. Table \ref{Desc2} presents descriptive statistics using child-level data from 25,202 households, covering 36,121 children under age five. Overall, diarrhea prevalence is 13.9 percent in the sample and is slightly higher among households whose water source falls into the moderate and high risk contamination categories. The average number of children under five per household is 1.81, with larger household sizes observed among high-risk households. In contrast, the average age and gender composition of children are very similar across contamination risk categories.
+
+%-------------------------------------------------------------%
+{\renewcommand\normalsize{}\normalsize\singlespacing  
+\input{Table/Descript_U5Main_Risk.tex}}
+%-------------------------------------------------------------%
+
+\section{Methods}
+
+\subsection{Double/Debiased Machine Learning (DDML)}
+
+This paper employs Double/Debiased Machine Learning (DDML), a framework that combines flexible machine learning with causal inference in settings with high-dimensional confounding. DDML estimates nuisance functions with machine-learning methods, then uses orthogonal scores and cross-fitting to reduce bias from overfitting and regularization. The approach allows nonlinear relationships and interactions among covariates without imposing restrictive functional-form assumptions. The identifying assumption remains selection on observables: conditional on the control vector, treatment assignment is assumed to be as good as random.
+
+A naive application of machine learning to causal estimation faces three fundamental challenges. First, machine learning is not immune to omitted variable bias: even when flexible nonlinear relationships are captured, the model may still learn spurious associations driven by confounding factors, leading to biased estimates. Second, the bias–variance tradeoff that guides predictive models can be problematic for causal inference. Methods that improve prediction accuracy by fitting highly complex functions may overfit correlations induced by confounders rather than recover the true treatment effect. At the same time, naively plugging in machine learning predictions can introduce regularization bias: penalties such as L1 (lasso) or L2 (ridge) shrink nuisance parameter estimates to improve out-of-sample prediction, but this shrinkage can leak into the causal estimate and bias the treatment effect downward. While these choices may improve predictive performance, they can distort the parameter of interest and prevent consistent causal estimation. Third, standard ML algorithms are designed to minimize prediction error for the outcome variable, not to identify the causal effect of a specific treatment while properly controlling for confounders. As a result, their objective function does not distinguish between predictive correlations and true causal relationships.
+
+The DDML framework addresses regularization bias and the mismatch between predictive objectives and causal estimation through orthogonalization and cross-fitting. The ``double'' in DDML refers to the orthogonalization of both the outcome and treatment variables with respect to high-dimensional controls, extending the Frisch--Waugh--Lovell theorem to flexible machine-learning settings. Cross-fitting further reduces overfitting bias by separating nuisance estimation from treatment-effect estimation.
 
 \begin{enumerate}
-\item \textbf{Neyman orthogonalization.} This provides a robust way to define scores ($\phi_i$) such that small errors in specification do not contaminate the causal estimate. The most important application concerns deviations from the true parameters caused by regularization. Formally, Neyman orthogonality requires:
+\item \textbf{Neyman orthogonalization.} This provides a robust way to define scores ($\phi_i$) such that small errors in specification do not contaminate the causal estimate. These errors are primarily measurement errors, but the most important application concerns deviations from the true parameters caused by regularization. Formally, Neyman orthogonality requires:
 \begin{equation}
 \left. \frac{\partial}{\partial \eta} \E[\phi(Z; \theta_0, \eta)] \right|_{\eta = \eta_0} = 0,
 \end{equation}
 which implies that small estimation errors in the nuisance components do not directly translate into bias in the treatment effect estimate, making causal inference more robust to regularization and model selection mistakes.
 
-\item \textbf{Cross-fitting.} This technique minimizes overfitting by passing different training and test sets to the model. We implement $K$-fold cross-fitting, which divides the full dataset into $K$ disjoint subsamples. For each fold, the model trains on $K-1$ subsamples and predicts on the held-out subsample to obtain score values. The process is repeated iteratively, and $\hat{\theta}$ is estimated by aggregating all score results across folds.
+\item \textbf{Cross-fitting.} This technique minimizes overfitting by passing different training and test sets to the model. We implement $K$-fold cross-fitting with $K=5$, which divides the full dataset into five disjoint subsamples. For each fold, the model trains on the remaining four subsamples and predicts on the held-out subsample to obtain score values. To reduce dependence on any single fold assignment, the entire cross-fitting procedure is repeated over three random partitions and the resulting estimates are averaged; $\hat{\theta}$ is estimated by aggregating all score results across folds.
 \end{enumerate}
 
-A commonly used moment condition is the AIPW (Augmented Inverse Probability Weighting) score function, which is doubly robust in the sense that the estimator remains consistent if either the outcome model or the propensity score model is correctly specified. Many AIPW score functions also satisfy Neyman orthogonality, making them robust to small estimation errors in nuisance parameters and well-suited for DDML estimation.
+A commonly used moment condition is the AIPW (Augmented Inverse Probability Weighting) score function, which is doubly robust in the sense that the estimator remains consistent if either the outcome model or the propensity score model is correctly specified. This double robustness implies Neyman orthogonality, making the score robust to small estimation errors in the nuisance parameters and well-suited for DDML.
 
-We employ the Interactive Regression Model (IRM) to capture the possibility of heterogeneous treatment effects across households. Unlike standard linear models that impose a constant treatment effect, the IRM allows the effect of treatment to vary flexibly with observed covariates:
+The IRM is designed for a binary treatment. Our treatment is multi-valued: households report no treatment or one of four mutually exclusive primary methods (boiling, chlorination, filtering, or other) recorded in a single categorical variable. In the main analysis, we therefore use IRM only for the any-treatment contrast, which collapses the four methods into a single treated indicator and estimates the effect of treating versus not treating on the full sample. This contrast is well defined and preserves the full sample, but it cannot distinguish boiling from chlorination, filtering, or other treatment methods.
 
-\begin{equation}
-Y = g_0(D, X) + \varepsilon,
-\end{equation}
+We adopt the Average Potential Outcomes (APOS) framework for method-specific effects \citep{doubleml2022}. APOS treats treatment as multi-valued and estimates, on the full sample, the average potential outcome for each treatment level: the mean outcome that would prevail if every household used that method. It uses a multi-valued doubly robust AIPW score built from two machine-learned, cross-fitted nuisance functions, a level-specific outcome regression and a multinomial propensity for the treatment level (Appendix~\ref{sec:theory_aipw_bias}). The method-specific average treatment effect is the contrast between a method's potential-outcome mean and the no-treatment mean, with standard errors from the joint influence function of the fitted potential outcomes. APOS therefore gives the method-specific contrasts that the any-treatment IRM cannot provide, while keeping every household in the estimation sample.
 
-where the treatment effect is a function of the covariates X, referred to as the Conditional Average Treatment Effect (CATE), and may take either linear or nonlinear forms. Although the IRM permits treatment effects to vary across observations, the main parameter of interest reported in the analysis is the Average Treatment Effect (ATE), obtained by averaging the estimated conditional treatment effects over the empirical distribution of covariates.
+Every AIPW-type estimator, including IRM and APOS, relies on overlap (or positivity): each household must have a non-degenerate probability of receiving each treatment level given its covariates. This condition keeps the inverse-probability component of the score well behaved. When the propensity for a treatment level approaches zero or one, a small number of near-deterministic observations receive large weights, which inflates variance and can make estimates unstable. Substantively, overlap requires comparable households within the covariate profiles used for identification. Because the specification includes country fixed effects and method choice is strongly patterned by country (Figure~\ref{ABC}), method-specific APOS identification depends on within-country variation in adoption and on sufficient support for each treatment level.
 
-DDML substantially improves adjustment for observed confounders by flexibly modeling nonlinearities, interactions, and high-dimensional relationships that may be misspecified in conventional OLS. As a result, it reduces bias arising from functional-form restrictions and incomplete control of observed covariates. However, DDML does not resolve omitted variable bias if important confounders remain entirely unobserved.
+Figures~\ref{fig:overlap_irm} (IRM) and~\ref{fig:overlap_apos} (APOS) diagnose overlap by plotting the distribution of the cross-fitted propensity (top row) and the outcome-model prediction (bottom row) for every treatment. Mass near $0$ or $1$ in the top row would indicate weak positivity. Figures~\ref{fig:overlap_irm}--\ref{fig:overlap_apos_u5} report the same diagnostic for all three outcomes (some-risk and very-high-risk E.\,coli, and under-five diarrhea) under both estimators. The fitted propensities remain mostly interior, with the expected weaker support for rare method-country combinations. The AIPW score reduces first-order bias when either the outcome model or propensity model is correctly specified, but weak overlap can still increase variance and make estimates sensitive to a small number of observations (Appendix~\ref{sec:theory_aipw_bias}). As a robustness check, we therefore drop country cells in which a method is used by fewer than $5\%$ (or fewer than ten) of households. The restricted-sample estimates are close to the full-sample estimates, and the corresponding overlap diagnostics are reported in Appendix~\ref{app:overlap_rob1}.
 
-The key identifying assumption is conditional independence: conditional on the observed covariates $X_{i}$, the household's water-treatment decision is assumed to be independent of unobserved determinants of drinking-water contamination. In other words, after controlling for a rich set of household, environmental, and socioeconomic characteristics, treatment status is interpreted as being as good as randomly assigned with respect to latent contamination risk.
+% ---- IRM overlap diagnostics, all three outcomes ----
+\begin{figure}[htbp]\centering
+\caption{Overlap diagnostics (IRM) --- Some Risk Home E.\,coli}\label{fig:overlap_irm}
+\includegraphics[width=\linewidth]{overlap_HH_SomeRiskHome.png}
+{\footnotesize\begin{flushleft} \textit{Notes:} Cross-fitted IRM nuisances by treatment and learner. The any-treatment contrast is the IRM specification used in the main analysis; method-specific IRM diagnostics, where shown, are auxiliary checks only and are not used for the headline method-specific estimates. Top row: propensity $\hat m(X)=P(D{=}d\mid X)$; bottom row: outcome prediction $\hat g(X)=\hat\E[Y\mid X,D]$. Dotted lines mark the $[0.01,0.99]$ trimming bounds; mass at the boundary indicates weak overlap. \end{flushleft}}
+\end{figure}
 
-Concretely, for each outcome, we consider several learners: a linear model, penalized linear models and nonlinear tree-based methods. All learners are specified for both the outcome model and the treatment propensity model. In addition, we construct a \textit{stacked} ensemble learner: each base learner generates cross-validated out-of-fold predictions, which are combined via feature union and passed to a ridge regression meta-learner that selects optimal stacking weights by minimizing out-of-sample loss. Final stacking weights are reported as the normalized absolute coefficients of the ridge meta-learner.
+\begin{figure}[htbp]\centering
+\caption{Overlap diagnostics (IRM) --- Very High Risk Home E.\,coli ($\geq 101$ CFU)}\label{fig:overlap_irm_vh}
+\includegraphics[width=\linewidth]{overlap_HH_VeryHighRiskHome.png}
+{\footnotesize\begin{flushleft} \textit{Notes:} As Figure~\ref{fig:overlap_irm}, for the very-high-risk E.\,coli outcome. \end{flushleft}}
+\end{figure}
 
-% OLS estimates are excluded from specific-treatment panels due to quasi-complete separation: country fixed effects perfectly predict zero treatment in several countries (e.g., Benin and the Central African Republic have a 0\% boil rate), causing infinite MLE in the logistic propensity model and rank-deficient fits in the outcome model. Regularized learners (lasso, ridge, elastic net) are unaffected, as penalties prevent coefficient divergence. The stacked ensemble for specific treatments uses only five base learners (lasso, ridge, elastic net, random forest, XGBoost) to avoid OLS contamination. Cross-fitting is implemented with $K = 5$ folds and 2 repetitions.
+\begin{figure}[htbp]\centering
+\caption{Overlap diagnostics (IRM) --- under-five diarrhea}\label{fig:overlap_irm_u5}
+\includegraphics[width=\linewidth]{overlap_U5_diarrhea.png}
+{\footnotesize\begin{flushleft} \textit{Notes:} As Figure~\ref{fig:overlap_irm}, for the under-five diarrhea outcome (U5 sample). \end{flushleft}}
+\end{figure}
 
-% Is this still true after discussion of causal pathway?: An important feature of our specification concerns the inclusion of source-water E. coli controls. For diarrhea outcomes, source-water contamination dummies are included as confounders, since they plausibly affect both treatment adoption and child health. For E. coli contamination outcomes, however, source-water contamination is \textit{not} included: it lies on the causal pathway from treatment to the outcome (i.e., it is a mediator rather than a confounder), and conditioning on it would block the effect of interest.
+% ---- APOS overlap diagnostics, all three outcomes ----
+\begin{figure}[htbp]\centering
+\caption{Overlap diagnostics (APOS) --- Some Risk Home E.\,coli}\label{fig:overlap_apos}
+\includegraphics[width=\linewidth]{overlap_apos_HH_SomeRiskHome.png}
+{\footnotesize\begin{flushleft} \textit{Notes:} Cross-fitted APOS nuisances by treatment \emph{level} (columns: no treatment and each method, estimated jointly on the full sample with a multinomial propensity) and learner. Top row: per-level propensity $\hat p_d(X)=P(D{=}d\mid X)$; bottom row: outcome prediction $\hat g(X)$. Dotted lines mark the $[0.01,0.99]$ trimming bounds. \end{flushleft}}
+\end{figure}
 
+\begin{figure}[htbp]\centering
+\caption{Overlap diagnostics (APOS) --- Very High Risk Home E.\,coli ($\geq 101$ CFU)}\label{fig:overlap_apos_vh}
+\includegraphics[width=\linewidth]{overlap_apos_HH_VeryHighRiskHome.png}
+{\footnotesize\begin{flushleft} \textit{Notes:} As Figure~\ref{fig:overlap_apos}, for the very-high-risk E.\,coli outcome. \end{flushleft}}
+\end{figure}
 
-\subsection{Causal Chain}
-
-We identify the following causal chain:
-\begin{equation}
-M_{\text{source}} \to T \to M_{\text{drinking}} \to Y,
-\end{equation}
-where $M_{\text{source}}$ is the baseline water quality measured as CFU \textit{E. coli} count, discretized as: 0 = No risk (0 CFU), 1 = Some risk ($1 \leq \text{CFU} < 100$), and 2 = Very high risk (CFU $\geq 100$). This discretization is motivated by both the measurement protocol and international health guidelines.
-
-\subsubsection{Measurement Protocol and WHO Guidelines}
-
-The MICS water quality module follows standardized protocols developed jointly by UNICEF and the Joint Monitoring Programme (JMP). Field teams collected 100 mL water samples from two distinct locations:
-
-\begin{enumerate}
-    \item \textbf{Source water ($M_{\text{source}}$)}: Water collected directly from the household's primary drinking water source (e.g., piped connection, well, spring, rainwater collection, or vendor). This represents the baseline contamination level before any household-level handling or treatment.
-    
-    \item \textbf{Drinking water ($M_{\text{drinking}}$)}: Water stored in the household and actually consumed, collected by requesting a glass of drinking water from the respondent. This reflects the cumulative effect of source quality, household treatment practices, transport, and storage conditions.
-\end{enumerate}
-
-Samples were analyzed using portable membrane filtration (CompactDry EC plates), with results reported as colony-forming units (CFU) per 100 mL. The measurement is right-censored at 100 CFU, as the test plates become unreadable beyond this threshold.
-
-The World Health Organization (WHO) Guidelines for Drinking-water Quality state that \textit{E. coli} ``must not be detectable in any 100 mL sample'' of water intended for drinking \citep{who_gdwq_2017, who_gdwq_2022}. The WHO explicitly notes that ``the presence of \textit{E. coli} indicates faecal contamination of drinking-water'' and that ``immediate investigative action must be taken if \textit{E. coli} are detected.'' \citep{who_gdwq_2022}
-
-While the WHO guideline is zero tolerance, empirical research in low- and middle-income countries recognizes that faecal contamination is widespread in rural and untreated water supplies \citep{who_gdwq_2022}. The three-category discretization used in this analysis aligns with risk-based frameworks:
-
-\begin{itemize}
-    \item \textbf{No risk (0 CFU)}: Meets WHO guideline; no detectable faecal contamination.
-    \item \textbf{Some risk (1--99 CFU)}: Indicates faecal contamination requiring attention; associated with elevated risk of waterborne disease.
-    \item \textbf{Very high risk ($\geq 100$ CFU)}: Indicates severe faecal contamination; substantially elevated risk of diarrheal disease and other waterborne illnesses.
-\end{itemize}
-
-Research indicates that \textit{E. coli} concentrations exceeding 100 CFU/100 mL are associated with significantly increased odds of detecting enteric pathogens including \textit{Campylobacter}, \textit{Cryptosporidium}, \textit{Salmonella}, and pathogenic \textit{E. coli} O157:H7 \citep{van_dyke_2012, banihashemi_2015}. This threshold thus represents a meaningful health risk breakpoint in addition to being the measurement ceiling.
-
-$T$ denotes the treatment variable. We evaluate two treatment specifications: (1) \textit{Any treatment}: a binary indicator (0 = no treatment, 1 = any treatment), and (2) \textit{Multitreatment}: categorical treatment by type---boil, chlorine, filter, or other---each compared to the control (no treatment).
-
-An important identification insight concerns the role of $M_{\text{source}}$. If we ignore the path $M_{\text{source}} \to T$, we end up comparing ``clean-source'' households who do not treat with ``dirty-source'' households who do treat. Because those who treat water are systematically starting from a worse baseline, a simple comparison would underestimate the effectiveness of treatment, as $M_{\text{source}}$ acts as a confounder. \footnote{Conversely, conditioning on $M_{\text{drinking}}$ in the base model would block the biological pathway (it acts as a mediator), which would lead to observing no treatment effect. Our empirical strategy therefore controls for $M_{\text{source}}$ but does not condition on $M_{\text{drinking}}$.}
-   $Home$ = drinking water E. coli; $Y$ = child diarrhea.
-   \end{flushleft}
-   }
-   \end{figure}
-
-where $M_{\text{source}}$ is the baseline water quality measured as CFU \textit{E. coli} count, discretized as: 0 = No risk (0 CFU), 1 = Some risk ($1 \leq \text{CFU} < 100$), and 2 = Very high risk (CFU $\geq$ 100). This discretization is motivated by the fact that the original water quality variables are right-censored at 101 CFU.
-
-$T$ denotes the treatment variable. We evaluate two treatment specifications: (1) \textit{Any treatment}: a binary indicator (0 = no treatment, 1 = any treatment), and (2) \textit{Multitreatment}: categorical treatment by type---boil, chlorine, filter, or other---each compared to the control (no treatment).
-
-An important identification insight concerns the role of $M_{\text{source}}$. If we ignore the path $M_{\text{source}} \to T$, we end up comparing ``clean-source'' households who do not treat with ``dirty-source'' households who do treat. Because those who treat water are systematically starting from a worse baseline, a simple comparison would underestimate the effectiveness of treatment, as $M_{\text{source}}$ acts as a confounder. \footnote{Conversely, conditioning on $M_{\text{drinking}}$ in the base model would block the biological pathway (it acts as a mediator), which would lead to observing no treatment effect. Our empirical strategy therefore controls for $M_{\text{source}}$ but does not condition on $M_{\text{drinking}}$.}
+\begin{figure}[htbp]\centering
+\caption{Overlap diagnostics (APOS) --- under-five diarrhea}\label{fig:overlap_apos_u5}
+\includegraphics[width=\linewidth]{overlap_apos_U5_diarrhea.png}
+{\footnotesize\begin{flushleft} \textit{Notes:} As Figure~\ref{fig:overlap_apos}, for the under-five diarrhea outcome (U5 sample). \end{flushleft}}
+\end{figure}
 
 
 
-\subsection{Characteristics associated with household water treatment (JA To update)}
-To characterize the factors associated with household water treatment, this study employs
 
+\begin{figure}[htbp]\centering
+\caption{Frequency count of treatment and country}\label{ABC}
+\begin{subfigure}[b]{0.49\textwidth}\includegraphics[width=\textwidth]{Freq_Country_Treatment_HH.eps}\end{subfigure}
+\begin{subfigure}[b]{0.49\textwidth}\includegraphics[width=\textwidth]{Freq_Country_Treatment_Child.eps}\end{subfigure}
+{\footnotesize  \begin{flushleft} Notes: \end{flushleft}}
+\end{figure}
+
+\clearpage
 \subsection{Control Variables}
-This study reports three sets of estimates: (1 and 2) OLS estimates with and without controls, and (3) Double/Debiased Machine Learning (DDML) estimates using the same set of control variables as in the OLS specification.
+All specifications --- the OLS and the DDML estimators (IRM and APOS) --- use the same control vector, and within DDML it enters both the outcome model and the propensity model. The vector is common to the household E. coli and under-five diarrhea samples; the under-five sample adds two child-level controls, described below.
 
-The control vector includes the following household and environmental characteristics. Household wealth is captured by a set of five wealth-index quintile dummies. The education of the household head is represented by five dummies corresponding to none, primary, lower secondary, upper secondary, and college education, plus a category for missing values.
+The household and environmental controls are: (i) household wealth, as four wealth-index quintile indicators (quintiles two through five, relative to the poorest); (ii) education of the household head, as indicators for primary and for secondary-or-higher education together with a missing-value category, relative to no education; (iii) urban versus rural residence; (iv) the main drinking-water source, as grouped MICS categories (piped supply, tube well or borehole, protected and unprotected wells and springs, surface and rainwater, packaged water, and other); (v) sanitation, as indicators for pit latrine, open defecation, and a missing category, relative to a flush toilet; (vi) household composition, as indicators for the presence of any under-five child, of a girl under fifteen, and of a boy under fifteen; and (vii) the contamination of the household's source water, as deciles of the source-water E. coli test (CFU per 100\,ml).
 
-For environmental factors, urban residence is indicated by a binary variable. Water source type is captured by 15 detailed dummies corresponding to the MICS classification: piped water into the dwelling, piped water to yard/plot, piped water to neighbor, public tap/standpipe, tube well/borehole, protected well, unprotected well, protected spring, unprotected spring, rainwater, tanker-truck, cart with small tank, surface water, bottled water, and other. Sanitation is captured by a binary indicator for improved latrine facilities. The number of children in the household (0, 1, or 2) is included to account for differences in exposure, water use, and hygiene practices.
+Country fixed effects (one indicator per country) absorb cross-country heterogeneity in baseline contamination risk, infrastructure, climate, and public-health environment. Within the interactive (IRM) and potential-outcome (APOS) frameworks these indicators also let treatment effects vary across country contexts, where the effectiveness of household treatment may depend on local environmental and institutional conditions.
 
-Importantly, country fixed effects (25 dummies) are included to account for cross-country heterogeneity in baseline contamination risk, infrastructure quality, climate, and public health environments. Including country indicators in the covariate set also allows the IRM framework to capture potential differences in treatment effects across country contexts, as the effectiveness of household water treatment may vary with local environmental and institutional conditions.
+For the under-five (diarrhea) sample the control vector is augmented with two child-level variables: the child's age in years and the child's sex. No other controls differ between the two samples.
 
-The same set of control variables is included in both the outcome model and the propensity score model of the DDML framework, with one important exception: for diarrhea outcomes, source-water E.\,coli risk dummies (no risk, moderate, very high) are included as confounders, since source contamination plausibly affects both treatment adoption and child health. For E.\,coli contamination outcomes, however, source-water contamination is \textit{not} included as a control, as it lies on the causal pathway from treatment to the outcome (i.e., it is a mediator rather than a confounder), and conditioning on it would block the effect of interest.
+Two source-water variables warrant comment. The decile measure above enters every model as a confounder: source contamination is measured upstream of the household's point-of-use treatment decision and plausibly drives both whether a household treats and the health outcome, so it is a pre-treatment confounder rather than a mediator. A separate, coarser categorisation of source risk (no risk, moderate, very high) is not used as a control; it instead serves as the dimension along which we examine treatment-effect heterogeneity, since point-of-use treatment is expected to matter little when source water is clean and more when it is contaminated. The household's number of under-five children is likewise not a control --- household composition is captured by the indicators in~(vi), and the child count is reserved as a moderator in the heterogeneity analysis.
 
-
-\subsection{Subsample analysis and heterogeneity by source-water contamination}
-
-A central advantage of the MICS data is the availability of direct measures of \emph{E.~coli} contamination at the household's water source. This allows us to examine heterogeneity in the effectiveness of household water treatment by baseline microbial risk, a dimension that is conceptually important for identification and interpretation. Treatment technologies are expected to have limited impact when source water is uncontaminated, while their potential benefits should be larger when households are exposed to higher contamination levels.
-
-We stratify households according to baseline source-water contamination (rather than point-of-use samples). Low-risk sources are defined as 0 CFU of \emph{E.~coli}, moderate-risk sources as 1-100 CFU, and high-risk sources as more than 100 CFU per 100 mL. For households drawing from low-risk sources, we expect little or no treatment effect, as there is essentially no contamination to remove. In contrast, for households exposed to moderate or high contamination, larger reductions in \emph{E.~coli} are expected unless treatment practices are inefficient (e.g.\ incorrect or inconsistent application) or environmental contamination is sufficiently severe to offset treatment effectiveness.
-
-In the full sample of 54,340 households, 23,079 households rely on low-risk sources, 19,648 households are exposed to moderate contamination, and 11,613 households draw from highly contaminated sources. The corresponding DDML estimates for each subsample are reported in Tables X and Y, with stacking weights shown in Table~Z.
-
-\section{Descriptive Statistics}\label{Descriptive}\setcounter{figure}{0}\setcounter{table}{0}
-Table \ref{Desc1} presents household characteristics and water treatment behavior based on the contamination level of the source water. The final sample size is \ToTSample{} households from 25 countries, with 25,518 (43 percent) in the low-risk category, 21,844 (37 percent) in the moderate-risk category, and 12,271 (21 percent) in the very high-risk category at the water source.
-
-%-------------------------------------------------------------%
-{\renewcommand\normalsize{}\normalsize\singlespacing
-\input{Table/Descript_ExtMain_Risk_ext.tex}
-}
-%-------------------------------------------------------------%
-
-
-\clearpage
 \section{Empirical Results}\label{Empirical}
-The main DDML estimates for the PLM parameter are reported in Tables~\ref{SR_plm} and~\ref{VH_plm}, which show, for each nuisance specification and control set, the estimated effect of household water treatment on the probability of being in the \emph{some risk} and \emph{very high risk} categories, respectively. Table~\ref{w_plm} reports the corresponding stacking weights assigned to each base learner in the preferred DDML specification, indicating which algorithms contribute most to the final, debiased estimates.
+This section presents ordinary least squares (OLS) estimates as a benchmark, followed by DDML estimates from the any-treatment IRM and the method-specific APOS specifications.
 
-This section presents the ordinary least squares (OLS) estimates as a benchmark, followed by results from the Double/Debiased Machine Learning (DDML) framework using both the partially linear and interactive specifications.
+\subsection{Characteristics Associated with Water Treatment}\label{Lasso}
 
-\subsection{Characteristics Associated with Water Treatment}\label{LASSO}
+Before estimating treatment effects, we examine the characteristics associated with adoption of any household water treatment. Table~\ref{tab:treatment_predictors} reports a logistic regression (signed log-odds), penalised-logit selection (Lasso and Elastic Net), and tree-based variable importance (random forest and XGBoost). Every model includes country fixed effects, and the covariates are ordered by their mean random-forest/XGBoost importance. Adoption is strongly patterned. It rises with household wealth (top-quintile log-odds $+0.93$ relative to the poorest), with the education of the household head, and with source-water E.\,coli deciles. Households facing dirtier source water are more likely to treat, although the strongest predictors are the middle source-water deciles (5--8), not the most contaminated deciles (9--10). This pattern suggests that households facing the dirtiest source water often do not, or cannot, treat it. Adoption is lower among households relying on packaged or bottled water and among households with poorer sanitation. The five learners agree on the main predictors and predict adoption well (AUC $\approx 0.86$--$0.90$). These wealth, sanitation, and source-contamination gradients are precisely the forms of confounding that the DDML adjustment is designed to remove.
 
-Before presenting causal estimates, we first examine the non-causal associations between household characteristics and water treatment adoption. This descriptive analysis serves three purposes: (1) it validates the hypothesized causal chain by showing that source water contamination predicts treatment adoption; (2) it identifies which household characteristics are most strongly associated with treatment behavior; and (3) it provides insight into potential confounding patterns that the DDML framework must address.
+\input{Table/table_treatment_predictors.tex}
 
-We employ two complementary machine learning approaches: (1) LASSO-logistic regression for interpretable coefficients and average marginal effects (AMEs), and (2) XGBoost (extreme gradient boosting) for flexible modeling of non-linearities and interactions, with variable importance measures to identify the most predictive characteristics.
+\subsection{Water Treatment Effect on E. coli}\label{OLS}
 
-\subsubsection{LASSO-Logistic Regression}
+Tables \ref{tab:Est_EColi_OLS_SomeRiskHome_full} and \ref{tab:Est_EColi_OLS_VeryHighRiskHome_full} present ordinary least squares (OLS) estimates of the association between household water treatment and E. coli contamination in household drinking water, using the same set of control variables and stratifying households by the level of E. coli risk at the water source.
 
-We estimate a sparse logistic regression model with L1 regularization:
-\begin{equation}
-\max_{\beta} \sum_{i=1}^{n} \left[ D_i \log(p_i) + (1-D_i)\log(1-p_i) \right] - \lambda \sum_{j=1}^{p} |\beta_j|,
-\end{equation}
-where $D_i$ is the treatment indicator, $p_i = \Pr(D_i=1|X_i)$, and $\lambda$ is selected via 10-fold cross-validation to minimize out-of-sample deviance. The LASSO penalty shrinks coefficients of less predictive covariates toward zero, providing automatic variable selection in high-dimensional settings.
+Table \ref{tab:Est_EColi_OLS_SomeRiskHome_full} examines the probability that household drinking water contains any detectable E.\,coli. Compared with the unconditional estimates in Panel A, the coefficients in Panel B remain negative but are smaller in magnitude, suggesting that observable controls absorb part of the upward bias in the simple correlation. The specification with basic controls indicates that household water treatment is associated with a 9.4 percentage-point reduction in the probability of detecting E.\,coli. Given that 78 percent of households in the sample have detectable E.\,coli in drinking water, this estimate implies a substantial reduction in contamination risk associated with water treatment.
 
-We estimate two specifications:
-\begin{enumerate}
-    \item \textbf{Any treatment}: Binary outcome (any treatment vs. no treatment)
-    \item \textbf{Multitreatment}: Multinomial outcome (boil, chlorine, filter, other vs. no treatment)
-\end{enumerate}
-
-%-------------------------------------------------------------%
-{\renewcommand\normalsize{\small}\normalsize\singlespacing
-\input{Table/LASSO_AnyTreatment.tex}
-}
-%-------------------------------------------------------------%
-
-Table \ref{tab:lasso_any} presents the LASSO-logistic regression results for any treatment. After variable selection, the model retains [X] out of [Y] covariates. Key findings include:
-
-\begin{itemize}
-    \item \textbf{Source water contamination}: Households with moderate-risk source water (1--100 CFU) are [X] percentage points more likely to treat compared to those with no contamination (p\textless0.01). For very high-risk sources ($\geq$100 CFU), the probability increases by [Y] percentage points. This confirms the hypothesized causal pathway $M_{\text{source}} \to T$ and validates that households respond to contamination risk.
-    
-    \item \textbf{Wealth}: Higher wealth quintiles show monotonically increasing treatment probabilities, with quintile 5 households [X]pp more likely to treat than quintile 1 (p\textless0.01). This pattern is consistent with treatment requiring financial resources for fuel, chlorine, or filters.
-    
-    \item \textbf{Education}: Household head education shows a positive gradient, with college-educated heads [X]pp more likely to treat compared to no education (p\textless0.05). This may reflect greater health knowledge or risk awareness.
-    
-    \item \textbf{Urban residence}: Urban households are [X]pp more likely to treat (p\textless0.01), potentially due to better access to treatment products and infrastructure.
-    
-    \item \textbf{Country fixed effects}: Large cross-country variation persists even after controlling for observables, ranging from [X]\% treatment prevalence in [Country A] to [Y]\% in [Country B]. This reflects differences in infrastructure, cultural practices, and public health environments.
-\end{itemize}
-
-%-------------------------------------------------------------%
-{\renewcommand\normalsize{\small}\normalsize\singlespacing
-\input{Table/LASSO_MultiTreatment.tex}
-}
-%-------------------------------------------------------------%
-
-Table \ref{tab:lasso_multi} shows multinomial LASSO results by treatment type. Notably:
-\begin{itemize}
-    \item \textbf{Boiling}: Most strongly associated with education and wealth; less common in urban areas (potentially due to fuel costs or alternative options).
-    \item \textbf{Chlorine}: More common among wealthier households and in urban areas; strongly predicted by source contamination.
-    \item \textbf{Filters}: Associated with higher wealth quintiles; may reflect higher upfront costs.
-    \item \textbf{Other methods}: More common in rural areas and among poorer households.
-\end{itemize}
-
-\subsubsection{XGBoost Variable Importance}
-
-To complement the parametric LASSO approach and capture potential non-linearities and interactions, we estimate an XGBoost classifier. XGBoost is a tree-based ensemble method that builds sequential decision trees, with each tree correcting errors from the previous iteration \citep{chen_xgboost_2016}. The method excels at capturing complex interactions without explicit specification.
-
-We use the following hyperparameters (selected via grid search): maximum depth = [X], learning rate ($\eta$) = [Y], number of rounds = [Z], subsample ratio = [W]. The model achieves an out-of-sample AUC of [AUC], compared to [AUC] for LASSO-logistic, suggesting [comparable/superior] predictive performance.
-
-%-------------------------------------------------------------%
-{\renewcommand\normalsize{\small}\normalsize\singlespacing
-\input{Table/XGBoost_VariableImportance.tex}
-}
-%-------------------------------------------------------------%
-
-Table \ref{tab:xgb_importance} reports variable importance measured by \textit{gain}, which captures the average reduction in the loss function (logistic deviance) attributable to splits on each variable. Higher gain indicates greater predictive importance.
-
-The top predictors of water treatment are:
-\begin{enumerate}
-    \item \textbf{Source water risk level} (gain: [X]\%): Confirms that baseline contamination is the strongest predictor of treatment, validating the causal chain.
-    \item \textbf{Country fixed effects} (gain: [Y]\%): Substantial cross-country heterogeneity in treatment practices.
-    \item \textbf{Wealth index} (gain: [Z]\%): Economic resources constrain treatment adoption.
-    \item \textbf{Water source type} (gain: [W]\%): Households using different source types (piped, well, surface water) face different contamination risks and treatment needs.
-    \item \textbf{Urban/rural} (gain: [V]\%): Reflects infrastructure and market access differences.
-\end{enumerate}
-
-Notably, child characteristics (age, sex) and sanitation show relatively low importance for treatment prediction, suggesting these variables primarily affect health outcomes rather than treatment decisions directly.
-
-\subsubsection{Comparison with OLS}\label{OLS}
-
-For comparison, Table \ref{tab:ols_treatment} presents linear probability model (OLS) estimates of the same specifications. The OLS results show similar directional patterns but differ in magnitude for several covariates, particularly for extreme values of source contamination and wealth. The machine learning methods better capture:
-\begin{itemize}
-    \item Non-linear wealth gradients (treatment probability plateaus at higher wealth levels)
-    \item Interactions between source risk and wealth (poor households with highly contaminated sources show lower treatment rates than rich households in similar circumstances)
-    \item Country-specific patterns that deviate from the linear average
-\end{itemize}
-
-These descriptive results validate the hypothesized causal chain and highlight the importance of flexibly controlling for source water contamination and household characteristics. The DDML framework builds on these insights by using machine learning to adjust for confounding while providing unbiased causal estimates of treatment effects on water quality and health outcomes.
-
-\subsection{OLS and DDML}\label{OLS}
-
-Tables \ref{tab:Est_EColi_OLS_SomeRiskHome_full} and \ref{tab:Est_EColi_OLS_VeryHighRiskHome_full} present ordinary least squares (OLS) estimates of the association between household water treatment and \textit{E. coli} contamination in household drinking water, using the same set of control variables and stratifying households by the level of \textit{E. coli} risk at the water source.
-
-Table \ref{tab:Est_EColi_OLS_SomeRiskHome_full} focuses on the probability that any \textit{E. coli} is detected in household drinking water. Among households with no detectable \textit{E. coli} at the source, 23,595 households are included in the sample, yet approximately 50 percent (see the mean of the dependent variable) exhibit some \textit{E. coli} contamination at the point of use. Water treatment is associated with a statistically significant reduction of 7.3 percentage points in the probability of \textit{E. coli} detection. The estimated reduction is larger among households whose source water contains moderate contamination levels (1-100 CFU). In contrast, the estimated effects are smaller for households facing high-risk source contamination, potentially reflecting recontamination during storage or inappropriate treatment practices, as chlorine is less effective under high organic load or incorrect dosing.
+Among households with no detectable E.\,coli at the source, 23,595 households are included in the sample, yet approximately 50 percent exhibit some E.\,coli contamination at the point of use. Water treatment is associated with a statistically significant 7.3 percentage-point reduction in the probability of E.\,coli detection. The estimated reduction is larger among households whose source water contains moderate contamination levels (1--100 CFU). In contrast, the estimated effects are smaller for households facing high-risk source contamination, potentially reflecting recontamination during storage, inconsistent treatment, or lower chlorine effectiveness under high organic load or incorrect dosing.
 
 
 %-------------------------------------------------------------%
-{\renewcommand\normalsize{\small}\normalsize\singlespacing
+{\renewcommand\normalsize{\small}\normalsize\singlespacing  
 \input{Table/Est_EColi_OLS_SomeRiskHome_full.tex}
-}
-%-------------------------------------------------------------%
+}  
+%-------------------------------------------------------------% 
 
-Table \ref{tab:Est_EColi_OLS_VeryHighRiskHome_full} examines the probability that household drinking water contains very high \textit{E. coli} contamination levels (greater than 100 CFU). Overall, water treatment does not significantly reduce the probability of very high contamination in households whose source water is classified as low risk. This is partly mechanical: only about 14 percent of these households exhibit very high contamination at the point of use, limiting scope for detectable treatment effects. However, the estimated effect of water treatment becomes larger in magnitude as source contamination risk increases, suggesting that treatment effectiveness is more pronounced when households are exposed to higher baseline microbial risk at the source.
+Table \ref{tab:Est_EColi_OLS_VeryHighRiskHome_full} examines the probability that household drinking water contains very high E.\,coli contamination (greater than 100 CFU). Overall, water treatment does not significantly reduce the probability of very high contamination among households whose source water is classified as low risk. This is partly mechanical: only about 14 percent of these households exhibit very high point-of-use contamination, leaving limited scope for detectable treatment effects. The estimated association becomes larger in magnitude as source contamination risk increases, suggesting that treatment effectiveness is more visible when households face higher baseline microbial risk at the source.
+
+%-------------------------------------------------------------%
+{\renewcommand\normalsize{\small}\normalsize\singlespacing  
+\input{Table/Est_EColi_OLS_VeryHighRiskHome_full.tex}}  
+%-------------------------------------------------------------% 
+
+
+Table~\ref{tab:results-ecoli} reports the DDML estimates of household water treatment on E.\,coli contamination at the point of use. The any-treatment IRM estimates show a clear reduction in contamination. In the preferred stacked specification, any household water treatment lowers the probability of any detectable E.\,coli by 8.5 percentage points, relative to an outcome mean of 73.7 percent, and lowers the probability of very high contamination by 7.1 percentage points, relative to a mean of 30.8 percent. The estimates are statistically significant across all nuisance learners and are close in magnitude across specifications, indicating that the result is not driven by a particular machine-learning model.
+
+The APOS contrasts show substantial differences by treatment method. Boiling produces the largest and most consistent reduction: in the stacked specification, it lowers any detectable E.\,coli by 16.2 percentage points and very high contamination by 10.6 percentage points. Chlorination also reduces contamination, but the estimated effect is smaller, at 3.3 percentage points for any detectable E.\,coli and 4.0 percentage points for very high contamination. Filtering does not reduce any detectable E.\,coli in the stacked specification and only reduces very high contamination by 3.3 percentage points. The ``other'' category is large and negative for both outcomes, but because it pools heterogeneous practices, it should be interpreted as an aggregate residual category rather than as a single treatment mechanism. Overall, the DDML estimates support a strong water-quality result: household treatment reduces measured E.\,coli contamination, with the clearest method-specific evidence for boiling and more modest evidence for chlorination.
 
 %-------------------------------------------------------------%
 {\renewcommand\normalsize{\small}\normalsize\singlespacing
-\input{Table/Est_EColi_OLS_VeryHighRiskHome_full.tex}
-}
+\input{Table/table_results_ecoli.tex}}
 %-------------------------------------------------------------%
-
-\begin{itemize}
-	\item Some risk: Smaller than OLS
-	\item High risk: Larger than OLS
-\end{itemize}
-
-
-
-\input{Table/benchmark_effects}
-
-\input{Table/heterogeneity_risksource}
-
-
-\begin{landscape}
-%\include{Table/SomeRiskHome_PLM_BASE_EXT_All}\label{SR_plm}
-\end{landscape}
-
-\begin{landscape}
-%\include{Table/VeryHighRiskHome_PLM_BASE_EXT_All}\label{VH_plm}
-\end{landscape}
-
 
 \clearpage
-\section{Diarrhea and fever}
+\subsection{Water Treatment Effect on Diarrhea}
+Table \ref{tab:Est_OLS_diarrhea_full} shows OLS estimates of the association between household water treatment practices and the probability that children under age five experienced diarrhea during the two weeks prior to the survey. Panel A reports estimates without extensive household controls, while Panel B adds child and household characteristics. The results are further stratified by contamination risk at the source water level.
+
+%-------------------------------------------------------------%
+{\renewcommand\normalsize{\small}\normalsize\singlespacing  
+\input{Table/Est_OLS_diarrhea_full.tex}
+}  
+%-------------------------------------------------------------% 
+
+In Panel A, households reporting any type of water treatment show a negative association with diarrhea prevalence across all contamination categories. The magnitude ranges from approximately 3 to 4 percentage points, and the estimates are statistically significant. However, this relationship appears to be driven primarily by households reporting boiling and “other” treatment methods, while chlorination and straining generally show weak or statistically insignificant associations. Boiling is consistently associated with lower diarrhea prevalence across contamination categories, with coefficients around 4.5 to 5 percentage points. These results are consistent with the idea that households engaging in water treatment may reduce exposure to contaminated drinking water.
+
+However, once child and household characteristics are included in Panel B, the negative association between water treatment and diarrhea becomes substantially weaker and generally statistically insignificant. This pattern suggests that the estimates in Panel A partly capture differences in underlying household characteristics rather than the causal effect of treatment itself. For example, households choosing to treat water may also differ systematically in education, sanitation, wealth, hygiene behavior, or access to safer infrastructure. Controlling for these factors moves the estimates closer to zero. At the same time, the disappearance of statistical significance may also reflect specification limitations of the OLS framework, including measurement error in self-reported treatment behavior or unobserved heterogeneity that remains uncontrolled.
+
+The child demographic variables show patterns that are broadly consistent with epidemiological expectations. Male children exhibit slightly higher diarrhea prevalence in several specifications. Age profiles are particularly informative: compared to children age 0, diarrhea prevalence is substantially higher among children age 1, likely reflecting the transition away from exclusive breastfeeding and increased exposure to contaminated food and water sources. After age 1, diarrhea prevalence declines steadily with age. Children ages 3 and 4 show significantly lower diarrhea prevalence relative to infants, which is consistent with the development of acquired immunity and improved hygiene behavior as children grow older.
+
+Table~\ref{tab:results-diarrhea} reports the DDML estimates for child diarrhea. The any-treatment IRM estimate is essentially zero in every specification. In the preferred stacked specification, any treatment is associated with a 0.5 percentage-point reduction in diarrhea, against an outcome mean of 13.9 percent, and the estimate is not statistically significant. This implies that the broad treatment-versus-no-treatment contrast provides no evidence of a detectable diarrhea reduction after flexible adjustment for the control vector.
+
+The method-specific APOS estimates are more mixed, but they do not overturn this conclusion. Boiling is negative and statistically significant in the stacked specification ($-2.9$ percentage points), and the ``other'' category is larger ($-5.0$ percentage points). However, these estimates are not as stable or defensible as the E.\,coli results: the boiling estimate changes sign in the OLS column, chlorination is close to zero in the stacked specification ($-0.2$ percentage points), and filtering is positive in the stacked specification ($+1.3$ percentage points). The robustness values are also near zero or very small for all diarrhea estimates. Thus, Table~\ref{tab:results-diarrhea} suggests at most weak method-specific associations for boiling and ``other,'' but it does not provide credible evidence that household water treatment reduces child diarrhea. The contrast with Table~\ref{tab:results-ecoli} is therefore central: water treatment measurably improves microbiological water quality, but the corresponding health outcome remains too noisy and confounded to identify with the same confidence.
 
 %-------------------------------------------------------------%
 {\renewcommand\normalsize{\small}\normalsize\singlespacing
-\input{Table/table_diarrhea.tex}
-}
+\input{Table/table_results_diarrhea.tex}}
 %-------------------------------------------------------------%
 
-%-------------------------------------------------------------%
-{\renewcommand\normalsize{\small}\normalsize\singlespacing
-\input{Table/table_diarrhea_subgroups.tex}
-}
-%-------------------------------------------------------------%
 
 % We estimate the causal effect of household water treatment on E. coli contamination using the DDML framework with XGBoost for nuisance function estimation (see Appendix Table~\ref{tab:robustness_comparison} for model performance). We present both PLR and IRM estimates, where convergence indicates linear effects and divergence suggests non-linearities.
 
@@ -507,7 +408,7 @@ Table \ref{tab:Est_EColi_OLS_VeryHighRiskHome_full} examines the probability tha
 
 % Stratifying by water source risk reveals important heterogeneity. Tables~\ref{tab:somerisk_no_risk}, \ref{tab:somerisk_moderate_to_high_risk}, and~\ref{tab:somerisk_very_high_risk} show SomeRiskHome effects by risk category.
 
-% Treatment effects are largest for moderate to high risk sources (9.9--11.5 percentage points), compared to very high risk (6.5--8.4 percentage points) and no-risk sources (6.0--6.8 percentage points). This inverted U-shaped pattern suggests households with moderate contamination benefit most-their water quality is poor enough to benefit from treatment but not so severe that point-of-use treatment is overwhelmed. Very high risk sources may indicate broader environmental contamination that household treatment alone cannot fully address.
+% Treatment effects are largest for moderate to high risk sources (9.9--11.5 percentage points), compared to very high risk (6.5--8.4 percentage points) and no-risk sources (6.0--6.8 percentage points). This inverted U-shaped pattern suggests households with moderate contamination benefit most—their water quality is poor enough to benefit from treatment but not so severe that point-of-use treatment is overwhelmed. Very high risk sources may indicate broader environmental contamination that household treatment alone cannot fully address.
 
 % Tables~\ref{tab:veryhigh_no_risk}, \ref{tab:veryhigh_moderate_to_high_risk}, and~\ref{tab:veryhigh_very_high_risk} show VeryHighRiskHome effects by risk category.
 
@@ -517,50 +418,111 @@ Table \ref{tab:Est_EColi_OLS_VeryHighRiskHome_full} examines the probability tha
 
 \iffalse
 %-------------------------------------------------------------%
-{\renewcommand\normalsize{}\normalsize\singlespacing
+{\renewcommand\normalsize{}\normalsize\singlespacing  
 \input{Table/ddml_partial_SomeEcoli_bi_full.tex}
 \input{Table/ddml_interactive_SomeEcoli_bi_full.tex}
 \input{Table/ddml_partial_Ecoli_bi_full.tex}
 \input{Table/ddml_interactive_Ecoli_bi_full.tex}
 \input{Table/ddml_partial_diarrhea.tex}
 \input{Table/ddml_interactive_diarrhea.tex}
-}
-%-------------------------------------------------------------%
+}  
+%-------------------------------------------------------------% 
 \fi
 
-\section{Conclusion}
 
-The Lancet Commission on water, sanitation, and hygiene highlights the urgent need for investments in WASH services, particularly in low- and middle-income countries, to reduce health disparities. Access to safe drinking water is critical in preventing infectious diseases, including those caused by E. Coli contamination \cite{lancet2021commission}.
-%Another study provides updated estimates on the impact of water, sanitation, and hygiene (WASH) interventions on childhood diarrhoea in low- and middle-income countries (LMICs). It demonstrates that interventions such as water treatment at the point of use, improved drinking water sources, sanitation with sewer connections, and handwashing with soap can significantly reduce the risk of diarrhoea in children \cite{wolf2022effectiveness}. These findings highlight the crucial role of WASH interventions in mitigating diarrhoeal disease, although no studies evaluated interventions achieving universal access to safely managed WASH services. The Lancet Commission on water, sanitation, hygiene, and health highlights the critical importance of improving WASH services for controlling diarrheal diseases, particularly those caused by E. Coli contamination in water. Water treatment interventions should focus not only on microbiological water quality but also address a broader spectrum of health outcomes beyond diarrhea, including mental health and gender disparities \cite{stoler2023revisiting}.
 
+
+
+\subsection{Estimation and robustness}
+The DDML estimates reported above combine the two estimators motivated in the Methods section: the any-treatment effect is the full-sample interactive regression (the top row of each results table), and the method-specific effects are the APOS contrasts below it. Neither drops observations: the any-treatment IRM uses the full sample, and APOS keeps every household and reweights through a multinomial propensity, so both are estimated on representative samples.
+
+As a robustness check we re-estimate the headline specifications on the restricted sample (our robust specification), which drops the country cells where a method has weak within-country support (Appendix~\ref{app:overlap_rob1}); the robust-specification tables appear in Appendix~\ref{app:robust_tables} (Tables~\ref{tab:apos-rob1} and~\ref{tab:irm-rob1}). Because the restriction changes the estimation sample some movement is expected, but the qualitative conclusions hold: all signs are preserved for the any-treatment IRM and for every APOS contrast.
+
+\subsection{Sensitivity analysis}
+The regression tables establish the DDML point estimates; Table~\ref{tab:sensitivity-benchmark} asks a different question: whether those estimates could plausibly be explained away by omitted variables. This is the key credibility check for the paper. The DDML estimates are generally stable across nuisance learners, but learner stability does not address unobserved confounding. For that reason, the interpretation below focuses on the confounder-benchmarking table rather than on statistical significance alone.
+
+Conditional independence is not testable, so we assess how fragile each estimate is to a hypothetical unobserved confounder using the robustness value proposed by \citet{chernozhukov2022long} (RV, and its CI-adjusted variant RV$_\alpha$). The RV is the share of residual variation that a confounder would have to explain in both adoption and the outcome to drive the point estimate, or its $95\%$ confidence interval, to zero. The observed-control benchmarks give the scale for judging whether such a confounder is plausible. The columns $cf_y$ and $cf_d$ report how much residual variation each observed group explains in the outcome and in treatment adoption, while $\Delta\theta$ reports the bias that an omitted confounder as strong as that group would induce. A large value of $cf_y$ alone is not enough to threaten the estimate if the same variable is weakly related to adoption, and a large value of $cf_d$ alone is not enough if it is weakly related to the outcome. The most relevant diagnostic is therefore the implied bias $\Delta\theta$ relative to the DDML effect, together with the RV/RV$_\alpha$ values. Table~\ref{tab:sensitivity-benchmark} reports this benchmark, with the any-treatment IRM in Panel A and the APOS method-versus-none contrasts in Panel B.
+
+\input{Table/table_sensitivity_benchmark.tex}
+
+The same benchmark on the overlap-restricted sample is reported in Appendix~\ref{app:robust_tables}. The robustness values and confounder benchmarks are essentially unchanged, so the interpretation does not depend on the trimming rule. For the any-treatment estimates, the E.\,coli results are the most defensible. The RV/RV$_\alpha$ are 13.6/12.5 for any detectable household E.\,coli and 12.0/11.2 for very high contamination. In percentage-point terms, the largest observed benchmark biases remain smaller than the point estimates: source E.\,coli would induce a bias of 7.66 points against an 8.7-point any-treatment effect for any detectable contamination, while country fixed effects would induce 3.91 points against a 9.1-point effect for very high contamination. These are not proof that omitted-variable bias is absent, but they show that an omitted confounder would need to be stronger, in the relevant adoption--outcome combination, than the most threatening observed benchmarks to eliminate the E.\,coli effects. By contrast, the any-treatment diarrhea estimate is small, statistically insignificant, and has an RV/RV$_\alpha$ of only 0.5/0.0. This estimate would be eliminated by a confounder explaining almost no residual variation.
+
+The method-specific results sharpen this pattern. Boiling is the clearest microbiological result. Its RV/RV$_\alpha$ are 12.0/11.5 for any detectable E.\,coli and 6.6/6.2 for very high contamination, and the largest observed benchmark biases remain below the estimated effects of 16.9 and 10.2 percentage points. The ``other'' category is also robust for E.\,coli, with RV/RV$_\alpha$ values of 8.2/7.5 and 7.9/7.4. Chlorination and filtering are weaker in sensitivity terms. Their E.\,coli point estimates are smaller, and their RV$_\alpha$ values are mostly below two percent. We therefore interpret chlorination and filtering as evidence of smaller or less consistently identified reductions under routine household implementation, not as effects with the same causal strength as boiling or the residual ``other'' category.
+
+The diarrhea estimates do not pass the same credibility threshold. Boiling and ``other'' are statistically significant in the APOS table, but their RV/RV$_\alpha$ values are only 1.4/1.0 and 2.4/1.9. Filtering is positive for diarrhea and also fragile, with an RV/RV$_\alpha$ of 0.7/0.1, while chlorination is essentially zero. These values are too small to support a causal interpretation in an observational design where unmeasured hygiene, food safety, breastfeeding, sanitation behaviour, and care-seeking may affect both treatment adoption and diarrhea. The correct reading is therefore not that treatment has no biological pathway to diarrhea, but that this design cannot separate that pathway from omitted non-water determinants of illness.
+
+The benchmark also clarifies the selection process. Country fixed effects explain a large share of residual variation in adoption ($cf_d$) for boiling and filtering, and for any treatment in the diarrhea sample, but almost none for chlorination or ``other.'' This does not automatically invalidate those estimates because the bias depends on the joint relationship with the outcome. For example, country fixed effects are extremely predictive of adoption in the diarrhea sample ($cf_d=94.8$ for any treatment and $100.0$ for boiling and filtering), but the corresponding diarrhea RVs remain close to zero, which means those estimates are fragile rather than protected by adjustment. For E.\,coli, country fixed effects and source E.\,coli are important observed benchmarks, but their implied $\Delta\theta$ values generally remain below the microbiological treatment effects. The reason is mechanical and substantive: $cf_d$ is large when adoption is clustered between countries and near zero when adoption varies within them. Boiling and filtering are nationally patterned; some countries practise them widely while others almost never do. Chlorination and ``other'' are rarer and more idiosyncratic, driven by local programmes and household circumstances within countries. Method-specific identification for boiling and filtering therefore depends especially on within-country support in the APOS multinomial propensity, whereas selection into chlorination and ``other'' is more within-country.
+
+The sensitivity analysis therefore supports an asymmetric conclusion about unobserved-variable bias. The E.\,coli estimates, especially any treatment, boiling, and the residual ``other'' category, are not merely statistically significant; they are also robust to omitted confounding of a strength comparable to the strongest observed benchmarks in the table. Chlorination and filtering show weaker robustness because their effects are smaller and their RV$_\alpha$ values are low. The diarrhea estimates are different. Even when statistically significant, they are too small and too sensitive to omitted confounding to carry the same causal interpretation. Thus, the paper can make a credible robustness argument for microbiological water quality, but not for child diarrhea.
+
+\subsection{Heterogeneity by group}
+The source-risk GATEs show where treatment appears to matter most. For any detectable E.\,coli, boiling reduces contamination in all source-risk groups, with effects of 15.2, 18.6, and 14.1 percentage points for households starting from no-risk, moderate-risk, and very-high-risk source water. The ``other'' category is also consistently negative, ranging from 11.1 to 20.8 points. Chlorination and filtering are more conditional: both reduce contamination for moderate- and very-high-risk source water, but are positive among households whose source water has no measured E.\,coli risk. This pattern suggests that these methods are most useful when there is contamination to remove, while the no-risk-source subgroup may capture residual selection, recontamination after collection, or measurement noise rather than a protective effect.
+
+{\renewcommand\normalsize{\small}\normalsize\singlespacing
+\input{Table/table_gate_risksource.tex}}
+
+For very high household E.\,coli contamination, the gradient by source risk is stronger. Boiling effects grow from 2.1 points in the no-risk-source group to 24.3 points in the very-high-risk-source group, and the ``other'' category grows from 5.9 to 45.0 points. Chlorination and filtering show the same qualitative pattern: positive or weak effects in the no-risk-source group, but sizeable reductions in the highest-risk source group. The heterogeneity results therefore support the mechanism implied by the main estimates. Treatment is most protective against severe point-of-use contamination when source-water risk is high.
+
+{\renewcommand\normalsize{\small}\normalsize\singlespacing
+\input{Table/table_gate_windex5.tex}}
+
+The wealth GATEs point to implementation differences rather than a simple poverty gradient. Boiling reduces any detectable E.\,coli in every wealth quintile, with effects declining from 17.3 points in the poorest quintile to 13.0 points in the richest. For very high contamination, boiling is also negative throughout, but smaller among richer households. The ``other'' category is consistently negative across wealth groups for both E.\,coli outcomes, although the category pools several practices and should not be interpreted as a single technology. Chlorination and filtering are less stable: they are protective in several lower- and middle-wealth groups but weak or positive in the richest quintile, consistent with differential baseline risk, correct use, storage conditions, or selection into methods.
+
+The diarrhea GATEs do not show a comparable mechanism. Boiling is negative for diarrhea in the three poorer quintiles but near zero in the two richer quintiles; chlorination is mostly indistinguishable from zero; filtering is sometimes positive; and ``other'' is negative in several groups but not uniformly precise. By source-risk group, the diarrhea estimates are also smaller and less coherent than the E.\,coli estimates. These subgroup patterns reinforce the main conclusion rather than adding a new one: household treatment is associated with meaningful reductions in microbiological contamination, especially where source-water risk is high, but the evidence does not show a stable, defensible reduction in child diarrhea.
+
+
+
+
+\section{Conclusion}  
+
+The Lancet Commission on water, sanitation, and hygiene highlights the continued need for investments in WASH services, particularly in low- and middle-income countries, to reduce health disparities. Safe drinking water remains central to preventing infectious disease, including disease risks associated with E.\,coli contamination \cite{lancet2021commission}. This paper contributes to that agenda by estimating the effects of naturally occurring household water treatment in observational MICS data, using objective water-quality tests and DDML methods designed for high-dimensional confounding.
+
+The results support a clear conclusion for drinking-water quality. Household water treatment reduces E.\,coli contamination at the point of use, and the estimated effects are stable across learners, estimators, and the overlap-restricted robustness sample. The method-specific APOS estimates indicate that boiling produces the largest reductions, while chlorination also reduces contamination but with smaller estimated effects. These estimates should be interpreted as effects of treatment practices as implemented by households, not as laboratory efficacy parameters.
+
+The evidence for child diarrhea is much weaker. Some DDML point estimates are statistically significant, but the sensitivity analysis shows that they are highly vulnerable to unobserved confounding. A weak omitted variable could explain them away. The most defensible interpretation is therefore asymmetric: household treatment improves measured microbiological water quality, but this study does not credibly identify a corresponding reduction in child diarrhea. That asymmetry is plausible because diarrhea depends on many channels not measured here, including food contamination, handwashing, sanitation behaviour, breastfeeding, environmental exposure, and recontamination during storage and handling.
+
+The larger estimated effect of boiling relative to chlorination should not be read as a policy recommendation to promote boiling. Boiling is time- and fuel-intensive and may contribute to household air pollution when solid fuels are used \citep{floess2025health}. Instead, the comparison highlights the practical challenges of achieving effective chlorination under routine household conditions. Households may apply chlorine products inconsistently, store them after opening for long periods, or use insufficient doses when source water has high chlorine demand from organic matter or microbial contamination. The smaller estimated effect of chlorination may therefore reflect implementation conditions rather than the intrinsic efficacy of chlorine as a treatment technology.
+
+The study has several limitations. The design relies on conditional independence after adjusting for observed covariates, including source-water E.\,coli contamination and country fixed effects. It cannot remove unobserved household hygiene, food-safety, or behavioural factors that are not recorded in MICS. Treatment is self-reported, so the analysis observes the stated primary treatment method but not dose, duration, consistency, or correct use. Finally, diarrhea is reported over a short recall window and is biologically multifactorial, which limits the predictive power of a water-focused design. Future work should link objective water-quality testing with richer behavioural, sanitation, and implementation measures, especially measures of correct and consistent treatment use.
 
 \subsection*{Contributors}
+Akito Kamei designed the study, conducted the analysis, interpreted the results, and drafted the manuscript.
 
-\subsection*{Declaration of interests}
+\subsection*{Ethics declaration}
+This study uses de-identified, publicly available MICS survey data. No new human-subject data were collected for this analysis.
+
+\subsection*{Declaration of interests}  
 All authors declare no competing interests.
 
-\subsection*{Data sharing}
-All data used for this and analytical codes are available immediately following publication without an end date to anyone for any purpose and are either published in the appendices or can be accessed through the corresponding author.
+\subsection*{Funding}
+No specific funding was declared for this study.
 
-\subsection*{Acknowledgments}
+\subsection*{Data sharing}  
+All data used for this study are publicly available through the MICS programme. Analytical code and derived outputs are available from the corresponding author upon reasonable request.
 
-\clearpage
+\subsection*{Acknowledgments}  
+The author thanks the UNICEF MICS programme and participating national statistical offices for making the survey data available.
+
+\subsection*{AI disclosure}
+AI-assisted editing tools were used to support language revision and manuscript organization. The author reviewed and remains responsible for all content, analysis, interpretation, and citations.
+
+\clearpage 
 % \nocite{*}
 \bibliographystyle{apacite}
 \bibliography{Citation_Water}
 
 
 
-\clearpage
-%%%%%%%
+\clearpage   
+%%%%%%%     
 % Appendix %
 %%%%%%%
-\renewcommand\thefigure{\thesection.\arabic{figure}}
-\renewcommand\thetable{\thesection.\arabic{table}}
+\renewcommand\thefigure{\thesection.\arabic{figure}}   
+\renewcommand\thetable{\thesection.\arabic{table}}   
 
 
 \clearpage
-\doublespacing
+\doublespacing  
 \begin{appendices}
 \section{Sample}\label{Sample0}\setcounter{figure}{0}\setcounter{table}{0}
 Table \ref{SurNum} reports the total number of households in the full survey, the number selected for the water quality testing module, and the number that provided consent. It also shows the number of samples with missing values for either water source or stored drinking water quality data, the number of samples missing water treatment information, and the final number of samples included in the analysis.
@@ -572,7 +534,76 @@ Table \ref{SurNum} reports the total number of households in the full survey, th
 
 
 \clearpage
-\section{Theoretical}\label{DDMLTheo}\setcounter{figure}{0}\setcounter{table}{0}
+\section{Clustering of standard errors}\label{sec:cluster}\setcounter{figure}{0}\setcounter{table}{0}
+The household (E.~coli) analysis has one observation per household and is estimated under independence. The under-five (diarrhea) analysis can contain several children per household, so we cluster its standard errors on the household identifier (HHID) in the IRM. The current release of \texttt{doubleml} does not implement clustered standard errors for APOS; we reuse the i.i.d.\ standard errors there. This is innocuous in our data because the HHID cluster-size distribution is dominated by singletons (Figure~\ref{fig:children_u5}): a large majority of households contribute exactly one under-five child, so each cluster is effectively its own observation and clustered and i.i.d.\ standard errors essentially coincide.
+
+\begin{figure}[htbp]\centering
+\caption{Distribution of under-five children per household (U5 sample)}\label{fig:children_u5}
+\includegraphics[width=0.62\linewidth]{children_distribution_U5.png}
+{\footnotesize\begin{flushleft} \textit{Notes:} Each bar is the number of HHID clusters (households) contributing a given number of under-five children to the U5 estimation sample ($n=36{,}121$ children in $25{,}202$ households; bars are labelled with their share of households, and the ``6+'' bar pools larger households). The distribution is dominated by singletons: $67\%$ of households contribute exactly one under-five child and the mean cluster size is $1.43$. Because so few households contribute more than one child, the within-cluster correlation that clustering on HHID is meant to absorb has little to act on, and clustered and i.i.d.\ standard errors essentially coincide. This is what licenses reusing i.i.d.\ standard errors for APOS, which \texttt{doubleml} does not cluster natively (Section~\ref{sec:cluster}). \end{flushleft}}
+\end{figure}
+
+
+\clearpage
+\section{Group heterogeneity tables}\label{app:gate_tables}\setcounter{figure}{0}\setcounter{table}{0}
+The tables below report the full set of GATE results for every grouping variable used in the analysis. They keep the same APOS-to-GATE construction as the main text, but the layouts differ by group so the information stays readable: smaller groups appear as standard tables, while the country table uses a sideways layout because it is wide.
+
+{\renewcommand\normalsize{\footnotesize}\normalsize\singlespacing
+\input{Table/table_gate_risksource.tex}
+\input{Table/table_gate_helevel.tex}
+\input{Table/table_gate_windex5.tex}
+\input{Table/table_gate_countrycat.tex}
+\input{Table/table_gate_toilet.tex}
+\input{Table/table_gate_ws1g.tex}
+\input{Table/table_gate_numchildrenbin.tex}
+\input{Table/table_gate_childage.tex}}
+
+
+\clearpage
+\section{Overlap diagnostics on the restricted sample (robust specification)}\label{app:overlap_rob1}\setcounter{figure}{0}\setcounter{table}{0}
+As a robustness check we drop the country cells in which a method is used by fewer than $5\%$ (or fewer than ten) of households --- the cells with the weakest within-country support --- and re-estimate on the restricted sample. The overlap diagnostics on that sample, for both estimators and all three outcomes, are shown below. They are visually indistinguishable from the full-sample diagnostics in the main text, and the resulting estimates change negligibly.
+
+\begin{figure}[htbp]\centering
+\caption{Robust specification --- overlap diagnostics (IRM), Some Risk Home E.\,coli}\label{fig:overlap_rob1_irm}
+\includegraphics[width=\linewidth]{overlap_rob1_HH_SomeRiskHome.png}
+\end{figure}
+
+\begin{figure}[htbp]\centering
+\caption{Robust specification --- overlap diagnostics (IRM), Very High Risk Home E.\,coli}\label{fig:overlap_rob1_irm_vh}
+\includegraphics[width=\linewidth]{overlap_rob1_HH_VeryHighRiskHome.png}
+\end{figure}
+
+\begin{figure}[htbp]\centering
+\caption{Robust specification --- overlap diagnostics (IRM), under-five diarrhea}\label{fig:overlap_rob1_irm_u5}
+\includegraphics[width=\linewidth]{overlap_rob1_U5_diarrhea.png}
+\end{figure}
+
+\begin{figure}[htbp]\centering
+\caption{Robust specification --- overlap diagnostics (APOS), Some Risk Home E.\,coli}\label{fig:overlap_rob1_apos}
+\includegraphics[width=\linewidth]{overlap_rob1_apos_HH_SomeRiskHome.png}
+\end{figure}
+
+\begin{figure}[htbp]\centering
+\caption{Robust specification --- overlap diagnostics (APOS), Very High Risk Home E.\,coli}\label{fig:overlap_rob1_apos_vh}
+\includegraphics[width=\linewidth]{overlap_rob1_apos_HH_VeryHighRiskHome.png}
+\end{figure}
+
+\begin{figure}[htbp]\centering
+\caption{Robust specification --- overlap diagnostics (APOS), under-five diarrhea}\label{fig:overlap_rob1_apos_u5}
+\includegraphics[width=\linewidth]{overlap_rob1_apos_U5_diarrhea.png}
+\end{figure}
+
+
+\clearpage\section{Robust specification: full estimation tables}\label{app:robust_tables}\setcounter{figure}{0}\setcounter{table}{0}
+These tables re-estimate the headline specifications on the overlap-restricted sample, which drops the country cells where a method has weak within-country support (Appendix~\ref{app:overlap_rob1}). They are the robust-specification counterparts referenced from the main text: the IRM and APOS coefficient estimates (Tables~\ref{tab:irm-rob1} and~\ref{tab:apos-rob1}) and the confounder-benchmark sensitivity (Tables~\ref{tab:sensitivity-benchmark-irm-rob1} and~\ref{tab:sensitivity-benchmark-rob1}). Across all four, the qualitative conclusions of the main text are preserved.
+
+\input{Table/table_irm_rob1.tex}
+\input{Table/table_apos_rob1.tex}
+\input{Table/table_sensitivity_benchmark_irm_rob1.tex}
+\input{Table/table_sensitivity_benchmark_rob1.tex}
+
+
+\clearpage\section{Theoretical}\label{DDMLTheo}\setcounter{figure}{0}\setcounter{table}{0}
 
 \begin{definition}[Neyman orthogonality]
 In DDML we work with a score $\varphi(W; \theta, \eta)$, where $\theta$ is the low-dimensional parameter of interest (ATE, PLM slope, etc.) and $\eta$ is a (possibly high-dimensional/nonparametric) nuisance object such as regression or propensity functions \citep[Section 2]{chernozhukov2018dml}. Neyman orthogonality requires
@@ -699,44 +730,96 @@ which is exactly the doubly robust augmented inverse probability weighting (AIPW
 
 
 
+\subsection{The AIPW potential-outcome score: orthogonality and the product bias}\label{sec:theory_aipw_bias}
+
+Both the binary IRM and the multi-valued APOS are built from one object: the doubly robust score for a single potential-outcome mean. Fix a treatment level \(d\) and define
+\[
+\theta_{d,0} \coloneqq \E[Y(d)], \qquad
+g_{d,0}(X) \coloneqq \E[Y\mid D=d,X], \qquad
+p_{d,0}(X) \coloneqq \Pr(D=d\mid X),
+\]
+with nuisance \(\eta_d=(g_d,p_d)\). The AIPW (augmented inverse-probability) score is
+\[
+\psi_d(W;\theta_d,\eta_d) \;=\; g_d(X) \;+\; \frac{\mathbf 1\{D=d\}}{p_d(X)}\bigl(Y-g_d(X)\bigr) \;-\; \theta_d .
+\]
+Under unconfoundedness \(Y(d)\perp \mathbf 1\{D=d\}\mid X\) and overlap \(p_{d,0}(X)>0\) it identifies \(\theta_{d,0}\): taking \(\E[\,\cdot\mid X]\) and using \(\E[\mathbf 1\{D=d\}(Y-g_{d,0})\mid X]=p_{d,0}(X)\,\E[Y-g_{d,0}\mid D=d,X]=0\),
+\[
+\E\bigl[\psi_d(W;\theta_{d,0},\eta_{d,0})\bigr]=\E[g_{d,0}(X)]-\theta_{d,0}=\E[Y(d)]-\theta_{d,0}=0 .
+\]
+
+\paragraph{Double robustness.} The moment stays zero if \emph{either} nuisance is correct. If \(g_d=g_{d,0}\) (any \(p_d\)), the augmentation term has conditional mean \(\tfrac{1}{p_d}\E[\mathbf 1\{D=d\}(Y-g_{d,0})\mid X]=0\). If \(p_d=p_{d,0}\) (any \(g_d\)), then \(\E[\psi_d\mid X]=g_d+\tfrac{p_{d,0}}{p_{d,0}}(g_{d,0}-g_d)-\theta_d=g_{d,0}-\theta_d\), again mean zero.
+
+\paragraph{Neyman orthogonality.} The Gateaux derivative of the moment in each nuisance direction vanishes at the truth. For a perturbation \(h\) of \(g_d\),
+\[
+\left.\frac{d}{dt}\,\E\bigl[\psi_d\bigl(\theta_{d,0},(g_{d,0}+th,\;p_{d,0})\bigr)\bigr]\right|_{t=0}
+=\E\!\left[h(X)\Bigl(1-\frac{\mathbf 1\{D=d\}}{p_{d,0}(X)}\Bigr)\right]
+=\E\!\left[h(X)\Bigl(1-\frac{p_{d,0}(X)}{p_{d,0}(X)}\Bigr)\right]=0 .
+\]
+For a perturbation \(k\) of \(p_d\),
+\[
+\left.\frac{d}{dt}\,\E\bigl[\psi_d\bigl(\theta_{d,0},(g_{d,0},\;p_{d,0}+tk)\bigr)\bigr]\right|_{t=0}
+=-\,\E\!\left[\frac{k(X)}{p_{d,0}(X)^2}\,\E\bigl[\mathbf 1\{D=d\}(Y-g_{d,0})\mid X\bigr]\right]=0,
+\]
+since the inner conditional expectation is zero. Hence \(\partial_\eta\,\E[\psi_d]\big|_{\eta_{d,0}}=0\): the score is Neyman-orthogonal, so first-order errors in the estimated nuisances do not contaminate \(\theta_{d}\).
+
+\paragraph{The product (rate double-robust) bias.} Plugging estimated nuisances \(\hat\eta_d=(\hat g_d,\hat p_d)\) into the moment at the true \(\theta_{d,0}\) and taking \(\E[\,\cdot\mid X]\) (using \(\E[\mathbf 1\{D=d\}\mid X]=p_{d,0}\) and \(\E[\mathbf 1\{D=d\}Y\mid X]=p_{d,0}g_{d,0}\)) gives the exact bias
+\[
+\E\bigl[\psi_d(\theta_{d,0},\hat\eta_d)\bigr]
+=\E\!\left[\bigl(\hat g_d(X)-g_{d,0}(X)\bigr)\,\frac{\hat p_d(X)-p_{d,0}(X)}{\hat p_d(X)}\right].
+\]
+By Cauchy--Schwarz, with trimming \(\hat p_d\ge c>0\),
+\[
+\bigl|\E[\psi_d(\theta_{d,0},\hat\eta_d)]\bigr|\;\le\;\frac1c\,\lVert \hat g_d-g_{d,0}\rVert_2\;\lVert \hat p_d-p_{d,0}\rVert_2 .
+\]
+The bias is the \emph{product} of the two nuisance errors. Three consequences follow: (i) it is exactly zero if either nuisance is correct (double robustness); (ii) it is \(o(n^{-1/2})\) once each error is \(o(n^{-1/4})\), so \(\sqrt n(\hat\theta_d-\theta_{d,0})\) is asymptotically normal and the cross-fit standard errors are valid; and (iii) a well-estimated outcome model \(\hat g_d\) makes the estimate first-order insensitive to propensity error because the propensity error multiplies the small factor \((\hat g_d-g_{d,0})\). The bound controls \emph{bias}. An extreme \(p_d\to 0\) can still inflate \emph{variance}, which motivates the \([0.01,0.99]\) trimming bounds.
+
+\subsection{IRM and APOS as functionals of the potential-outcome scores}\label{sec:theory_irm_apos}
+
+\paragraph{IRM (binary treatment).} With \(D\in\{0,1\}\), \(p_{1,0}=m_0\) and \(p_{0,0}=1-m_0\), the ATE \(\theta_0=\theta_{1,0}-\theta_{0,0}\) has score \(\varphi=\psi_1-\psi_0\), which is exactly the canonical AIPW score of Section~\ref{sec:theory_irm}. Neyman orthogonality and the product-bias bound transfer termwise by linearity:
+\[
+\bigl|\E[\varphi(\theta_0,\hat\eta)]\bigr|\;\le\;\frac1c\Bigl(\lVert \hat g_1-g_{1,0}\rVert_2+\lVert \hat g_0-g_{0,0}\rVert_2\Bigr)\,\lVert \hat m-m_0\rVert_2 .
+\]
+For a \emph{specific} method this score is evaluated on the single-method-vs-none subsample, so the operative overlap condition is \(m_0(X)\in(0,1)\) \emph{within that subsample} --- the source of its fragility.
+
+\paragraph{APOS (multi-valued treatment).} For \(D\in\{0,1,\dots,K\}\) the estimator stacks the \(K+1\) potential-outcome scores \(\{\psi_d\}_{d=0}^{K}\) with a multinomial propensity \(p_{d,0}(X)=\Pr(D=d\mid X)\), \(\sum_d p_{d,0}=1\). Each \(\theta_d\) inherits the orthogonality and product-bias properties above, and the method-versus-none contrast and its standard error follow from the joint influence function \(\psi_d-\psi_0\) (the \texttt{causal\_contrast} operation). Because no observations are discarded, the operative overlap condition is \(p_{d,0}(X)>0\) on the \emph{full} sample --- the multinomial analogue of binary overlap --- rather than overlap inside a single-method subsample. This is the formal reason APOS is the better-identified specification for method-specific contrasts: by the double-robustness and product-bias argument above, a correctly specified outcome model leaves the estimates first-order insensitive (in bias) to the rarity of individual methods, with the propensity entering only through variance.
+
+
 \clearpage
 \section{DDML Command}\setcounter{figure}{0}\setcounter{table}{0}\label{DDMLCommand}
 The DDML framework is particularly useful when estimating causal effects in high-dimensional settings, as it allows for flexible machine learning control while preserving valid inference through sample-splitting and orthogonalization.
 
-This section provides guidance on how to use the \texttt{qddml} command, which implements the Double/Debiased Machine Learning (DDML) framework proposed by \citet{chernozhukov2018double}.
-The official documentation can be found at the following link:
+This section provides guidance on how to use the \texttt{qddml} command, which implements the Double/Debiased Machine Learning (DDML) framework proposed by \citet{chernozhukov2018dml}.  
+The official documentation can be found at the following link:  
 \href{https://statalasso.github.io/docs/ddml/help/}{qddml Help File}.
 
 \bigskip
 \noindent
-\textbf{Step 1: Set up Python integration in Stata.}
-Before running any DDML commands, you must configure Stata's Python integration.
-Follow the official setup instructions available here:
-\href{https://statalasso.github.io/docs/python/}{Python Configuration for Stata}.
+\textbf{Step 1: Set up Python integration in Stata.}  
+Before running any DDML commands, you must configure Stata’s Python integration.  
+Follow the official setup instructions available here:  
+\href{https://statalasso.github.io/docs/python/}{Python Configuration for Stata}.  
 This step ensures that DDML can communicate properly with Python-based learners.
 
 \bigskip
 \noindent
-\textbf{Step 2: Run the analysis do-file.}
-Once Python integration is set up, you can execute the analysis script:
-
-\href{https://www.youtube.com/watch?v=iiEi-3gIUbg&t=1706s}{Good YouTube video}
+\textbf{Step 2: Run the analysis do-file.}  
+Once Python integration is set up, execute the project analysis do-file that defines the nuisance learners, sample splits, and DDML score specification.
 
 \clearpage
-\section{E. Coli in drinking water and diarrhea}
+\section{E. coli in drinking water and diarrhea}  
 
-Figure \ref{Count_Morbidity} shows the relationship between E. Coli counts in source and drinking water and the incidence of diarrhea and fever among households. The histograms show the distribution of E. Coli counts in both source and drinking water. The green histogram indicates that the E. Coli count in source water peaks at lower values, while the black histogram shows a similar distribution for drinking water. This distribution indicates that drinking water is more likely to be contaminated than source water, suggesting that water becomes contaminated during storage.
+Figure \ref{Count_Morbidity} shows the relationship between E. coli counts in source and drinking water and the incidence of diarrhea and fever among households. The histograms show the distribution of E. coli counts in both source and drinking water. The green histogram indicates that the E. coli count in source water peaks at lower values, while the black histogram shows a similar distribution for drinking water. This distribution indicates that drinking water is more likely to be contaminated than source water, suggesting that water becomes contaminated during storage.
 
-The figure shows that the diarrhea rate is highly correlated with drinking water quality. The average probability of children under age 5 having diarrhea is around 11 percent when the water is not contaminated (E. Coli = 0), but the rate increases to as high as 16 percent if the water is contaminated at levels higher than E. Coli over 100. The contamination level of the water source is unrelated to the prevalence of diarrhea, indicating that households are treating water to reduce E. Coli based on different initial contamination levels. A similar relationship is observed for the incidence of fever.
+The figure shows that the diarrhea rate is highly correlated with drinking water quality. The average probability of children under age 5 having diarrhea is around 11 percent when the water is not contaminated (E. coli = 0), but the rate increases to as high as 16 percent if the water is contaminated at levels higher than E. coli over 100. The contamination level of the water source is unrelated to the prevalence of diarrhea, indicating that households are treating water to reduce E. coli based on different initial contamination levels. A similar relationship is observed for the incidence of fever.
 
 \begin{figure}[htbp]\centering
-\caption{Relationship between E. Coli of Source/Drinking Water and Diarrhea and Fever }\label{Count_Morbidity}
+\caption{Relationship between E. coli of Source/Drinking Water and Diarrhea and Fever }\label{Count_Morbidity}
 \begin{subfigure}[b]{1\textwidth}\includegraphics[width=\textwidth]{WaterQ_Morbidity.eps}\end{subfigure}
-{\footnotesize  \begin{flushleft} Notes: N=22,589 children under age five. The figure shows the relationship between E. Coli counts in source and drinking water and the incidence of diarrhea and fever among households. The histograms show the distribution of E. Coli counts in both source and drinking water.\end{flushleft}}
+{\footnotesize  \begin{flushleft} Notes: N=22,589 children under age five. The figure shows the relationship between E. coli counts in source and drinking water and the incidence of diarrhea and fever among households. The histograms show the distribution of E. coli counts in both source and drinking water.\end{flushleft}}
 \end{figure}
 
-\subsection{Water treatment and diarrhea}
-Figure \ref{Desc_0} shows the prevalence of diarrhea among children under age 5, grouped by household water treatment methods. While some countries exhibit a lower prevalence of diarrhea among households that treat their water, the difference is minor. In some instances, the relationship is reversed, with a higher prevalence of diarrhea observed among households that treat their water. Such patterns are widely observed, and several studies using MICS data do not find a clear link between water treatment and diarrhea \citep{husein2023examination}.
+\subsection{Water treatment and diarrhea}  
+Figure \ref{Desc_0} shows the prevalence of diarrhea among children under age 5, grouped by household water treatment methods. While some countries exhibit a lower prevalence of diarrhea among households that treat their water, the difference is minor. In some instances, the relationship is reversed, with a higher prevalence of diarrhea observed among households that treat their water. Such patterns are widely observed, and several studies using MICS data do not find a clear link between water treatment and diarrhea \citep{husein2023examination}. 
 
 The unclear relationship can be attributed to endogeneity. Households with contaminated water, which is correlated with higher diarrhea prevalence, are more likely to treat their water, while those using uncontaminated water sources are less likely to do so. Another reason for the weak link is the low efficacy of the water treatment itself.
 
@@ -746,12 +829,26 @@ The unclear relationship can be attributed to endogeneity. Households with conta
 {\footnotesize  \begin{flushleft} Notes: The prevalence of diarrhea among children under age 5 across 14 countries from MICS, using nationally representative weights. Categories with fewer than 15 samples are excluded from the analysis, as the sample size is too small to calculate a reliable average.\end{flushleft}}
 \end{figure}
 
+\clearpage
+\section{Causal Chain}
+We identify the following causal chain:
+\begin{equation}
+M_{\text{source}} \to T \to M_{\text{drinking}} \to Y,
+\end{equation}
+where $M_{\text{source}}$ is the baseline water quality measured as CFU E. coli count, discretized as: 0 = No risk (0 CFU), 1 = Some risk ($1 \leq \text{CFU} < 100$), and 2 = Very high risk (CFU $\geq$ 100). This discretization is motivated by the fact that the original water quality variables are right-censored at 101 CFU.
+
+$T$ denotes the treatment variable. We evaluate two treatment specifications: (1) \textit{Any treatment}: a binary indicator (0 = no treatment, 1 = any treatment), and (2) \textit{Multitreatment}: categorical treatment by type---boil, chlorine, filter, or other---each compared to the control (no treatment).
+
+An important identification insight concerns the role of $M_{\text{source}}$. If we ignore the path $M_{\text{source}} \to T$, we end up comparing ``clean-source'' households who do not treat with ``dirty-source'' households who do treat. Because those who treat water are systematically starting from a worse baseline, a simple comparison would underestimate the effectiveness of treatment, as $M_{\text{source}}$ acts as a confounder. \footnote{Conversely, conditioning on $M_{\text{drinking}}$ in the base model would block the biological pathway (it acts as a mediator), which would lead to observing no treatment effect. Our empirical strategy therefore controls for $M_{\text{source}}$ but does not condition on $M_{\text{drinking}}$.}
 
 
 
 
 
 
+
+
+\iffalse
 \section{Notes}
 
 %https://docs.doubleml.org/tutorial/stable/lectures/L1/introduction_part1.html#/neyman-orthogonality-motivation
@@ -760,7 +857,7 @@ Why Double Machine Learning?
 $$Y=g_0(D,X) + U$$
 ML Learner
 , $$E(U|X,D)=0$$.
-
+ 
 
 Why not simply estimate g0(D,X)
  with ML and plug in predictions $g_0(D,X)$?
@@ -797,7 +894,7 @@ Estiamtes propensity score:
 
 \iffalse
 
-The l1
+The ℓ1
 -penalization of Lasso would reduce some of the coefficients in γ=(γ1,γ2)
  towards zero and maybe set some of them exactly to zero, say γ2
  for the confounder X2
@@ -815,7 +912,7 @@ Different structural assumptions on η0
  (Chernozhukov et al. 2018, sec. 3)
 
 Rate requirement in the IRM for estimation of ATE:
-∥m^0-m0∥P,2×∥l^0-l0∥P,2≤δNN-1/2
+∥m^0−m0∥P,2×∥ℓ^0−ℓ0∥P,2≤δNN−1/2
 
 ⇒
  We can use ML methods, that have typically slower convergence rates than the parametric N1/2
@@ -844,14 +941,15 @@ print(dml_obj_orth.evaluate_learners(metric=balanced_accuracy))
 Main Result: Double Machine Learning
 Main result in Chernozhukov et al. (2018)
 There exist regularity conditions, such that the DML estimator θ~0
- concentrates in a 1/N--√
+ concentrates in a 1/N−−√
 -neighborhood of θ0
  and the sampling error is approximately
-N--√(θ~0-θ0)∼N(0,σ2),
+N−−√(θ~0−θ0)∼N(0,σ2),
 with
-σ2:=J-20E(ψ2(W;θ0,η0)),J0=E(ψa(W;η0)).
+σ2:=J−20E(ψ2(W;θ0,η0)),J0=E(ψa(W;η0)).
 \fi
 
+\fi
 \end{appendices}
 \end{document}
 }

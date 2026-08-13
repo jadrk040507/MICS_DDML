@@ -55,113 +55,29 @@ clear all
 set graph off
 set graph on	
 
-* Final data use macro	
-cap program drop start_final
-program define   start_final
+*===============================================================
+* Household level data
+*===============================================================
 
+cap program drop start_from_final
+program define   start_from_final
 use "${Data_Final}MASTER_MICS_FINAL.dta", clear
 
 end
 
-* Final data use macro	
-cap program drop start_final_U5
-program define   start_final_U5
+*===============================================================
+* Diarrhea (U5 children)
+*===============================================================
 
+cap program drop start_from_final_child
+program define   start_from_final_child
 use "${Data_Final}MASTER_MICS_FINAL_U5.dta", clear
-
-label var diarrhea "Diarrhea"
-label var age "Age in years"
-label var male "Male"
-
- bys Country HH1 HH2: gen NumU5=_N
- label var NumU5 "Number of U5 children"
 
 end
 
+
 start_final
-tabplot Country WQ15_g, showval(format(%9.0f)) bfcolor(blue*0.6) subtitle("Frequency") ///
-    xla(, angle(45) labsize(small)) yla(, labsize(small)) xsize(10) ysize(12)
-graph export "${Figures}Freq_Country_Treatment_HH.eps", replace
-
-start_final_U5			   
-tabplot Country WQ15_g, showval(format(%9.0f)) bfcolor(blue*0.6) subtitle("Frequency") ///
-    xla(, angle(45) labsize(small)) yla(, labsize(small)) xsize(10) ysize(12)
-graph export "${Figures}Freq_Country_Treatment_Child.eps", replace
-
-*-----------------------------
-*  Table 0b: Extended descriptive statistics by source contamination
-*-----------------------------
-start_final_U5	
-replace diarrhea=diarrhea*100		   
-
-global U5Main diarrhea NumU5 age male
-			   
-tab1 $U5Main	
-replace water_carrier_edu = . if water_carrier_edu == 98
-mdesc $U5Main
-
-local U5Main  "Child Characteristics by Water Source Contamination Level among Households with U5 children"
-local LabelU5Main "Desc2"
-local noteU5Main  "Notes: The table presents summary statistics for children under five years of age from 25 countries included in the analysis sample. Diarrhea is measured as a binary indicator and is reported as a percentage of children who experienced diarrhea in the past two weeks."
-
-foreach k in U5Main {
-    * Means by contamination level
-	eststo model0: estpost summarize $`k' [aw=hhweight] 
-    eststo model1: estpost summarize $`k' [aw=hhweight] if RiskSource==0
-    eststo model2: estpost summarize $`k' [aw=hhweight] if RiskSource==1
-    eststo model3: estpost summarize $`k' [aw=hhweight] if RiskSource==2
-	
-	* Min
-start_final_U5	
-replace diarrhea=diarrhea*100		   
-
-	foreach i in $`k' {
-	egen min_`i'=min(`i')
-	replace `i'=min_`i'
-	}
-	eststo  model6: estpost summarize $`k'
-	
-* Max
-start_final_U5	
-replace diarrhea=diarrhea*100		   
-
-	foreach i in $`k' {
-	egen max_`i'=max(`i')
-	replace `i'=max_`i'
-	}
-	eststo  model7: estpost summarize $`k'
-	
-* Missing 
-start_final_U5	
-replace diarrhea=diarrhea*100		   
-	
-	foreach i in $`k' {
-	egen `i'_Miss=rowmiss(`i')
-	egen max_`i'=sum(`i'_Miss)
-	replace `i'=max_`i'
-	}
-	eststo  model8: estpost summarize $`k'
-
-    esttab model0 model1 model2 model3 using "${Tables}Descript_`k'_Risk.tex", ///
-        title("``k''" \label{`Label`k''}) ///
-        cell("mean (fmt(2) label(_))") stats(N, fmt("%9.0fc") label(N)) ///
-        mtitles("All" "Low risk" "Moderate risk" "High risk") nonum ///
-        substitute( ///
-            ".00" "" ///
-            "{l}{\footnotesize" "{p{0.8\linewidth}}{\footnotesize" ///
-            "&           _&           _&           _&           _\\" "" ///
-            "Diarrhea" "Diarrhea (percent)" ///
-            "Piped water" "\textbf{Primary water source} \\\hline Piped connection" ///
-            "12,271" "12,062 (21.3\%)" ///
-            "-0 " "0" ///
-            "Treat:" "~~~" ///
-            "Location:" "~~~" ///
-        ) ///
-        label note("`note`k''") ///
-        replace
-}
-
-eststo clear
+tab WQ15_g NoRiskSource,m
 
 *-----------------------------
 *  Table 0b: Extended descriptive statistics by source contamination
@@ -188,7 +104,7 @@ tab RiskSource, m
 
 local ExtMain  "Household Characteristics by Water Source Contamination Level"
 local LabelExt "Desc1"
-local noteExt  "Notes: The table presents extended household characteristics across 25 countries. The number of CFUs per 100mL of E. coli is capped at 101 if the number is higher than 100. The mean of the blank water test is 0.67 CFUs per 100mL."
+local noteExt  "Notes: The table presents household characteristics across 25 countries. The number of CFUs per 100mL of E. coli is capped at 101 if the number is higher than 100. The mean of the blank water test is 0.67 CFUs per 100mL."
 
 foreach k in ExtMain {
     * Means by contamination level
@@ -249,7 +165,6 @@ start_final
             "Any treatment (Water tested)" "\textbf{Water treatment for tested water} \\\hline Any treatment" ///
 			"Flush toilet" "\textbf{Sanitation facility} \\\hline Flush toilet" ///
             "Chlorinate" "Chlorine / Aquatabs / PUR" ///
-            "Solar disinfection" "Strain or settle" ///
             "Other treatment" "Other method" ///
             "Girls_less_than15" "Water carrier: Girls younger than 15" "Boys_15or_less" "Water carrier: Boys younger than 15" ///
             "No education" "\textbf{HH Education} \\\hline No education" ///
@@ -273,6 +188,98 @@ start_final
 eststo clear
 
 END
+
+
+
+
+
+*-----------------------------
+*  Table 0b: Extended descriptive statistics by source contamination
+*-----------------------------
+start_final_U5	
+replace diarrhea=diarrhea*100		   
+
+global U5Main diarrhea NumU5 age male
+			   
+tab1 $U5Main	
+replace water_carrier_edu = . if water_carrier_edu == 98
+mdesc $U5Main
+
+local U5Main  "Child Characteristics among Households with U5 children"
+local LabelU5Main "Desc2"
+local noteU5Main  "Notes: The table presents summary statistics  by Water Source Contamination Level for children under five years of age from 25 countries included in the analysis sample. Diarrhea is measured as a binary indicator and is reported as a percentage of children who experienced diarrhea in the past two weeks."
+
+foreach k in U5Main {
+    * Means by contamination level
+	eststo model0: estpost summarize $`k' [aw=hhweight] 
+    eststo model1: estpost summarize $`k' [aw=hhweight] if RiskSource==0
+    eststo model2: estpost summarize $`k' [aw=hhweight] if RiskSource==1
+    eststo model3: estpost summarize $`k' [aw=hhweight] if RiskSource==2
+	
+	* Min
+start_final_U5	
+replace diarrhea=diarrhea*100		   
+
+	foreach i in $`k' {
+	egen min_`i'=min(`i')
+	replace `i'=min_`i'
+	}
+	eststo  model6: estpost summarize $`k'
+	
+* Max
+start_final_U5	
+replace diarrhea=diarrhea*100		   
+
+	foreach i in $`k' {
+	egen max_`i'=max(`i')
+	replace `i'=max_`i'
+	}
+	eststo  model7: estpost summarize $`k'
+	
+* Missing 
+start_final_U5	
+replace diarrhea=diarrhea*100		   
+	
+	foreach i in $`k' {
+	egen `i'_Miss=rowmiss(`i')
+	egen max_`i'=sum(`i'_Miss)
+	replace `i'=max_`i'
+	}
+	eststo  model8: estpost summarize $`k'
+
+    esttab model0 model1 model2 model3 using "${Tables}Descript_`k'_Risk.tex", ///
+        title("``k''" \label{`Label`k''}) ///
+        cell("mean (fmt(2) label(_))") stats(N, fmt("%9.0fc") label(N)) ///
+        mtitles("All" "Low risk" "Moderate risk" "High risk") nonum ///
+        substitute( ///
+            ".00" "" ///
+            "{l}{\footnotesize" "{p{0.8\linewidth}}{\footnotesize" ///
+            "&           _&           _&           _&           _\\" "" ///
+            "Diarrhea" "Diarrhea (percent)" ///
+            "Piped water" "\textbf{Primary water source} \\\hline Piped connection" ///
+            "12,271" "12,062 (21.3\%)" ///
+            "-0 " "0" ///
+            "Treat:" "~~~" ///
+            "Location:" "~~~" ///
+        ) ///
+        label note("`note`k''") ///
+        replace
+}
+
+eststo clear
+
+
+EDBN
+
+start_final
+tabplot Country WQ15_g, showval(format(%9.0f)) bfcolor(blue*0.6) subtitle("Frequency") ///
+    xla(, angle(45) labsize(small)) yla(, labsize(small)) xsize(10) ysize(12)
+graph export "${Figures}Freq_Country_Treatment_HH.eps", replace
+
+start_final_U5			   
+tabplot Country WQ15_g, showval(format(%9.0f)) bfcolor(blue*0.6) subtitle("Frequency") ///
+    xla(, angle(45) labsize(small)) yla(, labsize(small)) xsize(10) ysize(12)
+graph export "${Figures}Freq_Country_Treatment_Child.eps", replace
 
 
 /*

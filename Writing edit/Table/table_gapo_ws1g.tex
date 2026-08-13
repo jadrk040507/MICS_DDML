@@ -1,0 +1,42 @@
+% Requires: \usepackage{booktabs, pdflscape, graphicx, adjustbox}
+\begin{table}[p]
+\centering
+\caption{Group average potential outcomes by water source type}
+\label{tab:gapo_ws1g}
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{adjustbox}{max width=\linewidth, center}
+\begin{tabular}{lccccccc}
+\toprule
+\multicolumn{8}{l}{\textbf{Panel A: Some Risk Home (E.coli 1--100 CFU) (HH)}} \\
+Treatment level & Piped & Tube/well/borehole & Protected well/spring & Unprotected well/spring & Surface/rain & Packaged/bottled & Other \\
+\midrule
+No Treatment & 0.456 {\scriptsize$[0.447,0.465]$} & 0.478 {\scriptsize$[0.468,0.488]$} & 0.471 {\scriptsize$[0.456,0.486]$} & 0.414 {\scriptsize$[0.401,0.427]$} & 0.364 {\scriptsize$[0.345,0.384]$} & 0.417 {\scriptsize$[0.401,0.434]$} & 0.318 {\scriptsize$[0.284,0.352]$} \\
+Boil & 0.350 {\scriptsize$[0.330,0.370]$} & 0.428 {\scriptsize$[0.414,0.441]$} & 0.486 {\scriptsize$[0.421,0.551]$} & 0.484 {\scriptsize$[0.456,0.511]$} & 0.416 {\scriptsize$[0.379,0.453]$} & 0.382 {\scriptsize$[0.366,0.398]$} & 0.321 {\scriptsize$[0.227,0.416]$} \\
+Chlorine & 0.445 {\scriptsize$[0.393,0.496]$} & 0.461 {\scriptsize$[0.422,0.500]$} & 0.446 {\scriptsize$[0.338,0.555]$} & 0.480 {\scriptsize$[0.417,0.544]$} & 0.398 {\scriptsize$[0.297,0.498]$} & 0.440 {\scriptsize$[0.395,0.485]$} & 0.350 {\scriptsize$[0.132,0.568]$} \\
+Filter & 0.503 {\scriptsize$[0.475,0.531]$} & 0.491 {\scriptsize$[0.471,0.511]$} & 0.508 {\scriptsize$[0.457,0.559]$} & 0.515 {\scriptsize$[0.479,0.551]$} & 0.452 {\scriptsize$[0.378,0.526]$} & 0.457 {\scriptsize$[0.440,0.475]$} & 0.403 {\scriptsize$[0.317,0.488]$} \\
+Other & 0.425 {\scriptsize$[0.389,0.460]$} & 0.409 {\scriptsize$[0.377,0.440]$} & 0.511 {\scriptsize$[0.453,0.570]$} & 0.364 {\scriptsize$[0.339,0.389]$} & 0.388 {\scriptsize$[0.337,0.438]$} & 0.364 {\scriptsize$[0.334,0.394]$} & 0.256 {\scriptsize$[0.134,0.378]$} \\
+\addlinespace
+\multicolumn{8}{l}{\textbf{Panel B: Very High Risk Home (E.coli $\geq$ 101 CFU) (HH)}} \\
+Treatment level & Piped & Tube/well/borehole & Protected well/spring & Unprotected well/spring & Surface/rain & Packaged/bottled & Other \\
+\midrule
+No Treatment & 0.207 {\scriptsize$[0.200,0.213]$} & 0.364 {\scriptsize$[0.355,0.374]$} & 0.416 {\scriptsize$[0.401,0.430]$} & 0.530 {\scriptsize$[0.517,0.543]$} & 0.532 {\scriptsize$[0.514,0.549]$} & 0.150 {\scriptsize$[0.139,0.160]$} & 0.173 {\scriptsize$[0.151,0.195]$} \\
+Boil & 0.156 {\scriptsize$[0.140,0.172]$} & 0.247 {\scriptsize$[0.236,0.257]$} & 0.214 {\scriptsize$[0.161,0.266]$} & 0.330 {\scriptsize$[0.304,0.355]$} & 0.364 {\scriptsize$[0.332,0.396]$} & 0.120 {\scriptsize$[0.110,0.130]$} & 0.051 {\scriptsize$[0.011,0.092]$} \\
+Chlorine & 0.184 {\scriptsize$[0.141,0.227]$} & 0.286 {\scriptsize$[0.249,0.323]$} & 0.333 {\scriptsize$[0.230,0.436]$} & 0.434 {\scriptsize$[0.371,0.497]$} & 0.477 {\scriptsize$[0.382,0.572]$} & 0.286 {\scriptsize$[0.249,0.323]$} & 0.300 {\scriptsize$[0.125,0.476]$} \\
+Filter & 0.214 {\scriptsize$[0.189,0.238]$} & 0.312 {\scriptsize$[0.294,0.331]$} & 0.347 {\scriptsize$[0.298,0.395]$} & 0.393 {\scriptsize$[0.358,0.428]$} & 0.428 {\scriptsize$[0.364,0.492]$} & 0.255 {\scriptsize$[0.242,0.269]$} & 0.220 {\scriptsize$[0.139,0.301]$} \\
+Other & 0.118 {\scriptsize$[0.096,0.139]$} & 0.265 {\scriptsize$[0.238,0.292]$} & 0.157 {\scriptsize$[0.119,0.195]$} & 0.288 {\scriptsize$[0.265,0.312]$} & 0.259 {\scriptsize$[0.218,0.300]$} & 0.100 {\scriptsize$[0.084,0.117]$} & 0.109 {\scriptsize$[0.032,0.186]$} \\
+\addlinespace
+\multicolumn{8}{l}{\textbf{Panel C: Diarrhea (under-5) (U5)}} \\
+Treatment level & Piped & Tube/well/borehole & Protected well/spring & Unprotected well/spring & Surface/rain & Packaged/bottled & Other \\
+\midrule
+No Treatment & 0.144 {\scriptsize$[0.137,0.151]$} & 0.142 {\scriptsize$[0.135,0.150]$} & 0.128 {\scriptsize$[0.116,0.141]$} & 0.147 {\scriptsize$[0.138,0.156]$} & 0.142 {\scriptsize$[0.130,0.155]$} & 0.104 {\scriptsize$[0.092,0.115]$} & 0.144 {\scriptsize$[0.110,0.177]$} \\
+Boil & 0.104 {\scriptsize$[0.082,0.126]$} & 0.109 {\scriptsize$[0.094,0.123]$} & 0.125 {\scriptsize$[0.095,0.155]$} & 0.106 {\scriptsize$[0.087,0.125]$} & 0.140 {\scriptsize$[0.094,0.186]$} & 0.109 {\scriptsize$[0.067,0.150]$} & 0.058 {\scriptsize$[0.025,0.091]$} \\
+Chlorine & 0.143 {\scriptsize$[0.095,0.191]$} & 0.170 {\scriptsize$[0.114,0.226]$} & 0.147 {\scriptsize$[0.068,0.226]$} & 0.143 {\scriptsize$[0.092,0.195]$} & 0.065 {\scriptsize$[0.007,0.124]$} & 0.083 {\scriptsize$[0.064,0.102]$} & 0.210 {\scriptsize$[0.086,0.335]$} \\
+Filter & 0.166 {\scriptsize$[0.125,0.207]$} & 0.163 {\scriptsize$[0.127,0.198]$} & 0.154 {\scriptsize$[0.096,0.211]$} & 0.183 {\scriptsize$[0.139,0.227]$} & 0.131 {\scriptsize$[0.057,0.206]$} & 0.111 {\scriptsize$[0.099,0.123]$} & 0.027 {\scriptsize$[-0.103,0.156]$} \\
+Other & 0.110 {\scriptsize$[0.071,0.149]$} & 0.108 {\scriptsize$[0.074,0.143]$} & 0.105 {\scriptsize$[0.046,0.163]$} & 0.110 {\scriptsize$[0.083,0.138]$} & 0.101 {\scriptsize$[0.046,0.156]$} & 0.018 {\scriptsize$[0.007,0.030]$} & 0.007 {\scriptsize$[-0.031,0.045]$} \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\par\vspace{3pt}
+\begin{minipage}{\linewidth}\footnotesize \textit{Notes:} Cells report APOS-based group average potential outcomes. Brackets contain pointwise 95\% confidence intervals.\end{minipage}
+\end{table}

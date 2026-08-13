@@ -1,0 +1,27 @@
+% Requires: \usepackage{booktabs}
+\begin{table}[htbp]
+\centering
+\caption{Sensitivity to unobserved confounding for stacked APOS contrasts}
+\label{tab:sensitivity-apos}
+\small\setlength{\tabcolsep}{6pt}
+\begin{tabular}{lllccc}
+\toprule
+Dataset & Outcome & Treatment & ATE & RV (\%) & RV$_\alpha$ (\%) \\
+\midrule
+HH & Some Risk Home (E.coli 1--100 CFU) & Boil & -0.035*** & 2.1 & 1.6 \\
+HH & Some Risk Home (E.coli 1--100 CFU) & Chlorine & 0.005 & 0.2 & 0.0 \\
+HH & Some Risk Home (E.coli 1--100 CFU) & Filter & 0.047*** & 1.8 & 1.3 \\
+HH & Some Risk Home (E.coli 1--100 CFU) & Other & -0.037*** & 1.3 & 0.8 \\
+HH & Very High Risk Home (E.coli $\geq$ 101 CFU) & Boil & -0.106*** & 7.6 & 7.0 \\
+HH & Very High Risk Home (E.coli $\geq$ 101 CFU) & Chlorine & -0.027** & 1.0 & 0.3 \\
+HH & Very High Risk Home (E.coli $\geq$ 101 CFU) & Filter & -0.026*** & 1.2 & 0.7 \\
+HH & Very High Risk Home (E.coli $\geq$ 101 CFU) & Other & -0.133*** & 5.7 & 5.3 \\
+U5 & Diarrhea (under-5) & Boil & -0.029*** & 1.3 & 0.9 \\
+U5 & Diarrhea (under-5) & Chlorine & -0.000 & 0.0 & 0.0 \\
+U5 & Diarrhea (under-5) & Filter & 0.018* & 0.7 & 0.1 \\
+U5 & Diarrhea (under-5) & Other & -0.040*** & 1.4 & 0.9 \\
+\bottomrule
+\end{tabular}
+\par\vspace{3pt}
+\begin{minipage}{\linewidth}\footnotesize \textit{Notes:} Chernozhukov et al. sensitivity analysis under the worst-case alignment $\rho=1$. RV is the share of residual variation in treatment and outcome that an unobserved confounder must explain to reduce the point estimate to zero; RV$_\alpha$ uses the 95\% confidence interval. $^{***}p<0.01$, $^{**}p<0.05$, $^{*}p<0.10$.\end{minipage}
+\end{table}

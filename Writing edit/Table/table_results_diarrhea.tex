@@ -1,0 +1,54 @@
+% Requires: \usepackage{booktabs, pdflscape, graphicx, adjustbox}
+\begin{table}[htbp]
+\centering
+\caption{DDML estimates: Water treatment and child diarrhea (under-5)}
+\label{tab:results-diarrhea}
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{0.94}
+\begin{adjustbox}{max width=\linewidth, max totalheight=0.86\textheight, center}
+\begin{tabular}{l|ccccccc}
+\toprule
+ & \multicolumn{7}{c}{Diarrhea (under-5)} \\
+\cmidrule(lr){2-8}
+ & OLS & Lasso & Ridge & Elastic Net & Random Forest & XGBoost & Stacked \\
+\midrule
+Any Treatment & -0.002 & -0.005 & -0.002 & -0.003 & -0.005 & 0.003 & -0.005 \\
+ & (0.010) & (0.010) & (0.010) & (0.010) & (0.005) & (0.010) & (0.005) \\
+\quad RV & 0.00 & 0.00 & 0.00 & 0.00 & 0.00 & 0.00 & 0.00 \\
+\quad RV$_\alpha$ & 0.00 & 0.00 & 0.00 & 0.00 & 0.00 & 0.00 & 0.00 \\
+\quad $N$ & \multicolumn{7}{c}{36,121} \\
+\midrule
+Boil & 0.028** & -0.011 & 0.009 & -0.007 & -0.031*** & 0.007 & -0.029*** \\
+ & (0.011) & (0.011) & (0.011) & (0.011) & (0.007) & (0.010) & (0.006) \\
+\quad RV & 0.01 & 0.00 & 0.00 & 0.00 & 0.01 & 0.00 & 0.01 \\
+\quad RV$_\alpha$ & 0.00 & 0.00 & 0.00 & 0.00 & 0.01 & 0.00 & 0.01 \\
+\quad $N$ & \multicolumn{7}{c}{36,121} \\
+\midrule
+Chlorine & -0.023* & -0.010 & -0.014 & -0.010 & -0.008 & -0.015 & -0.000 \\
+ & (0.013) & (0.012) & (0.012) & (0.012) & (0.010) & (0.013) & (0.012) \\
+\quad RV & 0.01 & 0.00 & 0.00 & 0.00 & 0.00 & 0.00 & 0.00 \\
+\quad RV$_\alpha$ & 0.00 & 0.00 & 0.00 & 0.00 & 0.00 & 0.00 & 0.00 \\
+\quad $N$ & \multicolumn{7}{c}{36,121} \\
+\midrule
+Filter & 0.049*** & 0.022* & 0.032** & 0.023* & -0.005 & 0.030** & 0.018* \\
+ & (0.014) & (0.013) & (0.013) & (0.013) & (0.009) & (0.013) & (0.010) \\
+\quad RV & 0.02 & 0.01 & 0.01 & 0.01 & 0.00 & 0.01 & 0.01 \\
+\quad RV$_\alpha$ & 0.01 & 0.00 & 0.00 & 0.00 & 0.00 & 0.00 & 0.00 \\
+\quad $N$ & \multicolumn{7}{c}{36,121} \\
+\midrule
+Other & -0.012 & -0.032*** & -0.031*** & -0.032*** & -0.025** & -0.002 & -0.040*** \\
+ & (0.012) & (0.012) & (0.011) & (0.012) & (0.011) & (0.012) & (0.009) \\
+\quad RV & 0.00 & 0.01 & 0.01 & 0.01 & 0.01 & 0.00 & 0.01 \\
+\quad RV$_\alpha$ & 0.00 & 0.00 & 0.00 & 0.00 & 0.00 & 0.00 & 0.01 \\
+\quad $N$ & \multicolumn{7}{c}{36,121} \\
+\midrule
+Outcome mean $\bar Y$ & \multicolumn{7}{c}{0.139} \\
+Treated (\%) & \multicolumn{7}{c}{19.4} \\
+Clusters & \multicolumn{7}{c}{25,202} \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\par\vspace{3pt}
+\begin{minipage}{\linewidth}\scriptsize \textit{Notes:} Each coefficient is reported with significance stars over its standard error. Any treatment is the IRM ATE of any household water treatment versus none. Boil, chlorine, filter, and other are APOS contrasts relative to no treatment. RV and RV$_\alpha$ are the robustness value and its 95\% confidence-interval-adjusted version. All models control for wealth, education, country fixed effects, urban residence, water source, household composition, sanitation, and source-water E.coli decile; the under-5 model also controls for child age and sex. IRM cross-fitting uses 5 folds $\times$ 3 repetitions; APOS uses 5 folds $\times$ 1 repetition. Propensities are trimmed to $[0.01,0.99]$. IRM standard errors cluster by HHID for diarrhea; APOS contrasts use i.i.d. standard errors. $^{***}p<0.01$, $^{**}p<0.05$, $^{*}p<0.10$.\end{minipage}
+\end{table}

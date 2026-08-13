@@ -1,0 +1,39 @@
+% Requires: \usepackage{booktabs, pdflscape, graphicx, adjustbox}
+\begin{table}[p]
+\centering
+\caption{Group average treatment effects by water source type}
+\label{tab:gate_ws1g}
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{adjustbox}{max width=\linewidth, center}
+\begin{tabular}{lccccccc}
+\toprule
+\multicolumn{8}{l}{\textbf{Panel A: Some Risk Home (E.coli 1--100 CFU) (HH)}} \\
+Method vs. no treatment & Piped & Tube/well/borehole & Protected well/spring & Unprotected well/spring & Surface/rain & Packaged/bottled & Other \\
+\midrule
+Boil & -0.106*** (0.011) & -0.050*** (0.009) & 0.015 (0.034) & 0.070*** (0.015) & 0.052** (0.021) & -0.036*** (0.011) & 0.003 (0.051) \\
+Chlorine & -0.012 (0.026) & -0.017 (0.020) & -0.025 (0.056) & 0.066** (0.033) & 0.034 (0.052) & 0.022 (0.024) & 0.032 (0.113) \\
+Filter & 0.047*** (0.015) & 0.013 (0.011) & 0.037 (0.027) & 0.101*** (0.019) & 0.088** (0.038) & 0.040*** (0.012) & 0.084* (0.046) \\
+Other & -0.031* (0.018) & -0.069*** (0.017) & 0.040 (0.031) & -0.050*** (0.014) & 0.024 (0.027) & -0.053*** (0.017) & -0.063 (0.064) \\
+\addlinespace
+\multicolumn{8}{l}{\textbf{Panel B: Very High Risk Home (E.coli $\geq$ 101 CFU) (HH)}} \\
+Method vs. no treatment & Piped & Tube/well/borehole & Protected well/spring & Unprotected well/spring & Surface/rain & Packaged/bottled & Other \\
+\midrule
+Boil & -0.051*** (0.009) & -0.118*** (0.007) & -0.202*** (0.027) & -0.200*** (0.014) & -0.167*** (0.018) & -0.030*** (0.007) & -0.122*** (0.022) \\
+Chlorine & -0.023 (0.022) & -0.078*** (0.019) & -0.082 (0.053) & -0.096*** (0.033) & -0.055 (0.049) & 0.136*** (0.020) & 0.127 (0.089) \\
+Filter & 0.007 (0.013) & -0.052*** (0.010) & -0.069*** (0.025) & -0.137*** (0.018) & -0.104*** (0.033) & 0.106*** (0.008) & 0.047 (0.043) \\
+Other & -0.089*** (0.011) & -0.099*** (0.014) & -0.259*** (0.020) & -0.242*** (0.013) & -0.273*** (0.022) & -0.049*** (0.010) & -0.064 (0.040) \\
+\addlinespace
+\multicolumn{8}{l}{\textbf{Panel C: Diarrhea (under-5) (U5)}} \\
+Method vs. no treatment & Piped & Tube/well/borehole & Protected well/spring & Unprotected well/spring & Surface/rain & Packaged/bottled & Other \\
+\midrule
+Boil & -0.040*** (0.012) & -0.034*** (0.008) & -0.003 (0.017) & -0.041*** (0.011) & -0.002 (0.024) & 0.005 (0.022) & -0.086*** (0.024) \\
+Chlorine & -0.001 (0.025) & 0.028 (0.029) & 0.019 (0.041) & -0.004 (0.027) & -0.077** (0.031) & -0.021* (0.011) & 0.067 (0.066) \\
+Filter & 0.022 (0.021) & 0.020 (0.018) & 0.025 (0.030) & 0.036 (0.023) & -0.011 (0.039) & 0.007 (0.008) & -0.117* (0.068) \\
+Other & -0.034* (0.020) & -0.034* (0.018) & -0.024 (0.031) & -0.037** (0.015) & -0.041 (0.029) & -0.086*** (0.008) & -0.137*** (0.026) \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\par\vspace{3pt}
+\begin{minipage}{\linewidth}\footnotesize \textit{Notes:} Cells report APOS-based group average treatment effects relative to no treatment. Standard errors are in parentheses. $^{***}p<0.01$, $^{**}p<0.05$, $^{*}p<0.10$.\end{minipage}
+\end{table}
