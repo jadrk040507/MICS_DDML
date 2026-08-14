@@ -1,3 +1,11 @@
+"""Run the MICS stacked DoubleML analysis and create publication outputs.
+
+The pipeline estimates the main IRM/APOS models, computes leave-one-control-
+group-out sensitivity measures, and projects existing orthogonal scores onto
+prespecified heterogeneity groups. The last two stages are post-estimation
+analyses and do not change the main causal estimands.
+"""
+
 import json
 import gc
 from pathlib import Path
@@ -92,7 +100,13 @@ cache_context = make_cache_context(
 def make_frame(
     data, outcome, treatment, allowed_levels, keep_cluster, child=False
 ):
-    """Build a complete-case frame and return its control-column names."""
+    """Build the exact model frame for one DoubleML specification.
+
+    The function applies complete-case and treatment-support restrictions,
+    expands categorical controls into dummies, and preserves the row order
+    used by DoubleML. RiskSource is intentionally excluded because it is a
+    prespecified heterogeneity variable rather than a main-model control.
+    """
 
     controls = [
         "windex5",
@@ -171,7 +185,12 @@ def make_frame(
 
 
 def make_cluster_folds(frame, treatment):
-    """Create repeated stratified folds where no cluster crosses a fold."""
+    """Create stratified cross-fitting folds that respect sampling clusters.
+
+    Treatment support is balanced across folds while every cluster stays
+    entirely in either the training or test portion of a fold. These folds
+    are reused in clustered main, sensitivity, and GATE calculations.
+    """
 
     groups = frame["Cluster_var"].to_numpy()
     target = frame[treatment].to_numpy()
@@ -303,7 +322,12 @@ def convex_weights(predictions, target, classification):
 
 
 class ConvexRegressor(RegressorMixin, BaseEstimator):
-    """Convex ensemble for outcome nuisance estimation."""
+    """Cross-fitted convex ensemble for the outcome nuisance function.
+
+    Base learners produce out-of-fold predictions, and nonnegative weights
+    summing to one are selected by prediction loss. The ensemble supplies
+    predictions to DoubleML; its weights are diagnostics, not causal weights.
+    """
 
     def __init__(
         self, estimators, random_state=42, group_column=None, refit_full=False
@@ -380,7 +404,7 @@ class ConvexRegressor(RegressorMixin, BaseEstimator):
 
 
 class ConvexClassifier(ClassifierMixin, BaseEstimator):
-    """Convex ensemble for binary treatment nuisance estimation."""
+    """Cross-fitted convex ensemble for the binary treatment propensity."""
 
     def __init__(
         self, estimators, random_state=42, group_column=None, refit_full=False
@@ -593,6 +617,9 @@ class DiskBackedEstimate:
 
     The fitted DoubleML object is intentionally not kept in ``estimates``.
     Attribute access loads it only for the operation that needs it.
+    This reduces memory pressure because fitted base learners can be large.
+    Mutating methods must use the object they return; this is important for
+    DoubleML sensitivity analysis.
     """
 
     def __init__(self, cache, key):
@@ -618,13 +645,15 @@ def _contains_super_learner_weights(value):
     return False
 
 
-def _cached_model_has_weights(handle):
+def _cached_model_has_weights(handle, nuisance):
     """Inspect one cached model, releasing it immediately afterwards."""
 
     fitted = estimate_cache.load(handle._key)
     try:
         models = getattr(fitted, "models", None)
-        return _contains_super_learner_weights(models)
+        if not isinstance(models, dict):
+            return False
+        return _contains_super_learner_weights(models.get(nuisance, {}))
     finally:
         del fitted
         gc.collect()
@@ -634,7 +663,13 @@ def run_or_load(
     progress, label, fit, dataset, outcome, model, clustered,
     require_super_learner_weights=False,
 ):
-    """Load a valid estimate or fit it once through ``joblib.Memory``."""
+    """Load a compatible estimate or fit it once through the disk cache.
+
+    Cache keys include source code, data files, design configuration, and the
+    DoubleML version. When Super Learner diagnostics are required, this
+    function verifies that ``ml_g`` weights are stored and refits under a
+    separate key if an older checkpoint is incomplete.
+    """
 
     key = make_estimate_key(
         cache_context,
@@ -647,7 +682,7 @@ def run_or_load(
         cached_handle = DiskBackedEstimate(estimate_cache, key)
         if (
             require_super_learner_weights
-            and not _cached_model_has_weights(cached_handle)
+            and not _cached_model_has_weights(cached_handle, "ml_g0")
         ):
             # Historical cache entries may contain the causal estimate but
             # not the stored nuisance learners.  Use a distinct key so a
@@ -656,15 +691,19 @@ def run_or_load(
                 cache_context,
                 dataset,
                 outcome,
-                f"{model}_stored_super_learner_weights_v1",
+                f"{model}_stored_super_learner_weights_ml_g_v2",
                 clustered,
             )
             if estimate_cache.contains(key):
-                progress.set_description(f"{label} [weights cached]")
-                progress.update(1)
-                progress.set_postfix(cache="weights hit", refresh=True)
-                return DiskBackedEstimate(estimate_cache, key)
-            progress.set_description(f"{label} [refitting for weights]")
+                stored_handle = DiskBackedEstimate(estimate_cache, key)
+                if _cached_model_has_weights(stored_handle, "ml_g0"):
+                    progress.set_description(f"{label} [weights cached]")
+                    progress.update(1)
+                    progress.set_postfix(cache="weights hit", refresh=True)
+                    return stored_handle
+            # Historical cache entries may contain the causal estimate or
+            # only ml_m weights. Refit under a new key with ml_g stored.
+            progress.set_description(f"{label} [refitting for ml_g weights]")
             fitted = run_estimation(
                 progress,
                 label,
@@ -883,9 +922,11 @@ progress.close()
 from _tables import (
     write_publication_table,
     write_stacked_regression_table,
-    write_super_learner_weights_table,
+    write_super_learner_weights_tables,
     create_relative_sensitivity_tables,
     create_relative_sensitivity_comparison_tables,
+    create_combined_sensitivity_tables,
+    create_benchmark_sensitivity_tables,
     create_heterogeneity_comparison_tables,
 )
 from _functions import (
@@ -984,20 +1025,22 @@ early_table_paths = {
 for path in early_table_paths.values():
     print(f"Main LaTeX table saved to: {path}")
 
-weights_table_path = write_super_learner_weights_table(
+weights_table_paths = write_super_learner_weights_tables(
     output_dir,
     estimates,
     ["SomeRiskHome", "VeryHighRiskHome", "diarrhea"],
-    "table_super_learner_weights.tex",
 )
-print(f"Super Learner weights table saved to: {weights_table_path}")
+for weights_table_path in weights_table_paths:
+    print(f"Super Learner weights table saved to: {weights_table_path}")
 
 
 def run_sensitivity(estimates):
-    """Build stacked APOS/IRM sensitivity rows using cached full fits.
+    """Legacy leave-one-control-group-out RV analysis.
 
-    Full models are never refit here.  Only leave-one-control-group-out fits
-    are needed for the relative RV/RV-alpha values, and each is memoized.
+    The active pipeline uses :func:`run_sensitivity_benchmark` below, which
+    calls DoubleML's native ``sensitivity_benchmark()`` API. This function is
+    retained for auditability and for reproducing earlier RV-relative tables;
+    it is not called by the current results pipeline.
     APOS cluster-fold contrasts use the manually reconstructed cluster
     framework so both cluster SEs and RV-alpha use the same variance estimate.
     """
@@ -1032,6 +1075,11 @@ def run_sensitivity(estimates):
         desc="Sensitivity: reduced fits",
         unit="model",
         dynamic_ncols=True,
+        leave=True,
+    )
+    tqdm.write(
+        f"Sensitivity: {len(sensitivity_specs) * 2} reduced fits queued.",
+        file=None,
     )
 
     def fit_with_heartbeat(cache_hit, label, key_kind, fit):
@@ -1283,46 +1331,162 @@ def run_sensitivity(estimates):
     return pd.DataFrame(rows)
 
 
-sensitivity_results = run_sensitivity(estimates)
-sensitivity_results.to_pickle(
-    output_dir / "results_sensitivity_relative.pkl"
+def run_sensitivity_benchmark(estimates):
+    """Benchmark the observed source-water E.coli decile block.
+
+    DoubleML refits the short model internally after removing the named
+    benchmarking set. The returned statistics quantify the predictive gain
+    from the observed block; they are complementary to, and not substitutes
+    for, the native RV/RV-alpha analysis of unobserved confounding.
+    """
+
+    rows = []
+    jobs = []
+    for (dataset, outcome), bundle in estimates.items():
+        if (dataset == "HH" and outcome not in {"SomeRiskHome", "VeryHighRiskHome"}) or (
+            dataset == "U5" and outcome != "diarrhea"
+        ):
+            continue
+        for specification, clustered in (("clustered_folds", True), ("unclustered", False)):
+            model_names = (
+                ("IRM", bundle["irm_cluster" if clustered else "irm_no_cluster"],
+                 bundle["irm_x_cluster" if clustered else "irm_x_no_cluster"]),
+                ("APOS", bundle["apos_cluster" if clustered else "apos_no_cluster"],
+                 bundle["apos_x_cluster" if clustered else "apos_x_no_cluster"]),
+            )
+            for method, model, x_columns in model_names:
+                benchmark_set = select_column_groups(
+                    x_columns, SENSITIVITY_GROUPS, bundle["child"]
+                ).get("source_ecoli", [])
+                jobs.append((dataset, outcome, specification, method, model, benchmark_set))
+
+    progress = tqdm(
+        total=len(jobs), desc="Sensitivity: observed benchmark", unit="model",
+        dynamic_ncols=True, leave=True,
+    )
+    tqdm.write(
+        f"Sensitivity benchmark: {len(jobs)} models queued; "
+        "benchmark set = source_ecoli_*.", file=None,
+    )
+    for dataset, outcome, specification, method, model, benchmark_set in jobs:
+        progress.set_description(
+            f"Sensitivity benchmark {dataset} {outcome}: {specification} {method}"
+        )
+        if not benchmark_set:
+            raise ValueError(f"No source_ecoli_* columns found for {method} {dataset} {outcome}.")
+        # RV and RV-alpha answer the unobserved-confounding question for the
+        # complete specification. The benchmark below is a separate observed-
+        # control reference and must not be confused with either RV.
+        if method == "IRM":
+            full_rv, full_rva = sensitivity_params(model)
+        else:
+            contrast = model.causal_contrast(reference_levels=[0])
+            full_rv, full_rva = sensitivity_params(
+                contrast,
+                cluster_ids=(
+                    estimates[(dataset, outcome)]["apos_frame_cluster"]["Cluster_var"].to_numpy()
+                    if specification == "clustered_folds" else None
+                ),
+                smpls=model.smpls if specification == "clustered_folds" else None,
+            )
+        benchmark = model.sensitivity_benchmark(
+            benchmarking_set=list(benchmark_set),
+            fit_args={"n_jobs_cv": jobs_cv, "n_jobs_models": 1}
+            if method == "APOS" else {"n_jobs_cv": jobs_cv},
+        )
+        # APOS benchmark output is indexed by all treatment levels, including
+        # the reference level 0.  The causal contrast sensitivity arrays omit
+        # that reference level and therefore contain only [1, 2, 3, 98].
+        # Match by treatment code instead of assuming that the row number is
+        # already the contrast number.
+        apos_contrast_levels = [1, 2, 3, 98]
+        for effect_index, (treatment, values) in enumerate(benchmark.iterrows()):
+            if method == "IRM":
+                parameter_index = 0
+            else:
+                try:
+                    treatment_code = int(str(treatment).split()[0])
+                except (TypeError, ValueError):
+                    # Fallback for an older DoubleML index without numeric
+                    # treatment labels: the reference level is the first row.
+                    parameter_index = effect_index - (1 if len(benchmark) == len(full_rv) + 1 else 0)
+                else:
+                    if treatment_code not in apos_contrast_levels:
+                        # The reference treatment has no APOS contrast and
+                        # must not be written as if it were an estimated effect.
+                        continue
+                    parameter_index = apos_contrast_levels.index(treatment_code)
+            if parameter_index >= len(full_rv):
+                raise ValueError(
+                    f"Could not align {method} benchmark row {treatment!r} "
+                    f"with {len(full_rv)} sensitivity parameters."
+                )
+            rows.append({
+                "dataset": dataset,
+                "outcome": outcome,
+                "specification": specification,
+                "method": method,
+                "treatment": str(treatment),
+                "benchmark_set": "source_ecoli_*",
+                "cf_y": float(values["cf_y"]),
+                "cf_d": float(values["cf_d"]),
+                "rho": float(values["rho"]),
+                "delta_theta": float(values["delta_theta"]),
+                "rv": float(full_rv[parameter_index]),
+                "rva": float(full_rva[parameter_index]),
+            })
+        progress.update(1)
+    progress.close()
+    return pd.DataFrame(rows)
+
+
+# Observed-control benchmark based on DoubleML's native benchmarking API.
+# Keep this separate from the fitted-model cache: the benchmark is a
+# post-estimation object, but it is still expensive because DoubleML refits
+# the short model internally for every outcome, method, and fold specification.
+# Its key depends on the estimation/data context and on this benchmark stage,
+# while presentation-only changes remain cache-safe.
+sensitivity_cache_context = {
+    **cache_context,
+    "sensitivity_benchmark_cache_version": 1,
+}
+sensitivity_cache_key = make_estimate_key(
+    sensitivity_cache_context,
+    "all",
+    "all",
+    "sensitivity_benchmark",
+    False,
 )
-relative_table_paths = []
-for method, prefix in [
-    ("APOS", "table_sensitivity_relative_apos"),
-    ("IRM", "table_sensitivity_relative_irm"),
-]:
-    method_results = sensitivity_results[sensitivity_results["method"] == method]
-    # Main-text tables: cluster-level folds only.
-    relative_table_paths.extend(
-        create_relative_sensitivity_tables(
-            method_results[method_results["specification"] == "clustered_folds"],
-            filename_prefix=prefix,
-            learner="stacked",
-            method=method,
-            output_dir=output_dir,
-        )
-    )
-    # Standalone ordinary-fold version retained for auditability.
-    relative_table_paths.extend(
-        create_relative_sensitivity_tables(
-            method_results[method_results["specification"] == "unclustered"],
-            filename_prefix=f"{prefix}_unclustered",
-            learner="stacked",
-            method=method,
-            output_dir=output_dir,
-        )
-    )
-    # Appendix comparison: same table, Panel A above Panel B.
-    relative_table_paths.extend(
-        create_relative_sensitivity_comparison_tables(
-            method_results,
-            filename_prefix=f"{prefix}_appendix",
-            learner="stacked",
-            method=method,
-            output_dir=output_dir,
-        )
-    )
+sensitivity_checkpoint = checkpoint_dir / f"sensitivity_benchmark_{sensitivity_cache_key}.pkl"
+
+if sensitivity_checkpoint.exists():
+    try:
+        sensitivity_benchmark_results = pd.read_pickle(sensitivity_checkpoint)
+        if not isinstance(sensitivity_benchmark_results, pd.DataFrame):
+            raise TypeError("Sensitivity checkpoint is not a DataFrame.")
+        print(f"Sensitivity benchmark checkpoint loaded: {sensitivity_checkpoint}")
+    except (OSError, EOFError, ValueError, TypeError, ImportError) as exc:
+        print(f"Sensitivity benchmark checkpoint invalid; recomputing ({exc}).")
+        sensitivity_benchmark_results = run_sensitivity_benchmark(estimates)
+        sensitivity_benchmark_results.to_pickle(sensitivity_checkpoint)
+else:
+    sensitivity_benchmark_results = run_sensitivity_benchmark(estimates)
+    sensitivity_benchmark_results.to_pickle(sensitivity_checkpoint)
+    print(f"Sensitivity benchmark checkpoint saved: {sensitivity_checkpoint}")
+
+# Keep the stable, human-facing output path used by downstream tables/scripts.
+sensitivity_benchmark_results.to_pickle(
+    output_dir / "results_sensitivity_benchmark.pkl"
+)
+sensitivity_benchmark_table_paths = create_benchmark_sensitivity_tables(
+    sensitivity_benchmark_results,
+    filename_prefix="table_sensitivity_benchmark",
+    output_dir=output_dir,
+)
+# Keep the publication-layer interface stable. The regression tables do not
+# consume sensitivity rows directly, but they still receive this object.
+sensitivity_results = sensitivity_benchmark_results
+relative_table_paths = sensitivity_benchmark_table_paths
 
 
 # ---------------------------------------------------------------------------
@@ -1331,22 +1495,30 @@ for method, prefix in [
 # These are post-estimation GATE projections of the existing stacked APOS
 # contrasts.  They do not refit the outcome or propensity nuisance learners.
 HETEROGENEITY_GROUPS = {
-    "source_risk": {
-        "column": "RiskSource",
-        "label": "Source-water microbiological risk",
-        "labels": {
-            "0": "No risk",
-            "1": "Moderate to high risk",
-            "2": "Very high risk",
-        },
+    "source_ecoli": {
+        "column": "wq27_decile",
+        "label": "Initial source-water E. coli decile",
+        "labels": {},
     },
 }
+
+# RiskSource is needed only for the post-estimation heterogeneity projection.
+# It is intentionally loaded lazily because the main estimation input keeps a
+# narrow set of columns and the fitted-model cache should not depend on this
+# presentation-only variable.
+_heterogeneity_source_cache = {}
 
 
 def prepare_heterogeneity_groups(
     data, outcome, child, keep_cluster, treatment_column, allowed_levels
 ):
-    """Recreate a model's complete-case order for heterogeneity groups."""
+    """Recreate the fitted sample order and attach source-water E. coli deciles.
+
+    The GATE analysis is intentionally restricted to the observed initial
+    source-water contamination deciles used in the main controls. The narrow
+    model frames are rebuilt in the same row order so the decile labels align
+    with the already-fitted influence scores.
+    """
 
     controls = [
         "windex5", "urban", "WS1_g", "wq27_decile", "Any_U5",
@@ -1359,13 +1531,20 @@ def prepare_heterogeneity_groups(
         required.extend(["age", "male"])
     keep = data[required].notna().all(axis=1)
     keep &= data[treatment_column].isin(allowed_levels)
-    return data.loc[keep, [
-        "RiskSource", "WS1_g", "urban", "country_cat",
-    ]].reset_index(drop=True)
+
+    keep &= data["wq27_decile"].notna()
+    groups = data.loc[keep, ["wq27_decile"]].copy()
+    return groups.reset_index(drop=True)
 
 
 def run_heterogeneity_projections(estimates):
-    """Project existing stacked IRM/APOS effects onto initial contamination risk."""
+    """Project existing IRM/APOS scores onto prespecified risk groups.
+
+    The IRM framework supplies the binary any-treatment score. APOS supplies
+    treatment-specific contrasts relative to level zero. Neither branch
+    refits nuisance learners; the function only estimates descriptive GATE
+    projections and their clustered or ordinary standard errors.
+    """
 
     rows = []
     projection_specs = [
@@ -1382,6 +1561,12 @@ def run_heterogeneity_projections(estimates):
         desc="Heterogeneity: GATE projections",
         unit="group",
         dynamic_ncols=True,
+        leave=True,
+    )
+    tqdm.write(
+        "Heterogeneity: "
+        f"{len(projection_specs) * len(HETEROGENEITY_GROUPS)} projections queued.",
+        file=None,
     )
     for dataset, data, child, outcome in analysis_specs:
         if dataset == "HH" and outcome not in {"SomeRiskHome", "VeryHighRiskHome"}:
@@ -1427,27 +1612,39 @@ def run_heterogeneity_projections(estimates):
                 irm_frame["Cluster_var"].to_numpy() if clustered else None
             )
             irm = bundle["irm_cluster"] if clustered else bundle["irm_no_cluster"]
+            # IRM itself is already the binary-treatment framework.  GATE
+            # projection needs its framework scores, whereas APOS requires an
+            # explicit causal contrast first.
+            irm_framework = irm.framework
 
             for group_name, spec in HETEROGENEITY_GROUPS.items():
                 heterogeneity_progress.set_description(
                     f"Heterogeneity {dataset} {outcome}: "
                     f"{specification} {group_name}"
                 )
+                # Use human-readable labels while retaining the original
+                # decile values for the projection design matrix.
+                group_labels = {
+                    str(value): f"Decile {value}"
+                    for value in pd.Series(
+                        apos_groups[spec["column"]]
+                    ).dropna().unique()
+                }
                 # IRM contributes the binary any-treatment effect.
                 irm_result = estimate_gate_from_contrast(
-                    irm,
+                    irm_framework,
                     "Any Treatment",
                     0,
                     irm_groups[spec["column"]],
                     irm_cluster_ids,
-                    group_labels=spec["labels"],
+                    group_labels=group_labels,
                 )
                 irm_result.insert(0, "dataset", dataset)
                 irm_result.insert(1, "outcome", outcome)
                 irm_result.insert(2, "method", "IRM stacked")
                 irm_result.insert(3, "specification", specification)
                 irm_result.insert(4, "group", group_name)
-                irm_result.insert(5, "group_label", spec["label"])
+                irm_result.insert(5, "heterogeneity_label", spec["label"])
                 irm_result.insert(6, "treatment_label", "Any Treatment")
                 rows.append(irm_result)
 
@@ -1460,14 +1657,14 @@ def run_heterogeneity_projections(estimates):
                         effect_index,
                         values,
                         cluster_ids,
-                        group_labels=spec["labels"],
+                        group_labels=group_labels,
                     )
                     result.insert(0, "dataset", dataset)
                     result.insert(1, "outcome", outcome)
                     result.insert(2, "method", "APOS stacked")
                     result.insert(3, "specification", specification)
                     result.insert(4, "group", group_name)
-                    result.insert(5, "group_label", spec["label"])
+                    result.insert(5, "heterogeneity_label", spec["label"])
                     result.insert(
                         6,
                         "treatment_label",
@@ -1476,8 +1673,12 @@ def run_heterogeneity_projections(estimates):
                     )
                     rows.append(result)
                 heterogeneity_progress.update(1)
+                heterogeneity_progress.set_postfix(
+                    status="completed", refresh=True
+                )
 
     heterogeneity_progress.close()
+    tqdm.write("Heterogeneity: all GATE projections completed.", file=None)
     return pd.concat(rows, ignore_index=True) if rows else pd.DataFrame()
 
 
@@ -1485,11 +1686,19 @@ heterogeneity_results = run_heterogeneity_projections(estimates)
 heterogeneity_results.to_pickle(
     output_dir / "results_heterogeneity_gates.pkl"
 )
-heterogeneity_table_paths = create_heterogeneity_comparison_tables(
+heterogeneity_table_paths = []
+heterogeneity_table_paths.extend(create_heterogeneity_comparison_tables(
     heterogeneity_results,
     output_dir=output_dir,
-    filename_prefix="table_heterogeneity",
-)
+    filename_prefix="table_heterogeneity_main",
+    specifications=("clustered_folds",),
+))
+heterogeneity_table_paths.extend(create_heterogeneity_comparison_tables(
+    heterogeneity_results,
+    output_dir=output_dir,
+    filename_prefix="table_heterogeneity_appendix",
+    specifications=("clustered_folds", "unclustered"),
+))
 
 
 # ---------------------------------------------------------------------------
@@ -1613,7 +1822,7 @@ cache_manifest = {
     "treatment_levels_reported": list(report_levels),
     "tables": [
         *table_paths.values(),
-        str(output_dir / "results_sensitivity_relative.pkl"),
+        str(output_dir / "results_sensitivity_benchmark.pkl"),
         str(output_dir / "results_heterogeneity_gates.pkl"),
         *[str(path) for path in heterogeneity_table_paths],
         *[str(path) for path in relative_table_paths],

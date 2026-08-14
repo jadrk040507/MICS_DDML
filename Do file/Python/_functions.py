@@ -1,4 +1,10 @@
-"""Helpers for cached DoubleML estimates and publication tables."""
+"""Statistical and infrastructure helpers for the MICS DoubleML pipeline.
+
+The functions cover clustered inference, sensitivity and GATE post-estimation,
+and reproducible disk caching for expensive fitted models. The cache is an
+implementation detail and must not change the estimand, sample, folds, or
+variance estimator used by the analysis.
+"""
 
 import hashlib
 from pathlib import Path
@@ -15,7 +21,11 @@ OUTCOME_LABELS = {
 
 
 def relative_robustness_value(reduced_value, full_value, denominator_floor=1e-8):
-    """Return reduced-specification RV divided by the full-specification RV.
+    """Compare robustness after removing a control group.
+
+    The returned ratio is reduced-specification RV divided by full-
+    specification RV: one means unchanged robustness, below one means lower
+    robustness, and above one means higher robustness.
 
     A ratio is not informative when either value is missing/non-finite or when
     the full-specification RV is effectively zero.  In those cases ``None`` is
@@ -96,7 +106,13 @@ def cluster_robust_framework_se(framework, cluster_ids, smpls):
 
 
 def as_clustered_framework(framework, cluster_ids, smpls):
-    """Rebuild a framework so DoubleML sensitivity uses clustered variance."""
+    """Attach cluster-level inference metadata to a DoubleML framework.
+
+    DoubleML 0.11.3 does not expose the required clustered APOS framework
+    directly. This preserves fitted point estimates and sensitivity elements,
+    replaces standard errors with the custom cluster sandwich, and supplies
+    cluster-level fold metadata for the native sensitivity calculation.
+    """
 
     from doubleml.double_ml_framework import DoubleMLCore, DoubleMLFramework
 
@@ -252,7 +268,12 @@ def cached_reduced_fit(cache, context, dataset, outcome, kind,
 
 
 def sensitivity_params(model_or_contrast, cluster_ids=None, smpls=None):
-    """Return RV/RV-alpha, optionally using cluster-robust contrast variance."""
+    """Compute RV and RV-alpha for an IRM or APOS estimand.
+
+    Clustered APOS contrasts are first rebuilt with the cluster-robust
+    framework so the sensitivity calculation uses the same variance scale as
+    the reported clustered effect.
+    """
 
     if cluster_ids is not None:
         if smpls is None:
@@ -261,10 +282,15 @@ def sensitivity_params(model_or_contrast, cluster_ids=None, smpls=None):
             model_or_contrast, cluster_ids, smpls
         )
 
-    model_or_contrast.sensitivity_analysis(
+    # DoubleML mutates the fitted framework in place and returns that same
+    # framework.  This distinction matters for DiskBackedEstimate: each
+    # attribute access reloads a fresh cached copy, so calling
+    # ``model_or_contrast.sensitivity_analysis()`` and then reading
+    # ``model_or_contrast.sensitivity_params`` would discard the mutation.
+    analyzed = model_or_contrast.sensitivity_analysis(
         cf_y=0.03, cf_d=0.03, rho=1.0, level=0.95
     )
-    params = model_or_contrast.sensitivity_params
+    params = analyzed.sensitivity_params
     if params is None:
         raise ValueError("DoubleML sensitivity parameters are unavailable.")
     return (
@@ -277,14 +303,13 @@ def estimate_gate_from_contrast(contrast, treatment_level, effect_index,
                                 group_values, cluster_ids=None,
                                 group_labels=None, level=0.95,
                                 n_rep_boot=500):
-    """Estimate grouped treatment effects from an existing APOS contrast.
+    """Estimate group-specific effects by projecting an existing score.
 
-    This is a post-estimation BLP/GATE projection.  It reuses the APOS
-    orthogonal contrast scores and therefore does not refit either nuisance
-    learner.  If ``cluster_ids`` are supplied, statsmodels uses one-way
-    cluster-robust covariance estimates; otherwise it uses ordinary HC0
-    covariance. DoubleML aggregates repetitions and constructs pointwise and
-    simultaneous confidence intervals.
+    This post-estimation BLP/GATE projection reuses an orthogonal score and
+    does not refit nuisance learners. Group indicators make each coefficient
+    the average treatment effect for one group. Clustered projections use a
+    one-way cluster covariance; ordinary projections use HC0 covariance.
+    The reported BLP R-squared is descriptive, not a causal-model fit.
     """
 
     import doubleml as dml

@@ -26,11 +26,16 @@ def _format_se(se: float) -> str:
     return f"({se:.3f})"
 
 
+def _latex_text(value) -> str:
+    """Escape plain-text underscores before inserting text into LaTeX."""
+    return str(value).replace("_", r"\_")
+
+
 def _format_rv(rv: float) -> str:
     """Format robustness value as percentage."""
     if rv is None or rv != rv:  # NaN check
         return "---"
-    return f"{rv * 100:.1f}\\%"
+    return f"{rv * 100:.4f}\\%"
 
 
 def _get_outcome_label(outcome_var: str) -> str:
@@ -66,13 +71,19 @@ def _relative_sensitivity_treatment(value):
 
 
 def _relative_sensitivity_value(row, reduced_key, full_key, relative=False):
-    """Extract an absolute or full-specification-relative sensitivity value."""
+    """Return either a reduced RV or its ratio to the full RV.
+
+    The full-specification column is handled by the table builder. For a
+    dropped-control column, absolute rows use the reduced value and relative
+    rows use reduced divided by full. Keeping this distinction here prevents
+    the two specifications from being accidentally displayed as identical.
+    """
 
     reduced = row.get(reduced_key)
     full = row.get(full_key)
     if relative:
         return relative_robustness_value(reduced, full)
-    return full
+    return reduced
 
 
 def create_relative_sensitivity_tables(
@@ -141,6 +152,7 @@ def create_relative_sensitivity_tables(
         ]
 
         ncol = 1 + len(groups)
+
         lines = [
             r"% Requires: \usepackage{booktabs, pdflscape, graphicx, adjustbox}",
             r"\begin{landscape}",
@@ -162,13 +174,13 @@ def create_relative_sensitivity_tables(
             lines.append(rf"\multicolumn{{{ncol + 1}}}{{l}}{{\textit{{{treatment_label}}}}} \\")
 
             rows = [
-                (r"RV relative", "rv_q", "rv_q_without", True),
                 (r"RV original", "rv_q", "rv_q_without", False),
-                (r"RV$_\alpha$ relative", "rv_qa", "rv_qa_without", True),
+                (r"RV relative", "rv_q", "rv_q_without", True),
                 (r"RV$_\alpha$ original", "rv_qa", "rv_qa_without", False),
+                (r"RV$_\alpha$ relative", "rv_qa", "rv_qa_without", True),
             ]
             for label, full_key, reduced_key, relative in rows:
-                values = ["1.00" if relative else _format_rv(full.get(full_key))]
+                values = ["1.0000" if relative else _format_rv(full.get(full_key))]
                 for group in groups:
                     hit = tsub[tsub["group"].eq(group)]
                     if hit.empty:
@@ -180,7 +192,7 @@ def create_relative_sensitivity_tables(
                     )
                     values.append(
                         "---" if value is None or pd.isna(value)
-                        else (f"{value:.2f}" if relative else _format_rv(value))
+                        else (f"{value:.4f}" if relative else _format_rv(value))
                     )
                 lines.append(" & ".join([rf"\quad {label}"] + values) + r" \\")
 
@@ -206,6 +218,231 @@ def create_relative_sensitivity_tables(
         paths.append(path)
         print(f"Table saved to: {path}")
 
+    return paths
+
+
+def create_combined_sensitivity_tables(
+    results,
+    filename_prefix="table_sensitivity",
+    learner="stacked",
+    output_dir=None,
+):
+    """Write one clustered sensitivity table per outcome.
+
+    Each table has Panel A for IRM and Panel B for APOS. Absolute and relative
+    RV/RV-alpha rows are shown together so readers can see both the robustness
+    level and the change caused by omitting the control group.
+    """
+
+    frame = results.copy() if isinstance(results, pd.DataFrame) else pd.DataFrame(results)
+    if learner is not None and "learner" in frame:
+        frame = frame[frame["learner"].eq(learner)]
+    frame = frame[frame["specification"].eq("clustered_folds")].copy()
+    frame["_treatment_label"] = frame["treatment"].map(
+        _relative_sensitivity_treatment
+    )
+    frame = frame[frame["_treatment_label"].notna()]
+    if frame.empty:
+        raise ValueError("No clustered sensitivity rows remain.")
+
+    group_order = [
+        "wealth", "country", "urban", "water_source", "hh_demog",
+        "sanitation", "source_ecoli", "child_age_sex",
+    ]
+    rank = {key: i for i, key in enumerate(group_order)}
+    output_dir = Path(output_dir) if output_dir is not None else Path("Output")
+    output_dir.mkdir(parents=True, exist_ok=True)
+    paths = []
+
+    for outcome in dict.fromkeys(frame["outcome"].tolist()):
+        sub = frame[frame["outcome"].eq(outcome)]
+        groups = sorted(
+            sub["group"].unique(),
+            key=lambda key: (rank.get(key, len(rank)), str(key)),
+        )
+        labels = {
+            row["group"]: row.get("group_label", row["group"])
+            for _, row in sub.iterrows()
+        }
+        ncol = 1 + len(groups)
+        lines = [
+            r"% Requires: \usepackage{booktabs, pdflscape, graphicx, adjustbox}",
+            r"\begin{landscape}", r"\begin{table}[p]", r"\centering",
+            rf"\caption{{Sensitivity relative to the complete specification: {_get_outcome_label(outcome)}}}",
+            rf"\label{{tab:{filename_prefix}-{outcome}}}",
+            r"\scriptsize\setlength{\tabcolsep}{4pt}",
+            r"\begin{adjustbox}{max width=\linewidth, center}",
+            rf"\begin{{tabular}}{{{'l' + 'c' * ncol}}}", r"\toprule",
+            " & ".join(["", "Full specification"] + [labels[g] for g in groups]) + r" \\",
+            r"\midrule",
+        ]
+        rows = [
+            (r"RV original", "rv_q", "rv_q_without", False),
+            (r"RV relative", "rv_q", "rv_q_without", True),
+            (r"RV$_\alpha$ original", "rv_qa", "rv_qa_without", False),
+            (r"RV$_\alpha$ relative", "rv_qa", "rv_qa_without", True),
+        ]
+        panels = [
+            ("IRM", "Any Treatment"),
+            ("APOS", None),
+        ]
+        for panel_index, (method, fixed_treatment) in enumerate(panels):
+            method_sub = sub[sub["method"].eq(method)]
+            lines.append(
+                rf"\multicolumn{{{ncol + 1}}}{{l}}{{\textit{{Panel {'AB'[panel_index]}: {method}}}}} \\"
+            )
+            treatments = [fixed_treatment] if fixed_treatment else [
+                label for label in [
+                    "Boiling", "Chlorination/tablets", "Straining/settling",
+                ] if label in set(method_sub["_treatment_label"])
+            ]
+            for treatment_index, treatment in enumerate(treatments):
+                tsub = method_sub[method_sub["_treatment_label"].eq(treatment)]
+                if tsub.empty:
+                    continue
+                full = tsub.iloc[0]
+                lines.append(
+                    rf"\multicolumn{{{ncol + 1}}}{{l}}{{\quad\textit{{{treatment}}}}} \\"
+                )
+                for label, full_key, reduced_key, relative in rows:
+                    values = ["1.0000" if relative else _format_rv(full.get(full_key))]
+                    for group in groups:
+                        hit = tsub[tsub["group"].eq(group)]
+                        value = None if hit.empty else _relative_sensitivity_value(
+                            hit.iloc[0], reduced_key, full_key, relative=relative
+                        )
+                        values.append(
+                            "---" if value is None or pd.isna(value)
+                            else (f"{value:.4f}" if relative else _format_rv(value))
+                        )
+                    lines.append(" & ".join([rf"\quad {label}"] + values) + r" \\")
+                if treatment_index < len(treatments) - 1:
+                    lines.append(r"\addlinespace")
+            if panel_index < len(panels) - 1:
+                lines.append(r"\midrule")
+
+        notes = (
+            r"\textit{Notes:} Panel A reports IRM and Panel B reports APOS. "
+            r"Relative values equal the leave-one-control-group-out RV or "
+            r"RV$_\alpha$ divided by the complete-specification value. "
+            r"Absolute values are percentages; all values use four decimals. "
+            r"Estimation uses cluster-level folds."
+        )
+        lines += [
+            r"\bottomrule", r"\end{tabular}", r"\end{adjustbox}",
+            r"\par\vspace{3pt}",
+            rf"\begin{{minipage}}{{\linewidth}}\footnotesize {notes}\end{{minipage}}",
+            r"\end{table}", r"\end{landscape}",
+        ]
+        path = output_dir / f"{filename_prefix}_{outcome}.tex"
+        path.write_text("\n".join(lines), encoding="utf-8")
+        paths.append(path)
+        print(f"Table saved to: {path}")
+    return paths
+
+
+def create_benchmark_sensitivity_tables(results, filename_prefix="table_sensitivity_benchmark", output_dir=None):
+    """Write source-E.coli benchmark tables in the appendix table style.
+
+    The table is deliberately organized in IRM and APOS panels, with fold
+    specifications shown as sub-blocks.  This keeps the benchmark statistics
+    together without putting specification and treatment names into a wide,
+    difficult-to-scan header.
+    """
+
+    frame = results.copy() if isinstance(results, pd.DataFrame) else pd.DataFrame(results)
+    output_dir = Path(output_dir) if output_dir is not None else Path("Output")
+    output_dir.mkdir(parents=True, exist_ok=True)
+    paths = []
+
+    treatment_labels = {
+        "0": "No treatment", "1": "Boiling", "2": "Aquatabs",
+        "3": "Straining/settling", "98": "Other treatment",
+    }
+
+    def treatment_label(value, method):
+        text = str(value).strip()
+        code = text.split()[0] if text else text
+        if method == "IRM":
+            return "Water treatment"
+        return treatment_labels.get(code, text)
+
+    specification_labels = {
+        "clustered_folds": "Clustered folds",
+        "unclustered": "Ordinary folds",
+    }
+    metric_headers = [
+        r"RV", r"RV$_\alpha$", r"\shortstack{Omit source E.coli\\$cf_y$}",
+        r"\shortstack{Omit source E.coli\\$cf_d$}", r"$\rho$",
+        r"\shortstack{Omit source E.coli\\$\Delta\theta$}",
+    ]
+
+    for outcome in frame["outcome"].drop_duplicates():
+        sub = frame[frame["outcome"].eq(outcome)]
+        lines = [
+            r"% Requires: \usepackage{booktabs, pdflscape, graphicx, adjustbox}",
+            r"\begin{landscape}", r"\begin{table}[p]", r"\centering",
+            rf"\caption{{Sensitivity to omission of source E.coli deciles: {_get_outcome_label(outcome)}}}",
+            rf"\label{{tab:{filename_prefix}-{outcome}}}",
+            r"\scriptsize",
+            r"\setlength{\tabcolsep}{5pt}",
+            r"\renewcommand{\arraystretch}{0.92}",
+            r"\begin{adjustbox}{max width=\linewidth, center}",
+            r"\begin{tabular}{lllrrrrrr}",
+            r"\toprule",
+            "Panel & Specification & Treatment & " + " & ".join(metric_headers) + r" \\",
+            r"\midrule",
+        ]
+
+        for panel_index, method in enumerate(("IRM", "APOS")):
+            method_sub = sub[sub["method"].eq(method)]
+            if method_sub.empty:
+                continue
+            panel_label = "Panel A: IRM" if method == "IRM" else "Panel B: APOS"
+            lines.append(rf"\multicolumn{{9}}{{l}}{{\textit{{{panel_label}}}}} \\")
+
+            for spec_index, specification in enumerate(("clustered_folds", "unclustered")):
+                spec_sub = method_sub[method_sub["specification"].eq(specification)]
+                if spec_sub.empty:
+                    continue
+                for _, row in spec_sub.iterrows():
+                    treatment = treatment_label(row["treatment"], method)
+                    values = [
+                        f"{100 * row['rv']:.4f}\\%",
+                        f"{100 * row['rva']:.4f}\\%",
+                        f"{row['cf_y']:.4f}", f"{row['cf_d']:.4f}",
+                        f"{row['rho']:.4f}", f"{row['delta_theta']:.4f}",
+                    ]
+                    lines.append(
+                        f" & {_latex_text(specification_labels[specification])} & "
+                        f"{_latex_text(treatment)} & " + " & ".join(values) + r" \\")
+                if spec_index == 0 and not method_sub[method_sub["specification"].eq("unclustered")].empty:
+                    lines.append(r"\addlinespace[3pt]")
+            if panel_index == 0 and not sub[sub["method"].eq("APOS")].empty:
+                lines.append(r"\midrule")
+
+        notes = (
+            r"\textit{Notes:} The omitted controls are the initial source-water "
+            r"E.coli decile indicators ($source\_ecoli\_*$). Panel A reports the "
+            r"IRM estimate for water treatment; Panel B reports APOS contrasts for "
+            r"Boiling, Aquatabs, Straining/settling, and Other treatment. Clustered "
+            r"folds use cluster-level sample splitting; ordinary folds use unclustered "
+            r"folds. $cf_y$ and $cf_d$ measure the observed gains in outcome and "
+            r"treatment prediction, respectively. $\rho$ is the implied signed adversity "
+            r"parameter, and $\Delta\theta = \theta_{\mathrm{omit}} - \theta_{\mathrm{full}}$. "
+            r"RV and RV$_\alpha$ are the confounding strengths needed to eliminate the "
+            r"estimate or its confidence interval."
+        )
+        lines += [
+            r"\bottomrule", r"\end{tabular}", r"\end{adjustbox}",
+            r"\par\vspace{3pt}",
+            rf"\begin{{minipage}}{{\linewidth}}\scriptsize {notes}\end{{minipage}}",
+            r"\end{table}", r"\end{landscape}",
+        ]
+        path = output_dir / f"{filename_prefix}_{outcome}.tex"
+        path.write_text("\n".join(lines), encoding="utf-8")
+        paths.append(path)
+        print(f"Table saved to: {path}")
     return paths
 
 
@@ -288,12 +525,12 @@ def create_relative_sensitivity_comparison_tables(
                 lines.append(
                     rf"\multicolumn{{{ncol + 1}}}{{l}}{{\quad\textit{{{treatment_label}}}}} \\")
                 for label, full_key, reduced_key, relative in [
-                    (r"RV relative", "rv_q", "rv_q_without", True),
                     (r"RV original", "rv_q", "rv_q_without", False),
-                    (r"RV$_\alpha$ relative", "rv_qa", "rv_qa_without", True),
+                    (r"RV relative", "rv_q", "rv_q_without", True),
                     (r"RV$_\alpha$ original", "rv_qa", "rv_qa_without", False),
+                    (r"RV$_\alpha$ relative", "rv_qa", "rv_qa_without", True),
                 ]:
-                    values = ["1.00" if relative else _format_rv(full.get(full_key))]
+                    values = ["1.0000" if relative else _format_rv(full.get(full_key))]
                     for group in groups:
                         hit = tsub[tsub["group"].eq(group)]
                         value = None if hit.empty else _relative_sensitivity_value(
@@ -301,7 +538,7 @@ def create_relative_sensitivity_comparison_tables(
                         )
                         values.append(
                             "---" if value is None or pd.isna(value)
-                            else (f"{value:.2f}" if relative else _format_rv(value))
+                            else (f"{value:.4f}" if relative else _format_rv(value))
                         )
                     lines.append(" & ".join([rf"\quad {label}"] + values) + r" \\")
                 if treatment_index < len(treatments) - 1:
@@ -448,7 +685,9 @@ def _write_column_publication_table(
     lines.append(row("", [result_cell(c["irm"])[1] for c in columns]))
     lines.append(r"\addlinespace[6pt]")
     lines.append(r"\multicolumn{" + str(1 + n_columns) + r"}{l}{\textit{Shares}} \\")
-    lines.append(row(r"Share outcome (%)", once_per_outcome([f"{100 * c['irm_stats']['mean_y']:.1f}\\%" for c in columns])))
+    # IRM is a binary-treatment model, so this is the outcome mean, not a
+    # treatment share. Treatment prevalence is reported separately below.
+    lines.append(row(r"Outcome mean (%)", once_per_outcome([f"{100 * c['irm_stats']['mean_y']:.1f}\\%" for c in columns])))
     lines.append(row(r"Treated (\%)", once_per_outcome([f"{100 * c['irm_stats']['mean_d']:.1f}\\%" for c in columns])))
 
     lines += [r"\midrule", r"\multicolumn{" + str(1 + n_columns) + r"}{l}{\textit{APOS}} \\"]
@@ -468,7 +707,9 @@ def _write_column_publication_table(
         lines.append(row(treatment_labels.get(index, str(contrast)), values))
         lines.append(row("", ses))
     lines.append(r"\addlinespace[6pt]")
-    lines.append(row(r"Share outcome (%)", once_per_outcome([f"{100 * c['apos_stats']['mean_y']:.1f}\\%" for c in columns])))
+    # APOS rows below are the empirical distribution of the categorical
+    # treatment variable WQ15_g. Do not label those treatment shares as an
+    # outcome share; the outcome mean is already reported in the IRM block.
     for level in [0, 1, 2, 3, 98]:
         lines.append(row(_SHARE_LABELS[level], once_per_outcome([f"{100 * c['apos_stats']['shares'].loc[level]:.1f}\\%" for c in columns])))
     lines += [r"\midrule", r"\multicolumn{" + str(1 + n_columns) + r"}{l}{\textit{Sample}} \\"]
@@ -492,7 +733,17 @@ def write_super_learner_weights_table(output_dir, estimates, outcome_order, file
     """Write average fitted Super Learner weights by outcome and fold type."""
 
     def collect_weights(model, nuisance):
-        fitted = model.models.get(nuisance, {})
+        models = model.models or {}
+        # DoubleML IRM/APOS store the outcome learner separately by treatment
+        # arm (ml_g0, ml_g1, ...), while the public learner is named ml_g.
+        # Pool those arm-specific fitted ensembles for the reported average.
+        if nuisance == "ml_g":
+            fitted = {
+                key: value for key, value in models.items()
+                if key.startswith("ml_g")
+            }
+        else:
+            fitted = models.get(nuisance, {})
         weights = []
 
         def visit(value):
@@ -502,7 +753,16 @@ def write_super_learner_weights_table(output_dir, estimates, outcome_order, file
             elif isinstance(value, (list, tuple)):
                 for item in value:
                     visit(item)
+            elif isinstance(value, np.ndarray):
+                # DoubleML may store fitted nuisance learners inside object
+                # arrays. Traverse those arrays so stored ensemble weights are
+                # found regardless of the container used by the installed
+                # DoubleML version.
+                for item in value.flat:
+                    visit(item)
             elif hasattr(value, "weights_"):
+                # ``estimators`` is the configured (name, estimator) list;
+                # ``weights_`` has the corresponding fitted convex weights.
                 names = [name for name, _ in value.estimators]
                 weights.append(dict(zip(names, np.asarray(value.weights_))))
 
@@ -512,8 +772,14 @@ def write_super_learner_weights_table(output_dir, estimates, outcome_order, file
                 f"No stored weights found for nuisance learner {nuisance}. "
                 "Refit with store_models=True."
             )
-        names = list(weights[0])
-        return {name: float(np.mean([row[name] for row in weights])) for name in names}
+        # A learner can be absent in a particular stored fit in edge cases.
+        # Average each learner over the fits in which it is present instead of
+        # failing with a misleading missing-key error.
+        names = list(dict.fromkeys(name for row in weights for name in row))
+        return {
+            name: float(np.mean([row[name] for row in weights if name in row]))
+            for name in names
+        }
 
     columns = []
     for outcome in outcome_order:
@@ -523,44 +789,165 @@ def write_super_learner_weights_table(output_dir, estimates, outcome_order, file
             fitted = models[f"irm_{suffix}"]
             columns.append((outcome, specification, fitted))
 
-    # ``estimates`` may contain lazy disk-backed handles, which deliberately
-    # do not expose DoubleML's private ``_learner`` attribute.  Keep this
-    # presentation-only list aligned with the configured learner library.
-    learner_names = ["ols", "random_forest", "xgboost"]
+    # Outcome regression and treatment propensity use different learner
+    # libraries. In particular, ``g(X)`` has OLS while ``m(X)`` has logistic
+    # regression. Reusing one list for both nuisances makes a valid table fail
+    # when it searches for OLS among propensity-model weights.
+    learner_names_by_nuisance = {
+        "ml_g": ["ols", "lasso", "elastic_net", "random_forest", "xgboost"],
+        "ml_m": ["logit", "lasso", "elastic_net", "random_forest", "xgboost"],
+    }
+    # Short headers keep the table readable in landscape without shrinking the
+    # numerical cells excessively. Full outcome definitions are documented in
+    # the note below the table.
+    short_headers = [
+        r"\shortstack{SomeRiskHome\\Clustered}",
+        r"\shortstack{SomeRiskHome\\Unclustered}",
+        r"\shortstack{VeryHighRiskHome\\Clustered}",
+        r"\shortstack{VeryHighRiskHome\\Unclustered}",
+        r"\shortstack{Diarrhea\\Clustered}",
+        r"\shortstack{Diarrhea\\Unclustered}",
+    ]
     lines = [
-        r"% Requires: \usepackage{booktabs, graphicx, adjustbox}",
-        r"\begin{table}[htbp]",
+        r"% Requires: \usepackage{booktabs, graphicx, pdflscape}",
+        r"\begin{landscape}",
+        r"\begin{table}[p]",
         r"\centering",
         r"\caption{Super Learner weights}",
         r"\label{tab:super-learner-weights}",
-        r"\scriptsize",
-        r"\begin{adjustbox}{max width=\linewidth}",
-        rf"\begin{{tabular}}{{ll{'c' * len(columns)}}}",
+        r"\small",
+        r"\begin{tabular}{lrrrrrr}",
         r"\toprule",
-        "Nuisance & Learner & " + " & ".join(
-            f"{_get_outcome_label(outcome)} ({spec})" for outcome, spec, _ in columns
-        ) + r" \\",
+        "Learner & " + " & ".join(short_headers) + r" \\",
         r"\midrule",
     ]
-    for nuisance, label in [("ml_g", "Outcome (g)"), ("ml_m", "Treatment (m)")]:
-        for learner in learner_names:
+    for panel_index, (nuisance, label) in enumerate(
+        [("ml_g", "Panel A: Outcome learner $g(X)$"),
+         ("ml_m", "Panel B: Treatment learner $m(X)$")]
+    ):
+        lines.append(rf"\multicolumn{{7}}{{l}}{{\textit{{{label}}}}} \\")
+        for learner in learner_names_by_nuisance[nuisance]:
             values = []
             for outcome, specification, model in columns:
-                values.append(f"{collect_weights(model, nuisance)[learner]:.3f}")
-            lines.append(f"{label} & {learner} & " + " & ".join(values) + r" \\")
-        if nuisance == "ml_g":
+                weights = collect_weights(model, nuisance)
+                if learner not in weights:
+                    # Keep the table readable if a future fit omits one
+                    # learner, while making the missing cell explicit.
+                    values.append("---")
+                else:
+                    values.append(f"{weights[learner]:.3f}")
+            lines.append(
+                f"{_latex_text(learner)} & "
+                + " & ".join(values)
+                + r" \\"
+            )
+        if panel_index == 0:
             lines.append(r"\midrule")
     lines += [
         r"\bottomrule",
         r"\end{tabular}",
-        r"\end{adjustbox}",
         r"\par\vspace{3pt}",
-        r"\begin{minipage}{\linewidth}\scriptsize Weights are averaged across outer folds and repetitions. Clustered and unclustered columns use the same fitted nuisance learner library with different sample-splitting schemes.\end{minipage}",
+        r"\begin{minipage}{0.95\linewidth}\footnotesize Weights are averaged across outer folds and repetitions. C = clustered-fold specification; U = unclustered-fold specification. SomeRiskHome denotes any detectable E. coli at home, VeryHighRiskHome denotes E. coli above 100 CFU/100 mL at home, and Diarrhea denotes diarrhea among children under five. The outcome learner uses OLS, Lasso, Elastic Net, random forest, and XGBoost; the treatment learner uses logistic regression, Lasso, Elastic Net, random forest, and XGBoost.\end{minipage}",
         r"\end{table}",
+        r"\end{landscape}",
     ]
     path = Path(output_dir) / filename
     path.write_text("\n".join(lines), encoding="utf-8")
     return path
+
+
+def write_super_learner_weights_tables(output_dir, estimates, outcome_order):
+    """Write separate, vertically stacked weight tables by fold specification.
+
+    Each output file contains three outcome panels. Within each panel, the
+    outcome learner and treatment learner are shown side by side, which keeps
+    clustered and unclustered results from competing for space in one wide
+    table.
+    """
+
+    def collect_weights(model, nuisance):
+        models = model.models or {}
+        fitted = (
+            {key: value for key, value in models.items() if key.startswith("ml_g")}
+            if nuisance == "ml_g" else models.get(nuisance, {})
+        )
+        rows = []
+
+        def visit(value):
+            if isinstance(value, dict):
+                for item in value.values():
+                    visit(item)
+            elif isinstance(value, (list, tuple)):
+                for item in value:
+                    visit(item)
+            elif isinstance(value, np.ndarray):
+                for item in value.flat:
+                    visit(item)
+            elif hasattr(value, "weights_"):
+                names = [name for name, _ in value.estimators]
+                rows.append(dict(zip(names, np.asarray(value.weights_))))
+
+        visit(fitted)
+        if not rows:
+            raise ValueError(f"No stored weights found for nuisance learner {nuisance}.")
+        names = list(dict.fromkeys(name for row in rows for name in row))
+        return {
+            name: float(np.mean([row[name] for row in rows if name in row]))
+            for name in names
+        }
+
+    learner_names = {
+        "ml_g": ["ols", "lasso", "elastic_net", "random_forest", "xgboost"],
+        "ml_m": ["logit", "lasso", "elastic_net", "random_forest", "xgboost"],
+    }
+    labels = {
+        "SomeRiskHome": "Any detectable E. coli at home",
+        "VeryHighRiskHome": "Very high E. coli at home (>100 CFU/100 mL)",
+        "diarrhea": "Diarrhea among children under five",
+    }
+    output_dir = Path(output_dir)
+    paths = []
+    for specification, suffix in [("clustered", "cluster"), ("unclustered", "no_cluster")]:
+        lines = [
+            r"% Requires: \usepackage{booktabs}",
+            r"\begin{table}[htbp]",
+            r"\centering",
+            rf"\caption{{Super Learner weights: {specification} folds}}",
+            rf"\label{{tab:super-learner-weights-{specification}}}",
+            r"\small",
+            r"\begin{tabular}{lrlr}",
+            r"\toprule",
+            r"Learner $g(X)$ & Weight & Learner $m(X)$ & Weight \\",
+            r"\midrule",
+        ]
+        for panel_index, outcome in enumerate(outcome_order):
+            dataset = "U5" if outcome == "diarrhea" else "HH"
+            model = estimates[(dataset, outcome)][f"irm_{suffix}"]
+            g_weights = collect_weights(model, "ml_g")
+            m_weights = collect_weights(model, "ml_m")
+            lines.append(
+                rf"\multicolumn{{4}}{{l}}{{\textit{{Panel {'ABC'[panel_index]}: {labels[outcome]}}}}} \\"
+            )
+            for g_name, m_name in zip(learner_names["ml_g"], learner_names["ml_m"]):
+                g_value = "---" if g_name not in g_weights else f"{g_weights[g_name]:.3f}"
+                m_value = "---" if m_name not in m_weights else f"{m_weights[m_name]:.3f}"
+                lines.append(
+                    f"{_latex_text(g_name)} & {g_value} & "
+                    f"{_latex_text(m_name)} & {m_value} " + r"\\"
+                )
+            if panel_index < len(outcome_order) - 1:
+                lines.append(r"\midrule")
+        lines += [
+            r"\bottomrule",
+            r"\end{tabular}",
+            r"\par\vspace{3pt}",
+            r"\begin{minipage}{0.9\linewidth}\footnotesize Weights are averaged across outer folds and repetitions. The $g(X)$ learner predicts the outcome; the $m(X)$ learner predicts treatment assignment.\end{minipage}",
+            r"\end{table}",
+        ]
+        path = output_dir / f"table_super_learner_weights_{specification}.tex"
+        path.write_text("\n".join(lines), encoding="utf-8")
+        paths.append(path)
+    return paths
 
 
 def write_publication_table(
@@ -732,12 +1119,11 @@ def write_publication_table(
 
         lines.extend([
             stat_row(r"\quad \textit{Shares} (IRM)", *([""] * len(irm_stats))),
-            stat_row(r"\quad Share outcome (\%)", *[share_text(stats["mean_y"]) for stats in irm_stats]),
+            stat_row(r"\quad Outcome mean (\%)", *[share_text(stats["mean_y"]) for stats in irm_stats]),
             stat_row(r"\quad Treated (\%) (IRM)", *[share_text(stats["mean_d"]) for stats in irm_stats]),
             stat_row(r"\quad Observations (IRM)", *[f"{stats['n']:,}" for stats in irm_stats]),
             stat_row(r"\quad PSUs (IRM)", *[psu_text(stats) for stats in irm_stats]),
             stat_row(r"\quad \textit{Shares} (APOS)", *([""] * len(apos_stats))),
-            stat_row(r"\quad Share outcome (\%)", *[share_text(stats["mean_y"]) for stats in apos_stats]),
             stat_row(r"\quad Observations (APOS)", *[f"{stats['n']:,}" for stats in apos_stats]),
             stat_row(r"\quad PSUs (APOS)", *[psu_text(stats) for stats in apos_stats]),
             *[
@@ -925,12 +1311,12 @@ def write_stacked_regression_table(
 
         for stat_label, method, treatment_column in [
             (r"\quad \textit{Shares} (IRM)", "IRM", "water_treatment"),
-            (r"\quad Share outcome (\%)", "IRM", "water_treatment"),
+            (r"\quad Outcome mean (\%)", "IRM", "water_treatment"),
             (r"\quad Mean treatment (IRM)", "IRM", "water_treatment"),
             (r"\quad Observations (IRM)", "IRM", "water_treatment"),
             (r"\quad PSUs (IRM)", "IRM", "water_treatment"),
             (r"\quad \textit{Shares} (APOS)", "APOS", "WQ15_g"),
-            (r"\quad Share outcome (\%)", "APOS", "WQ15_g"),
+            (r"\quad Outcome mean (\%)", "APOS", "WQ15_g"),
             (r"\quad Observations (APOS)", "APOS", "WQ15_g"),
             (r"\quad PSUs (APOS)", "APOS", "WQ15_g"),
         ]:
@@ -938,7 +1324,7 @@ def write_stacked_regression_table(
             for specification in specifications:
                 frame = models[f"{method.lower()}_frame_{frame_keys[specification]}"]
                 stat = stats(frame, outcome, treatment_column)
-                if stat_label == r"\quad Share outcome (\%)":
+                if stat_label == r"\quad Outcome mean (\%)":
                     value = share_text(stat["mean_y"])
                 elif stat_label.startswith(r"\quad \textit{Shares"):
                     value = ""
@@ -996,7 +1382,7 @@ def write_stacked_regression_table(
     return path
 
 
-def create_heterogeneity_comparison_tables(
+def _create_heterogeneity_comparison_tables_legacy(
     results,
     output_dir=None,
     filename_prefix="table_heterogeneity",
@@ -1005,7 +1391,7 @@ def create_heterogeneity_comparison_tables(
         ("diarrhea", ["diarrhea"]),
     ),
 ):
-    """Write outcome-specific appendix tables with heterogeneity panels.
+    """Write outcome-specific tables for clustered and ordinary GATE results.
 
     Rows are heterogeneity-group categories. Each treatment cell reports the
     cluster-fold estimate and SE, followed in brackets by the ordinary-fold
@@ -1063,7 +1449,7 @@ def create_heterogeneity_comparison_tables(
         panels = list(dict.fromkeys(table_frame["group"].tolist()))
         for panel_index, group in enumerate(panels):
             panel = table_frame[table_frame["group"].eq(group)]
-            panel_label = panel["group_label"].iloc[0]
+            panel_label = panel["heterogeneity_label"].iloc[0]
             n_columns = 1 + n_effect_columns
             lines.append(
                 rf"\multicolumn{{{n_columns}}}{{l}}"
@@ -1161,11 +1547,209 @@ def create_heterogeneity_comparison_tables(
     return paths
 
 
+def create_heterogeneity_comparison_tables(
+    results,
+    output_dir=None,
+    filename_prefix="table_heterogeneity",
+    specifications=("clustered_folds", "unclustered"),
+    outcome_sets=(
+        ("ecoli", ["SomeRiskHome", "VeryHighRiskHome"]),
+        ("diarrhea", ["diarrhea"]),
+    ),
+):
+    """Write heterogeneity tables in the water-treatment appendix layout."""
+
+    frame = results.copy() if isinstance(results, pd.DataFrame) else pd.DataFrame(results)
+    frame = frame[frame["specification"].isin(specifications)]
+    if frame.empty:
+        raise ValueError("No heterogeneity results remain for comparison tables.")
+
+    output_dir = Path(output_dir) if output_dir is not None else Path("Output")
+    output_dir.mkdir(parents=True, exist_ok=True)
+    treatment_order = [
+        ("IRM", "Any Treatment"),
+        ("APOS", "Boiling"),
+        ("APOS", "Chlorination/tablets"),
+        ("APOS", "Straining/settling"),
+    ]
+    paths = []
+
+    def sort_value(value):
+        try:
+            return (0, float(value))
+        except (TypeError, ValueError):
+            return (1, str(value))
+
+    for table_name, outcomes in outcome_sets:
+        table_frame = frame[frame["outcome"].isin(outcomes)].copy()
+        if table_frame.empty:
+            continue
+        n_effect_columns = len(specifications) * len(treatment_order)
+        n_columns = 1 + n_effect_columns
+        if len(specifications) == 1:
+            treatment_header = "Heterogeneity group & " + " & ".join(
+                treatment for _, treatment in treatment_order
+            ) + r" \\"
+            fold_header = None
+        else:
+            treatment_header = "Heterogeneity group & " + " & ".join(
+                rf"\multicolumn{{{len(specifications)}}}{{c}}{{{treatment}}}"
+                for _, treatment in treatment_order
+            ) + r" \\"
+            fold_header = " & " + " & ".join(
+                [
+                    {"clustered_folds": "Clustered folds", "unclustered": "Ordinary folds"}.get(
+                        specification, specification
+                    )
+                    for _ in treatment_order for specification in specifications
+                ]
+            ) + r" \\"
+        lines = [
+            r"% Requires: \usepackage{booktabs, pdflscape, graphicx, adjustbox}",
+            r"\begin{landscape}", r"\begin{table}[p]", r"\centering",
+            rf"\caption{{Heterogeneity of stacked GATE effects: {table_name}}}",
+            rf"\label{{tab:{filename_prefix}-{table_name}}}",
+            r"\scriptsize\setlength{\tabcolsep}{4pt}",
+            r"\begin{adjustbox}{max width=\linewidth, center}",
+            rf"\begin{{tabular}}{{l{'c' * n_effect_columns}}}",
+            r"\toprule",
+            treatment_header,
+            r"\midrule",
+        ]
+        if fold_header is not None:
+            lines.insert(-1, fold_header)
+
+        for panel_index, outcome in enumerate(outcomes):
+            outcome_frame = table_frame[table_frame["outcome"].eq(outcome)]
+            if outcome_frame.empty:
+                continue
+            groups = list(dict.fromkeys(outcome_frame["group"].tolist()))
+            for group_index, group in enumerate(groups):
+                panel = outcome_frame[outcome_frame["group"].eq(group)]
+                group_label = panel["heterogeneity_label"].iloc[0]
+                panel_label = f"{_get_outcome_label(outcome)}: {group_label}"
+                lines.append(
+                    rf"\multicolumn{{{n_columns}}}{{l}}{{\textbf{{Panel {chr(65 + panel_index)}: {panel_label}}}}} \\")
+                values = sorted(
+                    dict.fromkeys(panel["group_value"].tolist()),
+                    key=sort_value,
+                )
+
+                for raw_value in values:
+                    row = panel[panel["group_value"].eq(raw_value)]
+                    estimate_cells, se_cells = [], []
+                    for method, treatment in treatment_order:
+                        hit = row[
+                            row["method"].eq(f"{method} stacked")
+                            & row["treatment_label"].eq(treatment)
+                        ]
+                        for specification in specifications:
+                            result = hit[hit["specification"].eq(specification)]
+                            if result.empty:
+                                estimate_cells.append("---")
+                                se_cells.append("---")
+                            else:
+                                result = result.iloc[0]
+                                estimate_cells.append(
+                                    _format_coef(float(result["coef"]), float(result["se"]))
+                                )
+                                se_cells.append(f"({float(result['se']):.3f})")
+                    label = str(row["group_label"].iloc[0])
+                    lines.append(" & ".join([label] + estimate_cells) + r" \\")
+                    lines.append(" & ".join([""] + se_cells) + r" \\")
+
+                lines.append(rf"\multicolumn{{{n_columns}}}{{l}}{{\textit{{Sample}}}} \\")
+                sample_stats = {}
+                for method in ("IRM", "APOS"):
+                    hit = panel[panel["method"].eq(f"{method} stacked")]
+                    if hit.empty:
+                        continue
+                    sample_specification = (
+                        "clustered_folds" if "clustered_folds" in specifications
+                        else specifications[0]
+                    )
+                    sample = hit[hit["specification"].eq(sample_specification)]
+                    sample = sample.drop_duplicates(["group_value"])
+                    n_obs = int(sample["n"].sum())
+                    n_psu = (
+                        int(sample["n_psu"].sum())
+                        if sample["n_psu"].notna().all() else "---"
+                    )
+                    sample_stats[method] = {
+                        "N": f"{n_obs:,}",
+                        "PSUs": f"{n_psu:,}" if isinstance(n_psu, int) else str(n_psu),
+                    }
+
+                # N and PSU counts are sample-level diagnostics.  Put each
+                # method's count only in the treatment columns that use that
+                # method, without adding IRM/APOS labels as pseudo-columns.
+                for statistic in ("N", "PSUs"):
+                    cells = [rf"\quad {statistic}"]
+                    for method, _ in treatment_order:
+                        value = sample_stats.get(method, {}).get(statistic, "")
+                        cells.extend([value] * len(specifications))
+                    lines.append(" & ".join(cells) + r" \\")
+
+                lines.append(rf"\multicolumn{{{n_columns}}}{{l}}{{\textit{{BLP $R^{{2}}$}}}} \\")
+                for method in ("IRM", "APOS"):
+                    hit = panel[panel["method"].eq(f"{method} stacked")]
+                    if hit.empty:
+                        continue
+                    for treatment in [t for m, t in treatment_order if m == method]:
+                        treatment_hit = hit[hit["treatment_label"].eq(treatment)]
+                        available = [
+                            treatment_hit[treatment_hit["specification"].eq(specification)]
+                            for specification in specifications
+                        ]
+                        if any(value.empty for value in available):
+                            continue
+                        # Keep each BLP R-squared under its corresponding
+                        # treatment column.  Spanning the whole row makes the
+                        # value appear detached from the treatment it describes.
+                        r2_cells = []
+                        for value in available:
+                            r2_cells.append(f"{float(value['r2'].iloc[0]):.3f}")
+                        cells = [rf"\quad {treatment}"]
+                        for candidate_method, candidate_treatment in treatment_order:
+                            if (candidate_method, candidate_treatment) == (method, treatment):
+                                cells.extend(r2_cells)
+                            else:
+                                cells.extend([""] * len(specifications))
+                        lines.append(" & ".join(cells) + r" \\")
+                if group_index < len(groups) - 1:
+                    lines.append(r"\addlinespace[4pt]")
+            if panel_index < len(outcomes) - 1:
+                lines.append(r"\midrule")
+
+        fold_note = (
+            r"Clustered folds use cluster-level sample splitting."
+            if specifications == ("clustered_folds",)
+            else r"Clustered folds use cluster-level sample splitting; ordinary folds use unclustered folds."
+        )
+        notes = (
+            r"\textit{Notes:} Coefficient rows report GATE estimates with "
+            r"significance stars; the following row reports standard errors in "
+            r"parentheses. "
+            + fold_note +
+            r" $N$ and PSU counts "
+            r"are reported for each outcome and method. BLP $R^2$ is descriptive: "
+            r"it is the R-squared from projecting the APOS/IRM orthogonal contrast "
+            r"signal onto heterogeneity-group indicators, not a causal-model $R^2$. "
+            r"The heterogeneity analysis is exploratory."
+        )
+        lines += [
+            r"\bottomrule", r"\end{tabular}", r"\end{adjustbox}",
+            r"\par\vspace{3pt}",
+            rf"\begin{{minipage}}{{\linewidth}}\footnotesize {notes}\end{{minipage}}",
+            r"\end{table}", r"\end{landscape}",
+        ]
+        path = output_dir / f"{filename_prefix}_{table_name}.tex"
+        path.write_text("\n".join(lines), encoding="utf-8")
+        paths.append(path)
+        print(f"Table saved to: {path}")
+    return paths
+
+
 # Backward-compatible import name for cached estimation scripts.  New calls
 # should use ``write_publication_table``.
 write_water_treatment_table = write_publication_table
-
-
-
-
-

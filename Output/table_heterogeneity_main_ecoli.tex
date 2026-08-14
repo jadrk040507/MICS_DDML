@@ -1,0 +1,58 @@
+% Requires: \usepackage{booktabs, pdflscape, graphicx, adjustbox}
+\begin{landscape}
+\begin{table}[p]
+\centering
+\caption{Heterogeneity of stacked GATE effects: ecoli}
+\label{tab:table_heterogeneity_main-ecoli}
+\scriptsize\setlength{\tabcolsep}{4pt}
+\begin{adjustbox}{max width=\linewidth, center}
+\begin{tabular}{lcccc}
+\toprule
+Heterogeneity group & Any Treatment & Boiling & Chlorination/tablets & Straining/settling \\
+\midrule
+\multicolumn{5}{l}{\textbf{Panel A: Some Risk Home (E.coli $>0$ CFU): Initial source-water E. coli decile}} \\
+Decile 1 & 0.003 & -0.090 & -0.020 & -0.041 \\
+ & (0.036) & (0.062) & (0.085) & (0.066) \\
+Decile 5 & -0.006 & 0.136 & -0.001 & 0.151 \\
+ & (0.055) & (0.120) & (0.126) & (0.170) \\
+Decile 6 & -0.032 & 0.193 & -0.120 & 0.038 \\
+ & (0.060) & (0.133) & (0.092) & (0.071) \\
+Decile 7 & 0.073 & 0.189 & 0.075 & 0.064 \\
+ & (0.050) & (0.144) & (0.090) & (0.043) \\
+Decile 8 & -0.014 & -0.033 & 0.044 & -0.014 \\
+ & (0.021) & (0.038) & (0.054) & (0.023) \\
+\multicolumn{5}{l}{\textit{Sample}} \\
+\quad IRM & \multicolumn{4}{l}{$N=5,962$; PSUs = 5,536} \\
+\quad APOS & \multicolumn{4}{l}{$N=5,962$; PSUs = 5,536} \\
+\multicolumn{5}{l}{\textit{BLP $R^{2}$}} \\
+\quad IRM, Any Treatment & 0.000 &  &  &  \\
+\quad APOS, Boiling &  & 0.002 &  &  \\
+\quad APOS, Chlorination/tablets &  &  & 0.000 &  \\
+\quad APOS, Straining/settling &  &  &  & 0.000 \\
+\midrule
+\multicolumn{5}{l}{\textbf{Panel B: Very High Risk Home (E.coli $>100$ CFU): Initial source-water E. coli decile}} \\
+Decile 1 & -0.067** & -0.095** & -0.118** & -0.091 \\
+ & (0.029) & (0.048) & (0.056) & (0.067) \\
+Decile 5 & 0.051 & -0.128 & 0.070 & 0.213*** \\
+ & (0.041) & (0.143) & (0.107) & (0.049) \\
+Decile 6 & 0.011 & 0.068** & -0.163 & 0.009 \\
+ & (0.077) & (0.030) & (0.155) & (0.137) \\
+Decile 7 & 0.049 & 0.070** & -0.055 & 0.195*** \\
+ & (0.039) & (0.034) & (0.115) & (0.044) \\
+Decile 8 & 0.060 & 0.119** & 0.214** & 0.008 \\
+ & (0.045) & (0.059) & (0.084) & (0.072) \\
+\multicolumn{5}{l}{\textit{Sample}} \\
+\quad IRM & \multicolumn{4}{l}{$N=5,962$; PSUs = 5,536} \\
+\quad APOS & \multicolumn{4}{l}{$N=5,962$; PSUs = 5,536} \\
+\multicolumn{5}{l}{\textit{BLP $R^{2}$}} \\
+\quad IRM, Any Treatment & 0.001 &  &  &  \\
+\quad APOS, Boiling &  & 0.002 &  &  \\
+\quad APOS, Chlorination/tablets &  &  & 0.002 &  \\
+\quad APOS, Straining/settling &  &  &  & 0.001 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\par\vspace{3pt}
+\begin{minipage}{\linewidth}\footnotesize \textit{Notes:} Coefficient rows report GATE estimates with significance stars; the following row reports standard errors in parentheses. Clustered folds use cluster-level sample splitting. $N$ and PSU counts are reported for each outcome and method. BLP $R^2$ is descriptive: it is the R-squared from projecting the APOS/IRM orthogonal contrast signal onto heterogeneity-group indicators, not a causal-model $R^2$. The heterogeneity analysis is exploratory.\end{minipage}
+\end{table}
+\end{landscape}

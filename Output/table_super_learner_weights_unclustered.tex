@@ -1,0 +1,35 @@
+% Requires: \usepackage{booktabs}
+\begin{table}[htbp]
+\centering
+\caption{Super Learner weights: unclustered folds}
+\label{tab:super-learner-weights-unclustered}
+\small
+\begin{tabular}{lrlr}
+\toprule
+Learner $g(X)$ & Weight & Learner $m(X)$ & Weight \\
+\midrule
+\multicolumn{4}{l}{\textit{Panel A: Any detectable E. coli at home}} \\
+ols & 0.120 & logit & 0.071 \\
+lasso & 0.156 & lasso & 0.059 \\
+elastic\_net & 0.151 & elastic\_net & 0.046 \\
+random\_forest & 0.445 & random\_forest & 0.168 \\
+xgboost & 0.127 & xgboost & 0.655 \\
+\midrule
+\multicolumn{4}{l}{\textit{Panel B: Very high E. coli at home (>100 CFU/100 mL)}} \\
+ols & 0.213 & logit & 0.080 \\
+lasso & 0.265 & lasso & 0.057 \\
+elastic\_net & 0.257 & elastic\_net & 0.045 \\
+random\_forest & 0.175 & random\_forest & 0.168 \\
+xgboost & 0.091 & xgboost & 0.650 \\
+\midrule
+\multicolumn{4}{l}{\textit{Panel C: Diarrhea among children under five}} \\
+ols & 0.190 & logit & 0.337 \\
+lasso & 0.347 & lasso & 0.000 \\
+elastic\_net & 0.344 & elastic\_net & 0.000 \\
+random\_forest & 0.114 & random\_forest & 0.285 \\
+xgboost & 0.005 & xgboost & 0.378 \\
+\bottomrule
+\end{tabular}
+\par\vspace{3pt}
+\begin{minipage}{0.9\linewidth}\footnotesize Weights are averaged across outer folds and repetitions. The $g(X)$ learner predicts the outcome; the $m(X)$ learner predicts treatment assignment.\end{minipage}
+\end{table}

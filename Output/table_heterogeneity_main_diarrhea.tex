@@ -1,0 +1,38 @@
+% Requires: \usepackage{booktabs, pdflscape, graphicx, adjustbox}
+\begin{landscape}
+\begin{table}[p]
+\centering
+\caption{Heterogeneity of stacked GATE effects: diarrhea}
+\label{tab:table_heterogeneity_main-diarrhea}
+\scriptsize\setlength{\tabcolsep}{4pt}
+\begin{adjustbox}{max width=\linewidth, center}
+\begin{tabular}{lcccc}
+\toprule
+Heterogeneity group & Any Treatment & Boiling & Chlorination/tablets & Straining/settling \\
+\midrule
+\multicolumn{5}{l}{\textbf{Panel A: Diarrhea (under-5): Initial source-water E. coli decile}} \\
+Decile 1 & 0.031 & 0.027 & -0.002 & 0.084*** \\
+ & (0.031) & (0.070) & (0.019) & (0.021) \\
+Decile 5 & 0.038 & 0.065 & 0.019 & 0.132 \\
+ & (0.045) & (0.090) & (0.027) & (0.131) \\
+Decile 6 & 0.028 & 0.085* & -0.331 & -0.040 \\
+ & (0.064) & (0.049) & (0.276) & (0.212) \\
+Decile 7 & -0.125 & -0.019 & 0.001 & -0.378 \\
+ & (0.114) & (0.069) & (0.073) & (0.366) \\
+Decile 8 & -0.013 & -0.060 & 0.095** & 0.003 \\
+ & (0.039) & (0.084) & (0.039) & (0.086) \\
+\multicolumn{5}{l}{\textit{Sample}} \\
+\quad IRM & \multicolumn{4}{l}{$N=3,612$; PSUs = 3,263} \\
+\quad APOS & \multicolumn{4}{l}{$N=3,612$; PSUs = 3,263} \\
+\multicolumn{5}{l}{\textit{BLP $R^{2}$}} \\
+\quad IRM, Any Treatment & 0.001 &  &  &  \\
+\quad APOS, Boiling &  & 0.000 &  &  \\
+\quad APOS, Chlorination/tablets &  &  & 0.004 &  \\
+\quad APOS, Straining/settling &  &  &  & 0.002 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\par\vspace{3pt}
+\begin{minipage}{\linewidth}\footnotesize \textit{Notes:} Coefficient rows report GATE estimates with significance stars; the following row reports standard errors in parentheses. Clustered folds use cluster-level sample splitting. $N$ and PSU counts are reported for each outcome and method. BLP $R^2$ is descriptive: it is the R-squared from projecting the APOS/IRM orthogonal contrast signal onto heterogeneity-group indicators, not a causal-model $R^2$. The heterogeneity analysis is exploratory.\end{minipage}
+\end{table}
+\end{landscape}
