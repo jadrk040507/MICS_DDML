@@ -49,10 +49,10 @@ from _functions import (
 
 
 seed = 42
-folds = 3
-repetitions = 1
+folds = 5
+repetitions = 3
 # Sampled 10%
-sampled = True
+sampled = False
 # Keep DoubleML's process-level parallelism disabled.  In DoubleML 0.11.3,
 # APOS parallelized across treatment levels can share read-only NumPy arrays
 # between workers and fail while writing psi elements.  Sequential fitting is
