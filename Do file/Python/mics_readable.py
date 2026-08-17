@@ -321,12 +321,14 @@ REGRESSORS = [
 CLASSIFIERS = [
     ("logit", LogisticRegression(max_iter=2000)),
     ("lasso", LogisticRegressionCV(
-        cv=3, penalty="l1", solver="liblinear", max_iter=2000,
+        cv=3, l1_ratios=(1,), solver="liblinear", max_iter=2000,
         scoring="neg_log_loss", random_state=SEED,
+        use_legacy_attributes=False,
     )),
     ("elastic_net", LogisticRegressionCV(
-        cv=3, penalty="elasticnet", solver="saga", l1_ratios=(0.5,),
+        cv=3, solver="saga", l1_ratios=(0.5,),
         max_iter=3000, scoring="neg_log_loss", random_state=SEED,
+        use_legacy_attributes=False,
     )),
     ("random_forest", RandomForestClassifier(
         n_estimators=150, max_depth=15, min_samples_leaf=5,
