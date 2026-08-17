@@ -356,7 +356,12 @@ def load_or_fit(name, fit_function):
 
     print(f"Estimating: {name}")
     fitted = fit_function()
-    fitted.convex_weights = collect_convex_weights(fitted)
+
+    # Most fit functions return a DoubleML model directly.  The clustered
+    # APOS fit additionally returns its cluster-robust standard errors in a
+    # dictionary, so extract the model before attaching checkpoint metadata.
+    fitted_model = fitted["model"] if isinstance(fitted, dict) else fitted
+    fitted_model.convex_weights = collect_convex_weights(fitted_model)
 
     # The fitted DoubleML framework retains the influence scores and summary
     # needed for the tables. The fitted base learners are not needed after
@@ -364,7 +369,7 @@ def load_or_fit(name, fit_function):
     # DoubleML exposes ``models`` as a read-only property, so clear its
     # private backing field rather than assigning through the public API.
     # This keeps checkpoints small while preserving the causal results.
-    fitted._models = None
+    fitted_model._models = None
     joblib.dump(fitted, path, compress=3)
     print(f"Saved checkpoint: {path.name}")
     return fitted
