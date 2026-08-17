@@ -60,6 +60,12 @@ FOLDS = 5
 REPETITIONS = 3
 INNER_FOLDS = 3
 
+# Quick-run mode. Keep this False for the analysis used in the paper; switch
+# it to True when checking the pipeline end-to-end on a small sample.
+SAMPLED = True
+SAMPLE_FRAC = 0.05
+SAMPLE_SEED = SEED
+
 TREATMENT_LEVELS = (0, 1, 2, 3, 98)
 REPORTED_LEVELS = (0, 1, 2, 3)
 
@@ -70,6 +76,11 @@ CHECKPOINT_DIR = OUTPUT_DIR / "checkpoints"
 TABLE_DIR = OUTPUT_DIR / "tables"
 CHECKPOINT_DIR.mkdir(parents=True, exist_ok=True)
 TABLE_DIR.mkdir(parents=True, exist_ok=True)
+
+CHECKPOINT_TAG = (
+    f"_sample{int(SAMPLE_FRAC * 100):02d}"
+    if SAMPLED else ""
+)
 
 
 # ============================================================
@@ -349,7 +360,7 @@ CLASSIFIERS = [
 def load_or_fit(name, fit_function):
     """Load a fitted model if it exists; otherwise fit and save it."""
 
-    path = CHECKPOINT_DIR / f"{name}.pkl"
+    path = CHECKPOINT_DIR / f"{name}{CHECKPOINT_TAG}.pkl"
     if path.exists():
         print(f"Loading checkpoint: {path.name}")
         return joblib.load(path)
@@ -558,11 +569,21 @@ def load_analysis_data(path, outcome, child):
     # convert_categoricals=False preserves numeric Stata codes for treatment
     # levels. Loading selected columns keeps unrelated survey variables out of
     # memory; only one outcome's data frame is alive at a time.
-    return pd.read_stata(
+    data = pd.read_stata(
         path,
         columns=sorted(columns),
         convert_categoricals=False,
     )
+    if SAMPLED:
+        data = data.sample(
+            frac=SAMPLE_FRAC,
+            random_state=SAMPLE_SEED,
+        ).reset_index(drop=True)
+        print(
+            f"Quick sample: {len(data):,} observations "
+            f"({SAMPLE_FRAC:.0%} of loaded data)"
+        )
+    return data
 
 analysis_specs = [
     ("HH", DATA_DIR / "MASTER_MICS_FINAL.dta", False, "SomeRiskHome"),
