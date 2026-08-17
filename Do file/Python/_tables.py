@@ -446,6 +446,42 @@ def create_benchmark_sensitivity_tables(results, filename_prefix="table_sensitiv
     return paths
 
 
+def write_sensitivity_summary_table(results, output_dir, filename="table_sensitivity_summary.tex"):
+    """Write a compact RV/RV-alpha table for the active sensitivity stage."""
+
+    frame = results.copy() if isinstance(results, pd.DataFrame) else pd.DataFrame(results)
+    lines = [
+        r"% Requires: \usepackage{booktabs}",
+        r"\begin{table}[htbp]", r"\centering",
+        r"\caption{DoubleML sensitivity analysis}",
+        r"\label{tab:sensitivity-summary}",
+        r"\begin{tabular}{llllrr}", r"\toprule",
+        r"Outcome & Specification & Method & Treatment & RV & RV$_\alpha$ \\",
+        r"\midrule",
+    ]
+    for _, row in frame.iterrows():
+        lines.append(
+            f"{_latex_text(row['outcome'])} & "
+            f"{_latex_text(row['specification'])} & "
+            f"{_latex_text(row['method'])} & "
+            f"{_latex_text(row['treatment'])} & "
+            f"{100 * float(row['rv']):.4f}\\% & "
+            f"{100 * float(row['rva']):.4f}\\% " + r"\\"
+        )
+    lines += [
+        r"\bottomrule", r"\end{tabular}",
+        r"\par\vspace{3pt}",
+        r"\begin{minipage}{0.9\linewidth}\footnotesize "
+        r"RV is the confounding strength needed to remove the estimate; "
+        r"RV$_\alpha$ is the strength needed to remove its confidence interval. "
+        r"The analysis uses cf_y = cf_d = 0.03 and rho = 1.\end{minipage}",
+        r"\end{table}",
+    ]
+    path = Path(output_dir) / filename
+    path.write_text("\n".join(lines), encoding="utf-8")
+    return path
+
+
 def create_relative_sensitivity_comparison_tables(
     results,
     filename_prefix="table_sensitivity_relative_appendix",
@@ -605,10 +641,12 @@ def _write_column_publication_table(
         shares = frame[treatment].value_counts(normalize=True).reindex(
             [0, 1, 2, 3, 98], fill_value=0.0
         )
+        no_treatment = frame[treatment].eq(0)
         return {
             "n": len(frame),
             "psu": frame["Cluster_var"].nunique() if "Cluster_var" in frame else None,
-            "mean_y": float(frame[outcome].mean()),
+            # Use the same no-treatment reference group as the causal contrast.
+            "mean_y": float(frame.loc[no_treatment, outcome].mean()),
             "mean_d": float(frame[treatment].mean()) if treatment == "water_treatment" else None,
             "shares": shares,
         }
@@ -687,7 +725,7 @@ def _write_column_publication_table(
     lines.append(r"\multicolumn{" + str(1 + n_columns) + r"}{l}{\textit{Shares}} \\")
     # IRM is a binary-treatment model, so this is the outcome mean, not a
     # treatment share. Treatment prevalence is reported separately below.
-    lines.append(row(r"Outcome mean (%)", once_per_outcome([f"{100 * c['irm_stats']['mean_y']:.1f}\\%" for c in columns])))
+    lines.append(row(r"Outcome mean, no treatment (%)", once_per_outcome([f"{100 * c['irm_stats']['mean_y']:.1f}\\%" for c in columns])))
     lines.append(row(r"Treated (\%)", once_per_outcome([f"{100 * c['irm_stats']['mean_d']:.1f}\\%" for c in columns])))
 
     lines += [r"\midrule", r"\multicolumn{" + str(1 + n_columns) + r"}{l}{\textit{APOS}} \\"]
@@ -721,7 +759,7 @@ def _write_column_publication_table(
         r"\end{adjustbox}",
         r"\par\vspace{3pt}",
         rf"\begin{{minipage}}{{\linewidth}}\scriptsize \textit{{Notes:}} Cells report coefficients with significance stars and standard errors in parentheses. IRM and APOS are separated into blocks. Clustered specifications use cluster-level sample splitting; ordinary specifications use unclustered folds. Shares use readable treatment names, including Other treatment. Cross-fitting uses "
-        rf"{folds} folds and {repetitions} repetitions. APOS effects are contrasts relative to treatment level 0. $^{{***}}p<0.01$, $^{{**}}p<0.05$, $^{{*}}p<0.1$.\end{{minipage}}",
+        rf"{folds} folds and {repetitions} repetitions. The outcome mean is calculated among observations with no water treatment, the counterfactual reference group. APOS effects are contrasts relative to treatment level 0. $^{{***}}p<0.01$, $^{{**}}p<0.05$, $^{{*}}p<0.1$.\end{{minipage}}",
         r"\end{table}",
     ]
     path = Path(output_dir) / filename
@@ -733,6 +771,14 @@ def write_super_learner_weights_table(output_dir, estimates, outcome_order, file
     """Write average fitted Super Learner weights by outcome and fold type."""
 
     def collect_weights(model, nuisance):
+        # Read the compact weights saved by mics_readable.py when the fitted
+        # base learners have been removed from the checkpoint.
+        compact = getattr(model, "convex_weights", {})
+        if compact:
+            compact_weights = compact.get(nuisance, {})
+            if compact_weights:
+                return {name: float(value) for name, value in compact_weights.items()}
+
         models = model.models or {}
         # DoubleML IRM/APOS store the outcome learner separately by treatment
         # arm (ml_g0, ml_g1, ...), while the public learner is named ml_g.
@@ -866,6 +912,14 @@ def write_super_learner_weights_tables(output_dir, estimates, outcome_order):
     """
 
     def collect_weights(model, nuisance):
+        # Read compact checkpoint weights before looking for full fitted
+        # nuisance learners. This keeps the publication table lightweight.
+        compact = getattr(model, "convex_weights", {})
+        if compact:
+            compact_weights = compact.get(nuisance, {})
+            if compact_weights:
+                return {name: float(value) for name, value in compact_weights.items()}
+
         models = model.models or {}
         fitted = (
             {key: value for key, value in models.items() if key.startswith("ml_g")}
@@ -1007,7 +1061,7 @@ def write_publication_table(
             "n": len(frame),
             "psu": frame["Cluster_var"].nunique()
             if "Cluster_var" in frame else None,
-            "mean_y": float(frame[outcome].mean()),
+            "mean_y": float(frame.loc[frame[treatment].eq(0), outcome].mean()),
             "mean_d": float(frame[treatment].mean())
             if treatment == "water_treatment" else None,
             "shares": shares,
@@ -1246,7 +1300,7 @@ def write_stacked_regression_table(
         return {
             "n": len(frame),
             "psu": frame["Cluster_var"].nunique(),
-            "mean_y": float(frame[outcome].mean()),
+            "mean_y": float(frame.loc[frame[treatment].eq(0), outcome].mean()),
             "mean_d": float(frame[treatment].mean()) if treatment == "water_treatment" else None,
             "shares": shares,
         }

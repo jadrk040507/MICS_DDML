@@ -48,13 +48,40 @@ def relative_robustness_value(reduced_value, full_value, denominator_floor=1e-8)
 
 
 def cluster_robust_framework_se(framework, cluster_ids, smpls):
-    """Compute cluster-robust SEs from a fitted DoubleML framework.
+    """Compute one-way cluster-robust SEs from DoubleML influence scores.
 
-    ``framework.scaled_psi`` contains the influence scores for each target and
-    repetition.  The calculation follows DoubleML's one-way cluster sandwich:
-    cluster scores are summed within each test fold, averaged over folds, and
-    divided by the number of clusters.  Repetitions are aggregated with the
-    same median-confidence-bound rule used by DoubleML.
+    Why this function is needed
+    ---------------------------
+    ``DoubleMLIRM`` accepts ``cluster_cols`` directly. Older versions of
+    ``DoubleMLAPOS`` do not. For APOS, we therefore fit the model with folds
+    that keep each sampling cluster together and calculate the cluster
+    variance from the fitted orthogonal-score influence functions.
+
+    Estimator
+    ---------
+    Let ``psi_i(theta)`` be the scaled DoubleML influence score and let ``c(i)``
+    identify the sampling cluster. For each cross-fitting repetition, we sum
+    the influence scores within each cluster:
+
+        Gamma_c = sum_{i in cluster c} psi_i(theta)
+
+    The one-way cluster sandwich is proportional to the average of
+    ``Gamma_c^2`` across clusters. The implementation below computes that
+    quantity separately for every target parameter and repetition, then takes
+    the square root to obtain a standard error. The final repetition summary
+    follows DoubleML's median-confidence-bound aggregation.
+
+    Required conditions
+    -------------------
+    * ``cluster_ids`` has one entry per observation in ``scaled_psi``.
+    * ``smpls`` contains one list of train/test folds per repetition.
+    * Every cluster appears in exactly one test fold within each repetition.
+      This is what makes the cluster score sums non-overlapping.
+    * The model must have been fitted with the same sample splitting supplied
+      in ``smpls``.
+
+    This function changes standard errors only. It does not change the APOS
+    point estimates, nuisance predictions, treatment levels, or estimand.
     """
 
     psi = np.asarray(framework.scaled_psi, dtype=float)
@@ -84,6 +111,18 @@ def cluster_robust_framework_se(framework, cluster_ids, smpls):
                 "Cluster-robust scores require each cluster to appear in "
                 "exactly one test fold per repetition."
             )
+
+        # A cluster must never be split between the training and test portion
+        # of one fold. This is a second, explicit guard in addition to the
+        # test-fold coverage check above.
+        for train_indices, test_indices in rep_smpls:
+            train_clusters = set(np.unique(cluster_ids[train_indices]))
+            test_clusters = set(np.unique(cluster_ids[test_indices]))
+            if train_clusters.intersection(test_clusters):
+                raise ValueError(
+                    "A sampling cluster appears in both train and test "
+                    "within one fold."
+                )
 
         gamma = np.zeros(psi.shape[1], dtype=float)
         for _, test_indices in rep_smpls:
