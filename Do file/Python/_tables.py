@@ -474,7 +474,7 @@ def write_sensitivity_summary_table(results, output_dir, filename="table_sensiti
         r"\begin{minipage}{0.9\linewidth}\footnotesize "
         r"RV is the confounding strength needed to remove the estimate; "
         r"RV$_\alpha$ is the strength needed to remove its confidence interval. "
-        r"The analysis uses cf_y = cf_d = 0.03 and rho = 1.\end{minipage}",
+        r"The analysis uses $cf_y = cf_d = 0.03$ and $\rho = 1$.\end{minipage}",
         r"\end{table}",
     ]
     path = Path(output_dir) / filename
@@ -725,7 +725,7 @@ def _write_column_publication_table(
     lines.append(r"\multicolumn{" + str(1 + n_columns) + r"}{l}{\textit{Shares}} \\")
     # IRM is a binary-treatment model, so this is the outcome mean, not a
     # treatment share. Treatment prevalence is reported separately below.
-    lines.append(row(r"Outcome mean, no treatment (%)", once_per_outcome([f"{100 * c['irm_stats']['mean_y']:.1f}\\%" for c in columns])))
+    lines.append(row(r"Y mean (no treatment) (%)", once_per_outcome([f"{100 * c['irm_stats']['mean_y']:.1f}\\%" for c in columns])))
     lines.append(row(r"Treated (\%)", once_per_outcome([f"{100 * c['irm_stats']['mean_d']:.1f}\\%" for c in columns])))
 
     lines += [r"\midrule", r"\multicolumn{" + str(1 + n_columns) + r"}{l}{\textit{APOS}} \\"]
@@ -902,7 +902,9 @@ def write_super_learner_weights_table(output_dir, estimates, outcome_order, file
     return path
 
 
-def write_super_learner_weights_tables(output_dir, estimates, outcome_order):
+def write_super_learner_weights_tables(
+    output_dir, estimates, outcome_order, weights=None
+):
     """Write separate, vertically stacked weight tables by fold specification.
 
     Each output file contains three outcome panels. Within each panel, the
@@ -911,12 +913,44 @@ def write_super_learner_weights_tables(output_dir, estimates, outcome_order):
     table.
     """
 
-    def collect_weights(model, nuisance):
+    def collect_weights(model, nuisance, dataset=None, outcome=None, specification=None):
+        # Read the compact results table when checkpoints have intentionally
+        # discarded fitted nuisance learners.
+        if weights is not None and not weights.empty:
+            model_name = (
+                f"{dataset}_{outcome}_IRM_"
+                f"{'clustered' if specification == 'clustered' else 'iid'}"
+            )
+            selected = weights[
+                (weights["model"] == model_name)
+                & (weights["nuisance"] == nuisance)
+            ]
+            if not selected.empty:
+                return dict(zip(selected["learner"], selected["weight"]))
+
         # Read compact checkpoint weights before looking for full fitted
         # nuisance learners. This keeps the publication table lightweight.
         compact = getattr(model, "convex_weights", {})
         if compact:
-            compact_weights = compact.get(nuisance, {})
+            if nuisance == "ml_g":
+                # Multivalued outcomes may store one outcome learner per
+                # treatment level (ml_g0, ml_g1, ...). Average them for the
+                # single outcome-learner column in the publication table.
+                rows = [
+                    values for key, values in compact.items()
+                    if str(key).startswith("ml_g")
+                ]
+                names = list(dict.fromkeys(
+                    name for row in rows for name in row
+                ))
+                compact_weights = {
+                    name: float(np.mean([
+                        row[name] for row in rows if name in row
+                    ]))
+                    for name in names
+                }
+            else:
+                compact_weights = compact.get(nuisance, {})
             if compact_weights:
                 return {name: float(value) for name, value in compact_weights.items()}
 
@@ -977,8 +1011,12 @@ def write_super_learner_weights_tables(output_dir, estimates, outcome_order):
         for panel_index, outcome in enumerate(outcome_order):
             dataset = "U5" if outcome == "diarrhea" else "HH"
             model = estimates[(dataset, outcome)][f"irm_{suffix}"]
-            g_weights = collect_weights(model, "ml_g")
-            m_weights = collect_weights(model, "ml_m")
+            g_weights = collect_weights(
+                model, "ml_g", dataset, outcome, specification
+            )
+            m_weights = collect_weights(
+                model, "ml_m", dataset, outcome, specification
+            )
             lines.append(
                 rf"\multicolumn{{4}}{{l}}{{\textit{{Panel {'ABC'[panel_index]}: {labels[outcome]}}}}} \\"
             )

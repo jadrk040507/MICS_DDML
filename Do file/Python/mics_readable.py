@@ -5,9 +5,9 @@ sections from top to bottom. The helper functions only avoid repeating the
 same technical code for the household and under-five samples.
 
 Outputs:
-    output_readable/checkpoints/*.pkl   fitted IRM/APOS models
-    output_readable/results_*.pkl       result data frames
-    output_readable/tables/*.tex        LaTeX tables
+    Output/checkpoints/*.pkl            fitted IRM/APOS models
+    Output/results_*.pkl                result data frames
+    Output/table_*.tex                 LaTeX tables
 """
 
 from pathlib import Path
@@ -56,29 +56,29 @@ from _tables import (
 # ============================================================
 
 SEED = 42
-FOLDS = 5
-REPETITIONS = 3
-INNER_FOLDS = 3
-
 # Quick-run mode. Keep this False for the analysis used in the paper; switch
 # it to True when checking the pipeline end-to-end on a small sample.
 SAMPLED = True
 SAMPLE_FRAC = 0.05
 SAMPLE_SEED = SEED
 
+FOLDS = 2 if SAMPLED else 5
+REPETITIONS = 1 if SAMPLED else 3
+INNER_FOLDS = 2 if SAMPLED else 3
+
 TREATMENT_LEVELS = (0, 1, 2, 3, 98)
 REPORTED_LEVELS = (0, 1, 2, 3)
 
 PROJECT = Path(__file__).resolve().parents[2]
 DATA_DIR = PROJECT / "Data" / "3. Final"
-OUTPUT_DIR = Path(__file__).resolve().parent / "output_readable"
+OUTPUT_DIR = PROJECT / "Output"
 CHECKPOINT_DIR = OUTPUT_DIR / "checkpoints"
-TABLE_DIR = OUTPUT_DIR / "tables"
+TABLE_DIR = OUTPUT_DIR
 CHECKPOINT_DIR.mkdir(parents=True, exist_ok=True)
 TABLE_DIR.mkdir(parents=True, exist_ok=True)
 
 CHECKPOINT_TAG = (
-    f"_sample{int(SAMPLE_FRAC * 100):02d}"
+    f"_sample{int(SAMPLE_FRAC * 100):02d}{'_fast2' if SAMPLED else ''}"
     if SAMPLED else ""
 )
 
@@ -352,6 +352,13 @@ CLASSIFIERS = [
     )),
 ]
 
+# The sampled run is a smoke test of the complete pipeline, not a model
+# comparison. Keep two learners so the convex ensemble is exercised without
+# spending minutes on every saga/ElasticNet fold.
+if SAMPLED:
+    REGRESSORS = REGRESSORS[:2]
+    CLASSIFIERS = CLASSIFIERS[:2]
+
 
 # ============================================================
 # 5. Checkpoints and estimation functions
@@ -407,7 +414,13 @@ def collect_convex_weights(model):
             row = dict(zip(names, np.asarray(value.weights_, dtype=float)))
             collected.setdefault(nuisance, []).append(row)
 
-    visit(getattr(model, "models", {}))
+    # Read the private backing store while fitted learners are still present.
+    # The public ``models`` property may be empty/read-only in some DoubleML
+    # versions even though ``_models`` contains the fitted nuisances.
+    model_store = getattr(model, "_models", None)
+    if model_store is None:
+        model_store = getattr(model, "models", {})
+    visit(model_store)
     averaged = {}
     for nuisance, rows in collected.items():
         names = list(dict.fromkeys(name for row in rows for name in row))
@@ -720,6 +733,10 @@ for dataset, data_path, child, outcome in analysis_specs:
         "apos_cluster": apos_fitted,
         "apos_cluster_se": apos_cluster_se,
         "apos_no_cluster": apos_iid,
+        # ``_tables.py`` uses the explicit irm_frame_* names for publication
+        # tables. Keep the shorter aliases below for the later diagnostics.
+        "irm_frame_cluster": irm_table_frame_cluster,
+        "irm_frame_no_cluster": irm_table_frame_iid,
         "frame_cluster": irm_table_frame_cluster,
         "frame_no_cluster": irm_table_frame_iid,
         "apos_frame_cluster": apos_table_frame_cluster,
@@ -780,6 +797,7 @@ write_super_learner_weights_tables(
     TABLE_DIR,
     estimates,
     ["SomeRiskHome", "VeryHighRiskHome", "diarrhea"],
+    weights=weights,
 )
 
 manifest = {
@@ -955,13 +973,13 @@ pd.to_pickle(gate_results, OUTPUT_DIR / "results_heterogeneity_gates.pkl")
 create_heterogeneity_comparison_tables(
     gate_results,
     output_dir=TABLE_DIR,
-    filename_prefix="table_heterogeneity_main",
+    filename_prefix="table_gate_main",
     specifications=("clustered_folds",),
 )
 create_heterogeneity_comparison_tables(
     gate_results,
     output_dir=TABLE_DIR,
-    filename_prefix="table_heterogeneity_appendix",
+    filename_prefix="table_gate_appendix",
     specifications=("clustered_folds", "unclustered"),
 )
 

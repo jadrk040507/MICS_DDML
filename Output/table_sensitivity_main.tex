@@ -1,0 +1,26 @@
+% Requires: \usepackage{booktabs}
+\begin{table}[htbp]
+\centering
+\caption{DoubleML sensitivity analysis}
+\label{tab:sensitivity-summary}
+\begin{tabular}{llllrr}
+\toprule
+Outcome & Specification & Method & Treatment & RV & RV$_\alpha$ \\
+\midrule
+SomeRiskHome & clustered\_folds & IRM & Any Treatment & 16.9292\% & 14.0548\% \\
+SomeRiskHome & clustered\_folds & APOS & 1 & 15.5696\% & 14.1790\% \\
+SomeRiskHome & clustered\_folds & APOS & 2 & 1.5226\% & 0.0004\% \\
+SomeRiskHome & clustered\_folds & APOS & 3 & 2.1946\% & 0.0361\% \\
+VeryHighRiskHome & clustered\_folds & IRM & Any Treatment & 16.6381\% & 5.3625\% \\
+VeryHighRiskHome & clustered\_folds & APOS & 1 & 6.7435\% & 5.5515\% \\
+VeryHighRiskHome & clustered\_folds & APOS & 2 & 6.7730\% & 3.8094\% \\
+VeryHighRiskHome & clustered\_folds & APOS & 3 & 8.1814\% & 2.1748\% \\
+diarrhea & clustered\_folds & IRM & Any Treatment & 4.4082\% & 0.6330\% \\
+diarrhea & clustered\_folds & APOS & 1 & 4.0661\% & 3.1927\% \\
+diarrhea & clustered\_folds & APOS & 2 & 2.1707\% & 0.0005\% \\
+diarrhea & clustered\_folds & APOS & 3 & 14.9424\% & 0.0005\% \\
+\bottomrule
+\end{tabular}
+\par\vspace{3pt}
+\begin{minipage}{0.9\linewidth}\footnotesize RV is the confounding strength needed to remove the estimate; RV$_\alpha$ is the strength needed to remove its confidence interval. The analysis uses $cf_y = cf_d = 0.03$ and $\rho = 1$.\end{minipage}
+\end{table}

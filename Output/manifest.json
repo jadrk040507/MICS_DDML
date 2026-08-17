@@ -1,0 +1,46 @@
+{
+  "seed": 42,
+  "folds": 2,
+  "repetitions": 1,
+  "inner_folds": 2,
+  "learners_outcome": [
+    "ols",
+    "lasso"
+  ],
+  "learners_treatment": [
+    "logit",
+    "lasso"
+  ],
+  "treatment_levels": [
+    0,
+    1,
+    2,
+    3,
+    98
+  ],
+  "checkpoints": [
+    "HH_SomeRiskHome_APOS_iid_sample05_fast2.pkl",
+    "HH_SomeRiskHome_APOS_sample05_fast2.pkl",
+    "HH_SomeRiskHome_IRM_clustered_sample05_fast2.pkl",
+    "HH_SomeRiskHome_IRM_iid_sample05_fast2.pkl",
+    "HH_VeryHighRiskHome_APOS_iid_sample05_fast2.pkl",
+    "HH_VeryHighRiskHome_APOS_sample05_fast2.pkl",
+    "HH_VeryHighRiskHome_IRM_clustered_sample05_fast2.pkl",
+    "HH_VeryHighRiskHome_IRM_iid_sample05_fast2.pkl",
+    "U5_diarrhea_APOS_iid_sample05_fast2.pkl",
+    "U5_diarrhea_APOS_sample05_fast2.pkl",
+    "U5_diarrhea_IRM_clustered_sample05_fast2.pkl",
+    "U5_diarrhea_IRM_iid_sample05_fast2.pkl"
+  ],
+  "tables": [
+    "table_gate_appendix_diarrhea.tex",
+    "table_gate_appendix_ecoli.tex",
+    "table_gate_main_diarrhea.tex",
+    "table_gate_main_ecoli.tex",
+    "table_sensitivity_main.tex",
+    "table_super_learner_weights_clustered.tex",
+    "table_super_learner_weights_unclustered.tex",
+    "table_water_treatment_appendix.tex",
+    "table_water_treatment_main.tex"
+  ]
+}
