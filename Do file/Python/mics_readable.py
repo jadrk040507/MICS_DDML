@@ -361,8 +361,10 @@ def load_or_fit(name, fit_function):
     # The fitted DoubleML framework retains the influence scores and summary
     # needed for the tables. The fitted base learners are not needed after
     # the convex weights have been extracted, so remove them before saving.
+    # DoubleML exposes ``models`` as a read-only property, so clear its
+    # private backing field rather than assigning through the public API.
     # This keeps checkpoints small while preserving the causal results.
-    fitted.models = None
+    fitted._models = None
     joblib.dump(fitted, path, compress=3)
     print(f"Saved checkpoint: {path.name}")
     return fitted
