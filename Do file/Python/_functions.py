@@ -7,6 +7,7 @@ variance estimator used by the analysis.
 """
 
 import hashlib
+import joblib
 from pathlib import Path
 
 import numpy as np
@@ -18,6 +19,31 @@ OUTCOME_LABELS = {
     "VeryHighRiskHome": "Very High Risk Home (E.coli $\\geq$ 101 CFU)",
     "diarrhea": "Diarrhea (under-5)",
 }
+
+
+class LazyCheckpointBundle:
+    """Load one fitted checkpoint only when a downstream step needs it."""
+
+    def __init__(self, paths, metadata):
+        self.paths = paths
+        self.metadata = metadata
+
+    def __getitem__(self, key):
+        if key in self.metadata:
+            return self.metadata[key]
+        loaded = joblib.load(self.paths[key])
+        if key == "apos_cluster":
+            return loaded["model"]
+        if key == "apos_cluster_se":
+            return loaded["cluster_se"]
+        return loaded
+
+    def get(self, key, default=None):
+        if key in self.metadata:
+            return self.metadata[key]
+        if key not in self.paths:
+            return default
+        return self[key]
 
 
 def relative_robustness_value(reduced_value, full_value, denominator_floor=1e-8):

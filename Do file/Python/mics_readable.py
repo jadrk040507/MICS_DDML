@@ -12,7 +12,9 @@ Outputs:
 
 from pathlib import Path
 from copy import deepcopy
+import gc
 import json
+import os
 
 import doubleml as dml
 import joblib
@@ -38,6 +40,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from xgboost import XGBClassifier, XGBRegressor
 from _functions import (
+    LazyCheckpointBundle,
     cluster_robust_framework_se,
     estimate_gate_from_contrast,
     sensitivity_params,
@@ -56,9 +59,10 @@ from _tables import (
 # ============================================================
 
 SEED = 42
-# Quick-run mode. Keep this False for the analysis used in the paper; switch
-# it to True when checking the pipeline end-to-end on a small sample.
-SAMPLED = True
+# Full analysis is the default. Set MICS_SAMPLED=1 only for a smoke test.
+SAMPLED = os.environ.get("MICS_SAMPLED", "0").lower() in {
+    "1", "true", "yes", "on"
+}
 SAMPLE_FRAC = 0.05
 SAMPLE_SEED = SEED
 
@@ -367,12 +371,12 @@ if SAMPLED:
 def load_or_fit(name, fit_function):
     """Load a fitted model if it exists; otherwise fit and save it."""
 
-    path = CHECKPOINT_DIR / f"{name}{CHECKPOINT_TAG}.pkl"
+    path = checkpoint_path(name)
     if path.exists():
-        print(f"Loading checkpoint: {path.name}")
+        print(f"Loading checkpoint: {path.name}", flush=True)
         return joblib.load(path)
 
-    print(f"Estimating: {name}")
+    print(f"Estimating: {name}", flush=True)
     fitted = fit_function()
 
     # Most fit functions return a DoubleML model directly.  The clustered
@@ -389,8 +393,14 @@ def load_or_fit(name, fit_function):
     # This keeps checkpoints small while preserving the causal results.
     fitted_model._models = None
     joblib.dump(fitted, path, compress=3)
-    print(f"Saved checkpoint: {path.name}")
+    print(f"Saved checkpoint: {path.name}", flush=True)
     return fitted
+
+
+def checkpoint_path(name):
+    """Return the checkpoint path without loading the checkpoint."""
+
+    return CHECKPOINT_DIR / f"{name}{CHECKPOINT_TAG}.pkl"
 
 
 def collect_convex_weights(model):
@@ -610,9 +620,9 @@ weight_results = []
 estimates = {}
 
 for dataset, data_path, child, outcome in analysis_specs:
-    print(f"Loading columns for {dataset} — {outcome}")
+    print(f"Loading columns for {dataset} — {outcome}", flush=True)
     data = load_analysis_data(data_path, outcome, child)
-    print(f"\nPreparing {dataset} — {outcome}")
+    print(f"\nPreparing {dataset} — {outcome}", flush=True)
 
     # IRM uses the binary treatment indicator.
     frame, x_columns = make_frame(
@@ -662,6 +672,19 @@ for dataset, data_path, child, outcome in analysis_specs:
                     "weight": float(weight),
                 })
 
+    # Keep only the small columns needed by the publication tables.  The
+    # complete IRM design matrices are no longer needed once both IRM fits
+    # have finished; release them before allocating the APOS matrices.
+    irm_table_frame_cluster = irm_frames["cluster"][
+        [outcome, "water_treatment", "Cluster_var"]
+    ].copy()
+    irm_table_frame_iid = irm_frames["no_cluster"][
+        [outcome, "water_treatment"]
+    ].copy()
+    del frame, irm_frame, irm_frames
+    del irm_models, model
+    gc.collect()
+
     # APOS is estimated twice, just like IRM:
     #   1. clustered folds + custom cluster-robust SEs;
     #   2. ordinary observation-level folds + ordinary DoubleML SEs.
@@ -675,10 +698,21 @@ for dataset, data_path, child, outcome in analysis_specs:
     )
     apos_splits = make_cluster_splits(apos_frame, "WQ15_g")
     apos_name = f"{dataset}_{outcome}_APOS"
+    apos_table_frame_cluster = apos_frame[
+        [outcome, "WQ15_g", "Cluster_var"]
+    ].copy()
+    apos_n = len(apos_frame)
+    apos_clusters = apos_frame["Cluster_var"].nunique()
+    apos_checkpoint_exists = checkpoint_path(apos_name).exists()
+    if apos_checkpoint_exists:
+        # Existing full APOS checkpoints can be several GB.  Do not keep the
+        # raw data or design matrix alive while unpickling one of them.
+        del data, apos_frame, apos_x, apos_splits
+        gc.collect()
     apos_model = load_or_fit(
         apos_name,
-        lambda f=apos_frame, x=apos_x, s=apos_splits: fit_apos_clustered(
-            f, x, outcome, s
+        lambda: fit_apos_clustered(
+            apos_frame, apos_x, outcome, apos_splits
         ),
     )
     apos_fitted = apos_model["model"]
@@ -687,21 +721,37 @@ for dataset, data_path, child, outcome in analysis_specs:
     apos_results.append(_add_metadata(
         apos_summary,
         dataset, outcome, "APOS", "clustered_folds",
-        len(apos_frame), apos_frame["Cluster_var"].nunique(),
+        apos_n, apos_clusters,
     ))
+    if not apos_checkpoint_exists:
+        del apos_frame, apos_splits
+    # APOS clustered is now represented by its checkpoint path in
+    # ``estimates``.  Do not retain the fitted DoubleML object while loading
+    # the iid APOS checkpoint.
+    del apos_model, apos_fitted, apos_summary
+    gc.collect()
 
     # The unclustered APOS specification uses ordinary observation-level
     # sample splitting and the standard DoubleML standard errors.
+    if apos_checkpoint_exists:
+        data = load_analysis_data(data_path, outcome, child)
     apos_frame_iid, apos_x_iid = make_frame(
         data, outcome, "WQ15_g", child=child,
         cluster=False, allowed_levels=TREATMENT_LEVELS,
     )
     apos_iid_name = f"{dataset}_{outcome}_APOS_iid"
+    print(f"Preparing {apos_iid_name}", flush=True)
+    apos_table_frame_iid = apos_frame_iid[
+        [outcome, "WQ15_g"]
+    ].copy()
+    apos_iid_n = len(apos_frame_iid)
+    apos_iid_checkpoint_exists = checkpoint_path(apos_iid_name).exists()
+    if apos_iid_checkpoint_exists:
+        del data, apos_frame_iid, apos_x_iid
+        gc.collect()
     apos_iid = load_or_fit(
         apos_iid_name,
-        lambda f=apos_frame_iid, x=apos_x_iid: fit_apos(
-            f, x, outcome
-        ),
+        lambda: fit_apos(apos_frame_iid, apos_x_iid, outcome),
     )
     apos_iid_summary = apos_iid.causal_contrast(
         reference_levels=[0]
@@ -709,42 +759,80 @@ for dataset, data_path, child, outcome in analysis_specs:
     apos_results.append(_add_metadata(
         apos_iid_summary,
         dataset, outcome, "APOS", "iid",
-        len(apos_frame_iid), None,
+        apos_iid_n, None,
     ))
+    if not apos_iid_checkpoint_exists:
+        del apos_frame_iid
+    del apos_iid, apos_iid_summary
+    gc.collect()
+    gc.collect()
 
     # This is the structure expected by the existing publication-table code.
     # Keep only the columns needed for table statistics. The full design
     # matrices are not retained in the in-memory results dictionary.
-    irm_table_frame_cluster = irm_frames["cluster"][
-        [outcome, "water_treatment", "Cluster_var"]
-    ].copy()
-    irm_table_frame_iid = irm_frames["no_cluster"][
-        [outcome, "water_treatment"]
-    ].copy()
-    apos_table_frame_cluster = apos_frame[
-        [outcome, "WQ15_g", "Cluster_var"]
-    ].copy()
-    apos_table_frame_iid = apos_frame_iid[
-        [outcome, "WQ15_g"]
-    ].copy()
-    estimates[(dataset, outcome)] = {
-        "irm_cluster": irm_models["cluster"],
-        "irm_no_cluster": irm_models["no_cluster"],
-        "apos_cluster": apos_fitted,
-        "apos_cluster_se": apos_cluster_se,
-        "apos_no_cluster": apos_iid,
+    checkpoint_paths = {
+        "irm_cluster": checkpoint_path(
+            f"{dataset}_{outcome}_IRM_clustered"
+        ),
+        "irm_no_cluster": checkpoint_path(
+            f"{dataset}_{outcome}_IRM_iid"
+        ),
+        "apos_cluster": checkpoint_path(
+            f"{dataset}_{outcome}_APOS"
+        ),
+        "apos_no_cluster": checkpoint_path(
+            f"{dataset}_{outcome}_APOS_iid"
+        ),
+        "apos_cluster_se": checkpoint_path(
+            f"{dataset}_{outcome}_APOS"
+        ),
+    }
+    estimates[(dataset, outcome)] = LazyCheckpointBundle(
+        checkpoint_paths,
+        {
         # ``_tables.py`` uses the explicit irm_frame_* names for publication
         # tables. Keep the shorter aliases below for the later diagnostics.
-        "irm_frame_cluster": irm_table_frame_cluster,
-        "irm_frame_no_cluster": irm_table_frame_iid,
-        "frame_cluster": irm_table_frame_cluster,
-        "frame_no_cluster": irm_table_frame_iid,
-        "apos_frame_cluster": apos_table_frame_cluster,
-        "apos_frame_no_cluster": apos_table_frame_iid,
-    }
+            "irm_frame_cluster": irm_table_frame_cluster,
+            "irm_frame_no_cluster": irm_table_frame_iid,
+            "frame_cluster": irm_table_frame_cluster,
+            "frame_no_cluster": irm_table_frame_iid,
+            "apos_frame_cluster": apos_table_frame_cluster,
+            "apos_frame_no_cluster": apos_table_frame_iid,
+        },
+    )
 
-    # Release this outcome's data before loading the next specification.
-    del data
+    print(
+        f"Completed {dataset} — {outcome}: "
+        "IRM clustered, IRM iid, APOS clustered, APOS iid",
+        flush=True,
+    )
+
+    # Release every large, outcome-local frame before loading the next one.
+    # ``estimates`` retains only the compact model objects and table frames
+    # needed by the post-estimation code; the design matrices are not kept.
+    for _name in (
+        "data", "apos_model", "apos_fitted", "apos_iid", "apos_x",
+        "apos_x_iid", "x_columns", "apos_frame", "apos_frame_iid",
+        "apos_splits",
+    ):
+        if _name in locals():
+            del locals()[_name]
+    gc.collect()
+
+expected_estimates = {
+    (dataset, outcome) for dataset, _, _, outcome in analysis_specs
+}
+missing_estimates = expected_estimates.difference(estimates)
+if missing_estimates:
+    raise RuntimeError(
+        "Estimation stopped before all analysis specifications completed. "
+        f"Missing: {sorted(missing_estimates)}"
+    )
+print(
+    f"All {len(expected_estimates)} analysis specifications completed; "
+    "12 model specifications are available.",
+    flush=True,
+)
 
 
 # ============================================================
@@ -827,14 +915,16 @@ manifest = {
 sensitivity_rows = []
 for (dataset, outcome), bundle in estimates.items():
     irm = bundle["irm_cluster"]
-    apos = bundle["apos_cluster"].causal_contrast(reference_levels=[0])
-
     irm_rv, irm_rva = sensitivity_params(irm)
+    del irm
+    apos_model = bundle["apos_cluster"]
+    apos = apos_model.causal_contrast(reference_levels=[0])
     apos_rv, apos_rva = sensitivity_params(
         apos,
         cluster_ids=bundle["apos_frame_cluster"]["Cluster_var"].to_numpy(),
-        smpls=bundle["apos_cluster"].smpls,
+        smpls=apos_model.smpls,
     )
+    del apos, apos_model
 
     sensitivity_rows.append({
         "dataset": dataset,
@@ -928,6 +1018,7 @@ for (dataset, outcome), bundle in estimates.items():
         irm_gate.insert(5, "heterogeneity_label", "Initial source-water E. coli decile")
         irm_gate.insert(6, "treatment_label", "Any Treatment")
         gate_rows.append(irm_gate)
+        del irm, irm_gate, gate_frame, groups
 
         apos = bundle["apos_cluster" if clustered else "apos_no_cluster"]
         apos_contrast = apos.causal_contrast(reference_levels=[0])
@@ -965,6 +1056,7 @@ for (dataset, outcome), bundle in estimates.items():
                 3: "Straining/settling",
             }[level])
             gate_rows.append(apos_gate)
+        del apos, apos_contrast, apos_frame, apos_groups, apos_cluster_ids
 
     del data
 

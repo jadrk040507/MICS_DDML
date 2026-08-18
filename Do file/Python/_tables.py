@@ -1,6 +1,7 @@
 """LaTeX tables for the active stacked water-treatment analysis."""
 
 from pathlib import Path
+import gc
 import pandas as pd
 import numpy as np
 from _functions import relative_robustness_value
@@ -674,6 +675,10 @@ def _write_column_publication_table(
                 "irm_stats": sample_statistics(models[f"irm_frame_{'cluster' if specification == 'clustered' else 'no_cluster'}"], outcome, "water_treatment"),
                 "apos_stats": sample_statistics(models[f"apos_frame_{'cluster' if specification == 'clustered' else 'no_cluster'}"], outcome, "WQ15_g"),
             })
+            del irm, apos
+            gc.collect()
+        del models
+        gc.collect()
 
     n_columns = len(columns)
     lines = [
@@ -923,10 +928,14 @@ def write_super_learner_weights_tables(
             )
             selected = weights[
                 (weights["model"] == model_name)
-                & (weights["nuisance"] == nuisance)
+                & (
+                    weights["nuisance"].eq(nuisance)
+                    if nuisance != "ml_g" else
+                    weights["nuisance"].astype(str).str.startswith("ml_g")
+                )
             ]
             if not selected.empty:
-                return dict(zip(selected["learner"], selected["weight"]))
+                return selected.groupby("learner")["weight"].mean().to_dict()
 
         # Read compact checkpoint weights before looking for full fitted
         # nuisance learners. This keeps the publication table lightweight.
@@ -1010,7 +1019,7 @@ def write_super_learner_weights_tables(
         ]
         for panel_index, outcome in enumerate(outcome_order):
             dataset = "U5" if outcome == "diarrhea" else "HH"
-            model = estimates[(dataset, outcome)][f"irm_{suffix}"]
+            model = None if weights is not None and not weights.empty else estimates[(dataset, outcome)][f"irm_{suffix}"]
             g_weights = collect_weights(
                 model, "ml_g", dataset, outcome, specification
             )
