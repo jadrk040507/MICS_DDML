@@ -20,6 +20,7 @@ import doubleml as dml
 import joblib
 import numpy as np
 import pandas as pd
+from joblib import parallel_backend
 from scipy.optimize import minimize
 from sklearn.base import BaseEstimator, ClassifierMixin, RegressorMixin, clone
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
@@ -70,6 +71,22 @@ FOLDS = 2 if SAMPLED else 5
 REPETITIONS = 1 if SAMPLED else 3
 INNER_FOLDS = 2 if SAMPLED else 3
 
+
+def _env_int(name, default):
+    """Read a positive integer environment override."""
+
+    value = int(os.environ.get(name, str(default)))
+    if value < 1:
+        raise ValueError(f"{name} must be a positive integer")
+    return value
+
+
+# Keep parallelism explicit. APOS can parallelize across treatment-level
+# models, while RF/XGBoost can parallelize inside each nuisance fit. Running
+# both levels wide at the same time is the easiest way to exhaust RAM.
+APOS_WORKERS = _env_int("MICS_APOS_WORKERS", 1)
+LEARNER_JOBS = _env_int("MICS_LEARNER_JOBS", 1 if SAMPLED else 2)
+
 TREATMENT_LEVELS = (0, 1, 2, 3, 98)
 REPORTED_LEVELS = (0, 1, 2, 3)
 
@@ -85,6 +102,7 @@ CHECKPOINT_TAG = (
     f"_sample{int(SAMPLE_FRAC * 100):02d}{'_fast2' if SAMPLED else ''}"
     if SAMPLED else ""
 )
+HEAVY_APOS_CHECKPOINT_BYTES = 512 * 1024 * 1024
 
 
 # ============================================================
@@ -324,11 +342,11 @@ REGRESSORS = [
     ])),
     ("random_forest", RandomForestRegressor(
         n_estimators=150, max_depth=15, min_samples_leaf=5,
-        random_state=SEED, n_jobs=-1,
+        random_state=SEED, n_jobs=LEARNER_JOBS,
     )),
     ("xgboost", XGBRegressor(
         n_estimators=150, max_depth=4, learning_rate=0.1,
-        subsample=0.8, random_state=SEED, n_jobs=-1,
+        subsample=0.8, random_state=SEED, n_jobs=LEARNER_JOBS,
         eval_metric="rmse", verbosity=0,
     )),
 ]
@@ -347,11 +365,11 @@ CLASSIFIERS = [
     )),
     ("random_forest", RandomForestClassifier(
         n_estimators=150, max_depth=15, min_samples_leaf=5,
-        random_state=SEED, n_jobs=-1,
+        random_state=SEED, n_jobs=LEARNER_JOBS,
     )),
     ("xgboost", XGBClassifier(
         n_estimators=150, max_depth=4, learning_rate=0.1,
-        subsample=0.8, random_state=SEED, n_jobs=-1,
+        subsample=0.8, random_state=SEED, n_jobs=LEARNER_JOBS,
         eval_metric="logloss", verbosity=0,
     )),
 ]
@@ -368,10 +386,65 @@ if SAMPLED:
 # 5. Checkpoints and estimation functions
 # ============================================================
 
+def _is_apos_checkpoint(name):
+    """Return True for APOS checkpoints, including the iid specification."""
+
+    return "_APOS" in name
+
+
+def _move_legacy_heavy_checkpoint(path):
+    """Move an old full-model APOS checkpoint aside before it can exhaust RAM."""
+
+    legacy_path = path.with_name(f"{path.stem}.legacy{path.suffix}")
+    counter = 1
+    while legacy_path.exists():
+        legacy_path = path.with_name(
+            f"{path.stem}.legacy{counter}{path.suffix}"
+        )
+        counter += 1
+    path.rename(legacy_path)
+    print(
+        f"Moved oversized legacy checkpoint aside: "
+        f"{path.name} -> {legacy_path.name}",
+        flush=True,
+    )
+
+
+def checkpoint_ready_to_load(name):
+    """Return True when a checkpoint can be loaded without known RAM hazards."""
+
+    path = checkpoint_path(name)
+    if (
+        path.exists()
+        and _is_apos_checkpoint(name)
+        and path.stat().st_size > HEAVY_APOS_CHECKPOINT_BYTES
+    ):
+        _move_legacy_heavy_checkpoint(path)
+    return path.exists()
+
+
+def compact_fitted_model(model):
+    """Remove fitted nuisance learners after their convex weights are saved."""
+
+    model.convex_weights = collect_convex_weights(model)
+
+    # APOS stores one DoubleML model per treatment level in ``_modellist``.
+    # Each of those submodels can carry fitted nuisance learners even when the
+    # APOS wrapper's public ``models`` property is empty.  Keep frameworks,
+    # scores, summaries, and sample splits, but drop fitted base learners.
+    if hasattr(model, "_models"):
+        model._models = None
+    for submodel in getattr(model, "_modellist", []) or []:
+        if hasattr(submodel, "_models"):
+            submodel._models = None
+
+
 def load_or_fit(name, fit_function):
     """Load a fitted model if it exists; otherwise fit and save it."""
 
     path = checkpoint_path(name)
+    checkpoint_ready_to_load(name)
+
     if path.exists():
         print(f"Loading checkpoint: {path.name}", flush=True)
         return joblib.load(path)
@@ -383,15 +456,13 @@ def load_or_fit(name, fit_function):
     # APOS fit additionally returns its cluster-robust standard errors in a
     # dictionary, so extract the model before attaching checkpoint metadata.
     fitted_model = fitted["model"] if isinstance(fitted, dict) else fitted
-    fitted_model.convex_weights = collect_convex_weights(fitted_model)
 
     # The fitted DoubleML framework retains the influence scores and summary
-    # needed for the tables. The fitted base learners are not needed after
-    # the convex weights have been extracted, so remove them before saving.
-    # DoubleML exposes ``models`` as a read-only property, so clear its
-    # private backing field rather than assigning through the public API.
-    # This keeps checkpoints small while preserving the causal results.
-    fitted_model._models = None
+    # needed for tables, sensitivity, and GATE. The fitted base learners are
+    # not needed after their convex weights have been extracted, so remove
+    # them before saving. This is especially important for APOS, whose fitted
+    # treatment-level submodels otherwise create multi-GB checkpoints.
+    compact_fitted_model(fitted_model)
     joblib.dump(fitted, path, compress=3)
     print(f"Saved checkpoint: {path.name}", flush=True)
     return fitted
@@ -431,6 +502,11 @@ def collect_convex_weights(model):
     if model_store is None:
         model_store = getattr(model, "models", {})
     visit(model_store)
+    for submodel in getattr(model, "_modellist", []) or []:
+        submodel_store = getattr(submodel, "_models", None)
+        if submodel_store is None:
+            submodel_store = getattr(submodel, "models", {})
+        visit(submodel_store)
     averaged = {}
     for nuisance, rows in collected.items():
         names = list(dict.fromkeys(name for row in rows for name in row))
@@ -492,12 +568,13 @@ def fit_apos(frame, x_columns, outcome):
         n_rep=REPETITIONS,
         draw_sample_splitting=True,
     )
-    return model.fit(
-        n_jobs_models=1,
-        n_jobs_cv=1,
-        store_predictions=False,
-        store_models=True,
-    )
+    with parallel_backend("threading"):
+        return model.fit(
+            n_jobs_models=APOS_WORKERS,
+            n_jobs_cv=1,
+            store_predictions=False,
+            store_models=False,
+        )
 
 
 def make_cluster_splits(frame, treatment):
@@ -543,12 +620,13 @@ def fit_apos_clustered(frame, x_columns, outcome, splits):
         draw_sample_splitting=False,
     )
     model.set_sample_splitting(splits)
-    model = model.fit(
-        n_jobs_models=1,
-        n_jobs_cv=1,
-        store_predictions=False,
-        store_models=True,
-    )
+    with parallel_backend("threading"):
+        model = model.fit(
+            n_jobs_models=APOS_WORKERS,
+            n_jobs_cv=1,
+            store_predictions=False,
+            store_models=False,
+        )
     contrast = model.causal_contrast(reference_levels=[0])
     cluster_se = cluster_robust_framework_se(
         contrast,
@@ -703,7 +781,7 @@ for dataset, data_path, child, outcome in analysis_specs:
     ].copy()
     apos_n = len(apos_frame)
     apos_clusters = apos_frame["Cluster_var"].nunique()
-    apos_checkpoint_exists = checkpoint_path(apos_name).exists()
+    apos_checkpoint_exists = checkpoint_ready_to_load(apos_name)
     if apos_checkpoint_exists:
         # Existing full APOS checkpoints can be several GB.  Do not keep the
         # raw data or design matrix alive while unpickling one of them.
@@ -745,7 +823,7 @@ for dataset, data_path, child, outcome in analysis_specs:
         [outcome, "WQ15_g"]
     ].copy()
     apos_iid_n = len(apos_frame_iid)
-    apos_iid_checkpoint_exists = checkpoint_path(apos_iid_name).exists()
+    apos_iid_checkpoint_exists = checkpoint_ready_to_load(apos_iid_name)
     if apos_iid_checkpoint_exists:
         del data, apos_frame_iid, apos_x_iid
         gc.collect()
@@ -890,9 +968,13 @@ write_super_learner_weights_tables(
 
 manifest = {
     "seed": SEED,
+    "sampled": SAMPLED,
+    "sample_frac": SAMPLE_FRAC if SAMPLED else None,
     "folds": FOLDS,
     "repetitions": REPETITIONS,
     "inner_folds": INNER_FOLDS,
+    "apos_workers": APOS_WORKERS,
+    "learner_jobs": LEARNER_JOBS,
     "learners_outcome": [name for name, _ in REGRESSORS],
     "learners_treatment": [name for name, _ in CLASSIFIERS],
     "treatment_levels": list(TREATMENT_LEVELS),
