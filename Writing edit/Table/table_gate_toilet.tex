@@ -1,0 +1,39 @@
+% Requires: \usepackage{booktabs, pdflscape, graphicx, adjustbox}
+\begin{table}[p]
+\centering
+\caption{Group average treatment effects by toilet type}
+\label{tab:gate_toilet}
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{adjustbox}{max width=\linewidth, center}
+\begin{tabular}{lcccc}
+\toprule
+\multicolumn{5}{l}{\textbf{Panel A: Some Risk Home (E.coli 1--100 CFU) (HH)}} \\
+Method vs. no treatment & Flush & Pit latrine & Open defecation & Missing \\
+\midrule
+Boil & -0.080*** (0.010) & -0.054*** (0.008) & 0.099*** (0.012) & 0.055 (0.054) \\
+Chlorine & -0.008 (0.019) & -0.012 (0.022) & 0.070** (0.027) & 0.046 (0.061) \\
+Filter & 0.035*** (0.013) & 0.024** (0.011) & 0.120*** (0.016) & 0.124*** (0.040) \\
+Other & -0.034** (0.017) & -0.062*** (0.010) & -0.002 (0.013) & 0.094*** (0.022) \\
+\addlinespace
+\multicolumn{5}{l}{\textbf{Panel B: Very High Risk Home (E.coli $\geq$ 101 CFU) (HH)}} \\
+Method vs. no treatment & Flush & Pit latrine & Open defecation & Missing \\
+\midrule
+Boil & -0.051*** (0.008) & -0.114*** (0.006) & -0.212*** (0.011) & -0.116** (0.054) \\
+Chlorine & 0.027* (0.015) & -0.037* (0.020) & -0.114*** (0.027) & -0.154*** (0.058) \\
+Filter & 0.023** (0.010) & -0.020** (0.010) & -0.144*** (0.015) & -0.076** (0.037) \\
+Other & -0.060*** (0.011) & -0.128*** (0.008) & -0.275*** (0.012) & -0.435*** (0.017) \\
+\addlinespace
+\multicolumn{5}{l}{\textbf{Panel C: Diarrhea (under-5) (U5)}} \\
+Method vs. no treatment & Flush & Pit latrine & Open defecation & Missing \\
+\midrule
+Boil & -0.010 (0.012) & -0.036*** (0.007) & -0.033*** (0.010) & -0.045 (0.055) \\
+Chlorine & 0.013 (0.016) & 0.010 (0.021) & -0.029 (0.024) & -0.040* (0.023) \\
+Filter & 0.038* (0.020) & 0.016 (0.013) & 0.006 (0.022) & -0.050** (0.021) \\
+Other & -0.039** (0.019) & -0.029** (0.013) & -0.062*** (0.013) & -0.047*** (0.013) \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\par\vspace{3pt}
+\begin{minipage}{\linewidth}\footnotesize \textit{Notes:} Cells report APOS-based group average treatment effects relative to no treatment. Standard errors are in parentheses. $^{***}p<0.01$, $^{**}p<0.05$, $^{*}p<0.10$.\end{minipage}
+\end{table}

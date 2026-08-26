@@ -1,0 +1,79 @@
+% Requires: \usepackage{booktabs, pdflscape, graphicx, adjustbox}
+\begin{landscape}
+\begin{table}[htbp]
+\centering
+\caption{IRM Confounder Benchmarking, Robust Specification --- Observed Controls vs.\ the Robustness Value}
+\label{tab:sensitivity-benchmark-irm-rob1}
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{0.92}
+\begin{adjustbox}{max width=\linewidth, max totalheight=0.72\textwidth, center}
+\begin{tabular}{l|ccc|ccc|ccc}
+\toprule
+ & \multicolumn{3}{c|}{Some Risk Home (E.coli 1--100 CFU)} & \multicolumn{3}{c|}{Very High Risk Home (E.coli $\geq$ 101 CFU)} & \multicolumn{3}{c}{Diarrhea (under-5)} \\
+\cmidrule(lr){2-4} \cmidrule(lr){5-7} \cmidrule(lr){8-10}
+ & cf$_y$ & cf$_d$ & $\Delta\theta$ & cf$_y$ & cf$_d$ & $\Delta\theta$ & cf$_y$ & cf$_d$ & $\Delta\theta$ \\
+\midrule
+\multicolumn{10}{l}{\textit{Panel A: Any treatment}} \\
+Any treatment & \multicolumn{3}{c|}{-0.111*** {\scriptsize[RV 9.8/9.4]}} & \multicolumn{3}{c|}{-0.115*** {\scriptsize[RV 8.8/8.4]}} & \multicolumn{3}{c}{-0.042*** {\scriptsize[RV 2.4/2.0]}} \\
+\quad Wealth quintile & 0.2 & 2.2 & +2.21 & 0.0 & 2.0 & +0.72 & 0.1 & 0.0 & -0.05 \\
+\quad Education & 0.3 & 0.0 & -0.28 & 0.0 & 5.2 & +0.12 & 0.0 & 0.0 & -0.07 \\
+\quad Country FE & 11.0 & 20.7 & -6.71 & 11.5 & 23.9 & -3.03 & 3.5 & 100.0 & -0.15 \\
+\quad Urban & 0.0 & 4.8 & +0.30 & 0.0 & 9.4 & -0.44 & 0.0 & 0.0 & +0.03 \\
+\quad Water source & 4.9 & 5.6 & +2.00 & 2.8 & 7.8 & +0.18 & 0.0 & 4.1 & +0.34 \\
+\quad HH demographics & 0.2 & 1.0 & +0.74 & 0.0 & 4.9 & +0.01 & 0.0 & 0.0 & -0.03 \\
+\quad Sanitation & 0.0 & 0.0 & -0.09 & 1.8 & 3.7 & -0.34 & 0.0 & 0.4 & -0.32 \\
+\quad Source E.coli (decile) & 23.3 & 0.0 & +3.62 & 14.1 & 2.4 & +1.05 & 0.0 & 0.8 & +0.05 \\
+\quad Child age/sex &  &  &  &  &  &  & 2.2 & 0.0 & +0.48 \\
+\midrule
+\multicolumn{10}{l}{\textit{Panel B: Specific treatments}} \\
+Boil & \multicolumn{3}{c|}{-0.183*** {\scriptsize[RV 11.6/11.3]}} & \multicolumn{3}{c|}{-0.102*** {\scriptsize[RV 5.9/5.6]}} & \multicolumn{3}{c}{-0.047*** {\scriptsize[RV 1.9/1.6]}} \\
+\quad Wealth quintile & 0.0 & 0.3 & -1.42 & 0.0 & 0.3 & -0.31 & 0.1 & 1.0 & +0.12 \\
+\quad Education & 0.0 & 0.0 & -1.96 & 0.2 & 0.0 & -0.88 & 0.1 & 0.1 & -0.09 \\
+\quad Country FE & 7.7 & 16.3 & -8.81 & 6.4 & 14.2 & -7.07 & 3.2 & 100.0 & -0.24 \\
+\quad Urban & 0.0 & 0.0 & -1.47 & 0.2 & 0.0 & -0.94 & 0.0 & 1.0 & +0.07 \\
+\quad Water source & 7.5 & 8.5 & +2.02 & 4.6 & 4.3 & +0.64 & 0.0 & 17.4 & +0.34 \\
+\quad HH demographics & 0.1 & 0.3 & +0.33 & 0.0 & 0.0 & -1.15 & 0.1 & 0.4 & +0.06 \\
+\quad Sanitation & 0.0 & 0.0 & -1.96 & 0.0 & 0.0 & -1.91 & 0.0 & 1.3 & +0.07 \\
+\quad Source E.coli (decile) & 24.9 & 0.2 & +1.36 & 17.1 & 0.0 & -0.42 & 0.0 & 0.8 & -0.09 \\
+\quad Child age/sex &  &  &  &  &  &  & 2.1 & 0.2 & +0.06 \\
+\midrule
+Chlorine & \multicolumn{3}{c|}{-0.013 {\scriptsize[RV 0.5/0.0]}} & \multicolumn{3}{c|}{0.013 {\scriptsize[RV 0.4/0.0]}} & \multicolumn{3}{c}{0.011 {\scriptsize[RV 0.3/0.0]}} \\
+\quad Wealth quintile & 0.0 & 0.1 & +1.49 & 0.0 & 0.1 & -1.84 & 0.2 & 0.0 & -0.98 \\
+\quad Education & 0.6 & 0.0 & -1.20 & 0.7 & 0.1 & -0.02 & 0.1 & 0.0 & -0.41 \\
+\quad Country FE & 8.8 & 1.1 & +1.87 & 5.0 & 1.1 & -4.66 & 3.6 & 0.9 & -1.69 \\
+\quad Urban & 0.2 & 0.0 & +0.87 & 0.0 & 0.0 & -1.48 & 0.0 & 0.0 & -2.16 \\
+\quad Water source & 6.4 & 0.5 & -2.66 & 3.3 & 0.6 & -1.37 & 0.0 & 0.4 & +1.97 \\
+\quad HH demographics & 0.1 & 0.0 & -1.11 & 0.0 & 0.1 & -0.41 & 0.0 & 0.0 & +3.80 \\
+\quad Sanitation & 0.0 & 0.0 & +0.87 & 0.0 & 0.0 & -3.31 & 0.0 & 0.0 & -0.85 \\
+\quad Source E.coli (decile) & 26.4 & 0.1 & +5.11 & 17.0 & 0.1 & +2.31 & 0.0 & 0.0 & -0.17 \\
+\quad Child age/sex &  &  &  &  &  &  & 2.2 & 0.0 & -0.28 \\
+\midrule
+Filter & \multicolumn{3}{c|}{0.012*** {\scriptsize[RV 0.5/0.2]}} & \multicolumn{3}{c|}{-0.108*** {\scriptsize[RV 3.5/3.2]}} & \multicolumn{3}{c}{-0.036*** {\scriptsize[RV 1.3/1.1]}} \\
+\quad Wealth quintile & 0.0 & 5.7 & +0.07 & 0.1 & 47.2 & +0.86 & 0.2 & 2.5 & -0.31 \\
+\quad Education & 0.5 & 25.7 & +0.51 & 0.5 & 18.8 & +0.36 & 0.1 & 2.3 & +0.26 \\
+\quad Country FE & 8.5 & 100.0 & -2.09 & 5.9 & 100.0 & -5.41 & 3.7 & 100.0 & -0.29 \\
+\quad Urban & 0.2 & 17.9 & -1.03 & 0.1 & 13.1 & -0.37 & 0.0 & 2.0 & -0.73 \\
+\quad Water source & 7.0 & 0.0 & +3.89 & 4.3 & 0.0 & +0.41 & 0.0 & 2.4 & +0.40 \\
+\quad HH demographics & 0.2 & 7.1 & -0.10 & 0.2 & 21.8 & -0.09 & 0.0 & 1.0 & -0.09 \\
+\quad Sanitation & 0.0 & 0.4 & -0.55 & 0.4 & 0.0 & +1.36 & 0.0 & 2.3 & +0.41 \\
+\quad Source E.coli (decile) & 25.3 & 0.0 & +0.24 & 17.6 & 4.0 & +2.72 & 0.0 & 0.7 & -0.93 \\
+\quad Child age/sex &  &  &  &  &  &  & 2.2 & 0.0 & -0.10 \\
+\midrule
+Other & \multicolumn{3}{c|}{-0.366*** {\scriptsize[RV 12.7/11.9]}} & \multicolumn{3}{c|}{-0.228*** {\scriptsize[RV 6.9/6.6]}} & \multicolumn{3}{c}{-0.076*** {\scriptsize[RV 2.5/2.1]}} \\
+\quad Wealth quintile & 0.0 & 1.0 & -1.66 & 0.0 & 1.0 & -0.39 & 0.1 & 0.5 & -0.21 \\
+\quad Education & 0.3 & 0.1 & +3.57 & 0.6 & 0.1 & -2.06 & 0.0 & 0.1 & +0.20 \\
+\quad Country FE & 6.8 & 5.4 & +1.74 & 6.1 & 5.4 & -2.11 & 3.5 & 1.5 & -0.00 \\
+\quad Urban & 0.0 & 0.1 & +0.85 & 0.0 & 0.1 & -1.45 & 0.1 & 0.0 & -0.04 \\
+\quad Water source & 5.3 & 2.5 & +1.55 & 4.4 & 2.4 & +0.42 & 0.0 & 0.5 & -0.34 \\
+\quad HH demographics & 0.0 & 0.0 & -0.38 & 0.3 & 0.0 & +1.27 & 0.0 & 0.0 & -0.05 \\
+\quad Sanitation & 0.0 & 0.4 & -3.32 & 0.3 & 0.5 & -2.20 & 0.0 & 0.1 & +0.40 \\
+\quad Source E.coli (decile) & 25.0 & 0.0 & -1.22 & 17.6 & 0.0 & -5.41 & 0.0 & 0.1 & -0.13 \\
+\quad Child age/sex &  &  &  &  &  &  & 2.2 & 0.0 & -0.34 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\par\vspace{3pt}
+\begin{minipage}{\linewidth}\footnotesize \textit{Notes:} cf$_y$, cf$_d$ = partial $R^2$ ($\times100$) of each confounder group in the outcome and in adoption; $\Delta\theta$ ($\times100$) = bias from an unobserved confounder as strong as that group; [RV\,/\,RV$_\alpha$] next to each ATE = robustness value (point estimate / 95\% CI). $^{***}$p$<$0.01, $^{**}$p$<$0.05, $^{*}$p$<$0.1.\end{minipage}
+\end{table}
+\end{landscape}

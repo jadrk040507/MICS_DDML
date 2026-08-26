@@ -1,0 +1,66 @@
+% Requires: \usepackage{booktabs, pdflscape, graphicx}
+\begin{landscape}
+\begin{table}[htbp]
+\centering
+\caption{DDML IRM Estimates: Water Treatment on E.coli and Diarrhea}
+\label{tab:irm}
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{l|ccccccc|ccccccc|ccccccc}
+\toprule
+ & \multicolumn{7}{c|}{Some Risk Home (E.coli 1--100 CFU)} & \multicolumn{7}{c|}{Very High Risk Home (E.coli $\geq$ 101 CFU)} & \multicolumn{7}{c}{Diarrhea (under-5)} \\
+\cmidrule(lr){2-8} \cmidrule(lr){9-15} \cmidrule(lr){16-22}
+ & OLS & Lasso & Ridge & Elastic Net & Random Forest & XGBoost & Stacked & OLS & Lasso & Ridge & Elastic Net & Random Forest & XGBoost & Stacked & OLS & Lasso & Ridge & Elastic Net & Random Forest & XGBoost & Stacked \\
+\midrule
+\multicolumn{22}{l}{\textit{Panel A: Any treatment}} \\
+Any treatment & -0.079*** & -0.091*** & -0.084*** & -0.096*** & -0.075*** & -0.081*** & -0.085*** & -0.065*** & -0.069*** & -0.061*** & -0.074*** & -0.065*** & -0.071*** & -0.071*** & -0.005 & -0.003 & -0.004 & -0.004 & -0.004 & 0.004 & -0.005 \\
+ & (0.007) & (0.005) & (0.005) & (0.003) & (0.004) & (0.006) & (0.004) & (0.008) & (0.005) & (0.006) & (0.003) & (0.004) & (0.006) & (0.004) & (0.010) & (0.010) & (0.005) & (0.010) & (0.006) & (0.009) & (0.006) \\
+\quad $w_g$ & 0.09 & 0.09 & 0.18 & 0.11 & 0.17 & 0.36 &  & 0.12 & 0.12 & 0.16 & 0.11 & 0.23 & 0.25 &  & 0.18 & 0.19 & 0.16 & 0.19 & 0.11 & 0.17 &  \\
+\quad $w_m$ & 0.28 & 0.11 & 0.18 & 0.15 & 0.10 & 0.19 &  & 0.29 & 0.13 & 0.17 & 0.13 & 0.09 & 0.20 &  & 0.23 & 0.12 & 0.08 & 0.10 & 0.20 & 0.27 &  \\
+\quad RV & 0.06 & 0.07 & 0.06 & 0.09 & 0.05 & 0.05 & 0.11 & 0.04 & 0.05 & 0.04 & 0.07 & 0.04 & 0.04 & 0.09 & 0.00 & 0.00 & 0.00 & 0.00 & 0.00 & 0.00 & 0.00 \\
+\quad RV$_\alpha$ & 0.05 & 0.06 & 0.05 & 0.09 & 0.05 & 0.04 & 0.10 & 0.03 & 0.04 & 0.03 & 0.06 & 0.04 & 0.03 & 0.08 & 0.00 & 0.00 & 0.00 & 0.00 & 0.00 & 0.00 & 0.00 \\
+\quad $N$ & \multicolumn{7}{c|}{59,620} & \multicolumn{7}{c|}{59,620} & \multicolumn{7}{c}{36,121} \\
+\midrule
+\multicolumn{22}{l}{\textit{Panel B: Specific treatments}} \\
+Boil & -0.045*** & -0.053*** & -0.031*** & -0.055*** & -0.088*** & -0.039** & -0.062*** & -0.044*** & -0.052*** & -0.048*** & -0.051*** & -0.030*** & -0.028** & -0.043*** & 0.053* & 0.023 & 0.033*** & 0.017 & -0.004 & 0.042* & -0.007 \\
+ & (0.015) & (0.007) & (0.011) & (0.007) & (0.010) & (0.017) & (0.007) & (0.012) & (0.006) & (0.007) & (0.006) & (0.008) & (0.011) & (0.006) & (0.029) & (0.026) & (0.013) & (0.026) & (0.016) & (0.022) & (0.010) \\
+\quad $w_g$ & 0.18 & 0.19 & 0.18 & 0.19 & 0.17 & 0.11 &  & 0.24 & 0.14 & 0.22 & 0.15 & 0.15 & 0.10 &  & 0.21 & 0.09 & 0.21 & 0.09 & 0.22 & 0.17 &  \\
+\quad $w_m$ & 0.06 & 0.22 & 0.18 & 0.19 & 0.20 & 0.15 &  & 0.07 & 0.21 & 0.19 & 0.19 & 0.20 & 0.15 &  & 0.21 & 0.16 & 0.08 & 0.15 & 0.16 & 0.23 &  \\
+\quad RV & 0.02 & 0.04 & 0.02 & 0.05 & 0.05 & 0.02 & 0.06 & 0.02 & 0.05 & 0.03 & 0.05 & 0.02 & 0.01 & 0.05 & 0.02 & 0.01 & 0.02 & 0.01 & 0.00 & 0.02 & 0.00 \\
+\quad RV$_\alpha$ & 0.01 & 0.03 & 0.01 & 0.04 & 0.04 & 0.00 & 0.05 & 0.01 & 0.04 & 0.03 & 0.04 & 0.01 & 0.00 & 0.04 & 0.00 & 0.00 & 0.01 & 0.00 & 0.00 & 0.00 & 0.00 \\
+\quad $N$ & \multicolumn{7}{c|}{11,075} & \multicolumn{7}{c|}{11,075} & \multicolumn{7}{c}{6,329} \\
+\midrule
+Chlorine & 0.243*** & 0.195*** & 0.235*** & 0.192*** & 0.154*** & 0.187*** & 0.205*** & 0.018 & 0.049*** & 0.035*** & 0.071*** & 0.046*** & 0.031*** & 0.084*** & -0.061*** & -0.007 & -0.017* & -0.014 & -0.005 & -0.036* & 0.016* \\
+ & (0.019) & (0.011) & (0.009) & (0.011) & (0.009) & (0.015) & (0.011) & (0.014) & (0.009) & (0.007) & (0.009) & (0.007) & (0.011) & (0.013) & (0.019) & (0.016) & (0.010) & (0.016) & (0.009) & (0.020) & (0.009) \\
+\quad $w_g$ & 0.21 & 0.15 & 0.20 & 0.15 & 0.15 & 0.14 &  & 0.14 & 0.23 & 0.10 & 0.22 & 0.15 & 0.16 &  & 0.11 & 0.24 & 0.14 & 0.25 & 0.13 & 0.13 &  \\
+\quad $w_m$ & 0.56 & 0.06 & 0.11 & 0.02 & 0.12 & 0.12 &  & 0.47 & 0.09 & 0.12 & 0.04 & 0.15 & 0.12 &  & 0.26 & 0.20 & 0.05 & 0.12 & 0.12 & 0.25 &  \\
+\quad RV & 0.06 & 0.05 & 0.09 & 0.09 & 0.05 & 0.05 & 0.17 & 0.01 & 0.01 & 0.01 & 0.04 & 0.02 & 0.01 & 0.08 & 0.02 & 0.00 & 0.01 & 0.00 & 0.00 & 0.01 & 0.01 \\
+\quad RV$_\alpha$ & 0.05 & 0.05 & 0.08 & 0.08 & 0.04 & 0.04 & 0.15 & 0.00 & 0.01 & 0.01 & 0.03 & 0.01 & 0.00 & 0.06 & 0.01 & 0.00 & 0.00 & 0.00 & 0.00 & 0.00 & 0.00 \\
+\quad $N$ & \multicolumn{7}{c|}{11,075} & \multicolumn{7}{c|}{11,075} & \multicolumn{7}{c}{6,329} \\
+\midrule
+Filter & 0.130*** & 0.159*** & 0.132*** & 0.153*** & 0.164*** & 0.157*** & 0.173*** & 0.114*** & 0.101*** & 0.113*** & 0.096*** & 0.091*** & 0.114*** & 0.099*** & -0.000 & 0.000 & 0.008 & 0.005 & -0.003 & -0.030 & 0.024*** \\
+ & (0.023) & (0.007) & (0.008) & (0.008) & (0.013) & (0.021) & (0.007) & (0.021) & (0.008) & (0.008) & (0.008) & (0.013) & (0.023) & (0.008) & (0.042) & (0.031) & (0.017) & (0.032) & (0.015) & (0.037) & (0.009) \\
+\quad $w_g$ & 0.17 & 0.22 & 0.15 & 0.21 & 0.09 & 0.15 &  & 0.15 & 0.20 & 0.14 & 0.19 & 0.20 & 0.12 &  & 0.19 & 0.17 & 0.18 & 0.17 & 0.14 & 0.15 &  \\
+\quad $w_m$ & 0.18 & 0.18 & 0.30 & 0.19 & 0.12 & 0.04 &  & 0.18 & 0.17 & 0.30 & 0.18 & 0.12 & 0.05 &  & 0.18 & 0.16 & 0.15 & 0.16 & 0.16 & 0.19 &  \\
+\quad RV & 0.05 & 0.10 & 0.08 & 0.10 & 0.06 & 0.05 & 0.12 & 0.04 & 0.07 & 0.07 & 0.07 & 0.04 & 0.04 & 0.08 & 0.00 & 0.00 & 0.00 & 0.00 & 0.00 & 0.01 & 0.02 \\
+\quad RV$_\alpha$ & 0.03 & 0.10 & 0.07 & 0.09 & 0.06 & 0.04 & 0.12 & 0.03 & 0.06 & 0.06 & 0.06 & 0.03 & 0.03 & 0.07 & 0.00 & 0.00 & 0.00 & 0.00 & 0.00 & 0.00 & 0.01 \\
+\quad $N$ & \multicolumn{7}{c|}{11,075} & \multicolumn{7}{c|}{11,075} & \multicolumn{7}{c}{6,329} \\
+\midrule
+Other & 0.039 & 0.005 & -0.000 & 0.014 & 0.014 & 0.002 & -0.003 & -0.022 & -0.026*** & -0.018* & -0.021** & -0.011 & -0.032* & -0.031*** & 0.039 & 0.009 & 0.047 & 0.013 & 0.026 & 0.062* & -0.006 \\
+ & (0.029) & (0.008) & (0.011) & (0.011) & (0.016) & (0.022) & (0.017) & (0.021) & (0.008) & (0.010) & (0.010) & (0.012) & (0.018) & (0.012) & (0.038) & (0.022) & (0.029) & (0.022) & (0.020) & (0.036) & (0.013) \\
+\quad $w_g$ & 0.14 & 0.16 & 0.27 & 0.14 & 0.19 & 0.10 &  & 0.14 & 0.14 & 0.18 & 0.15 & 0.25 & 0.13 &  & 0.15 & 0.14 & 0.16 & 0.13 & 0.21 & 0.21 &  \\
+\quad $w_m$ & 0.34 & 0.20 & 0.04 & 0.06 & 0.17 & 0.20 &  & 0.35 & 0.19 & 0.05 & 0.05 & 0.16 & 0.20 &  & 0.29 & 0.13 & 0.09 & 0.14 & 0.13 & 0.22 &  \\
+\quad RV & 0.02 & 0.00 & 0.00 & 0.01 & 0.01 & 0.00 & 0.00 & 0.01 & 0.02 & 0.01 & 0.01 & 0.01 & 0.02 & 0.03 & 0.03 & 0.01 & 0.03 & 0.01 & 0.01 & 0.03 & 0.00 \\
+\quad RV$_\alpha$ & 0.00 & 0.00 & 0.00 & 0.00 & 0.00 & 0.00 & 0.00 & 0.00 & 0.01 & 0.00 & 0.00 & 0.00 & 0.00 & 0.01 & 0.00 & 0.00 & 0.00 & 0.00 & 0.00 & 0.00 & 0.00 \\
+\quad $N$ & \multicolumn{7}{c|}{11,075} & \multicolumn{7}{c|}{11,075} & \multicolumn{7}{c}{6,329} \\
+\midrule
+Outcome mean $\bar Y$ & \multicolumn{7}{c|}{0.737} & \multicolumn{7}{c|}{0.308} & \multicolumn{7}{c}{0.139} \\
+Treated (\%) & \multicolumn{7}{c|}{21.2} & \multicolumn{7}{c|}{21.2} & \multicolumn{7}{c}{19.4} \\
+Clusters & \multicolumn{7}{c|}{---} & \multicolumn{7}{c|}{---} & \multicolumn{7}{c}{25,202} \\
+\bottomrule
+\end{tabular}}
+\par\vspace{3pt}
+\begin{minipage}{\linewidth}\footnotesize \textit{Notes:} DDML IRM (ATE score). Each cell: coefficient with significance stars over (standard error). Columns group the three outcomes; within each, the ML nuisance learners. Panel A is any-treatment vs.\ none (full sample); Panel B is each method vs.\ none on single-method households (N below the full-sample N). The $w_g$ and $w_m$ rows give each base learner's meta-weight in the stacked ensemble (outcome model $g$ and propensity $m$), shown under that learner's own column; blank for non-base learners and for the stacked column itself. The RV and RV$_\alpha$ rows are the Chernozhukov et al. (2022) robustness value (and its CI-adjusted version): the share of residual variation an unobserved confounder must explain in both $D$ and $Y$ to move the point estimate (its 95\% CI) to zero. Controls (all models): household wealth quintile, education of the household head, country fixed effects, urban/rural residence, main drinking-water source, an indicator for any under-5 child in the household, indicators for a girl and a boy under~15, sanitation-facility type, and deciles of the source-water E.coli test (100\,ml). The diarrhea (under-5) model additionally controls for the child's age and sex. Cross-fitting: 5 folds $\times$ 3 reps; propensity trimmed to $[0.01,0.99]$. Cluster: HHID for diarrhea (U5); E.coli outcomes estimated i.i.d. $^{***}$p$<$0.01, $^{**}$p$<$0.05, $^{*}$p$<$0.1.\end{minipage}
+\end{table}
+\end{landscape}

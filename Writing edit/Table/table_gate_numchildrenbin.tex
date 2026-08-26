@@ -1,0 +1,39 @@
+% Requires: \usepackage{booktabs, pdflscape, graphicx, adjustbox}
+\begin{table}[p]
+\centering
+\caption{Group average treatment effects by number of children}
+\label{tab:gate_numchildrenbin}
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{adjustbox}{max width=\linewidth, center}
+\begin{tabular}{lccc}
+\toprule
+\multicolumn{4}{l}{\textbf{Panel A: Some Risk Home (E.coli 1--100 CFU) (HH)}} \\
+Method vs. no treatment & 0 & 1 & 2 \\
+\midrule
+Boil & -0.036*** (0.006) & -0.060 (0.040) & -0.002 (0.034) \\
+Chlorine & 0.004 (0.013) & 0.105 (0.119) & -0.028 (0.112) \\
+Filter & 0.049*** (0.007) & -0.002 (0.078) & 0.032 (0.074) \\
+Other & -0.039*** (0.009) & 0.038 (0.058) & -0.024 (0.047) \\
+\addlinespace
+\multicolumn{4}{l}{\textbf{Panel B: Very High Risk Home (E.coli $\geq$ 101 CFU) (HH)}} \\
+Method vs. no treatment & 0 & 1 & 2 \\
+\midrule
+Boil & -0.109*** (0.005) & -0.049* (0.026) & -0.050*** (0.019) \\
+Chlorine & -0.027** (0.011) & -0.173* (0.099) & 0.077 (0.089) \\
+Filter & -0.026*** (0.006) & 0.019 (0.062) & -0.043 (0.058) \\
+Other & -0.136*** (0.006) & -0.097*** (0.029) & -0.074*** (0.024) \\
+\addlinespace
+\multicolumn{4}{l}{\textbf{Panel C: Diarrhea (under-5) (U5)}} \\
+Method vs. no treatment & 0 & 1 & 2 \\
+\midrule
+Boil & -0.028*** (0.006) & -0.026 (0.048) & -0.080*** (0.026) \\
+Chlorine & 0.002 (0.013) & -0.021 (0.031) & -0.108** (0.049) \\
+Filter & 0.019* (0.010) & 0.063 (0.078) & -0.220*** (0.056) \\
+Other & -0.038*** (0.009) & -0.121*** (0.015) & -0.026* (0.016) \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\par\vspace{3pt}
+\begin{minipage}{\linewidth}\footnotesize \textit{Notes:} Cells report APOS-based group average treatment effects relative to no treatment. Standard errors are in parentheses. $^{***}p<0.01$, $^{**}p<0.05$, $^{*}p<0.10$.\end{minipage}
+\end{table}

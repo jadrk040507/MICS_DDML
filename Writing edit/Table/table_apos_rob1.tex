@@ -1,0 +1,56 @@
+% Requires: \usepackage{booktabs, pdflscape, graphicx}
+\begin{landscape}
+\begin{table}[htbp]
+\centering
+\caption{DDML APOS Estimates: Robust Specification (Overlap-Restricted Sample)}
+\label{tab:apos-rob1}
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{l|ccccccc|ccccccc|ccccccc}
+\toprule
+ & \multicolumn{7}{c|}{Some Risk Home (E.coli 1--100 CFU)} & \multicolumn{7}{c|}{Very High Risk Home (E.coli $\geq$ 101 CFU)} & \multicolumn{7}{c}{Diarrhea (under-5)} \\
+\cmidrule(lr){2-8} \cmidrule(lr){9-15} \cmidrule(lr){16-22}
+ & OLS & Lasso & Ridge & Elastic Net & Random Forest & XGBoost & Stacked & OLS & Lasso & Ridge & Elastic Net & Random Forest & XGBoost & Stacked & OLS & Lasso & Ridge & Elastic Net & Random Forest & XGBoost & Stacked \\
+\midrule
+Boil & -0.200*** & -0.202*** & -0.279*** & -0.231*** & -0.240*** & -0.181*** & -0.211*** & -0.128*** & -0.003 & -0.154*** & -0.161*** & -0.150*** & -0.135*** & -0.104*** & -0.045*** & -0.015*** & -0.043*** & -0.048*** & -0.048*** & -0.052*** & -0.044*** \\
+ & (0.004) & (0.005) & (0.006) & (0.006) & (0.003) & (0.003) & (0.004) & (0.003) & (0.004) & (0.005) & (0.004) & (0.003) & (0.003) & (0.004) & (0.004) & (0.004) & (0.004) & (0.004) & (0.003) & (0.003) & (0.004) \\
+\quad $w_g$ & 0.13 & 0.24 & 0.09 & 0.10 & 0.11 & 0.32 &  & 0.17 & 0.12 & 0.14 & 0.12 & 0.22 & 0.21 &  & 0.30 & 0.14 & 0.08 & 0.16 & 0.17 & 0.15 &  \\
+\quad $w_m$ & 0.20 & 0.20 & 0.07 & 0.17 & 0.17 & 0.19 &  & 0.20 & 0.20 & 0.07 & 0.17 & 0.17 & 0.19 &  & 0.22 & 0.18 & 0.04 & 0.16 & 0.17 & 0.23 &  \\
+\quad RV & 0.05 & 0.07 & 0.09 & 0.08 & 0.07 & 0.04 & 0.14 & 0.03 & 0.00 & 0.05 & 0.05 & 0.04 & 0.03 & 0.06 & 0.01 & 0.00 & 0.02 & 0.01 & 0.01 & 0.01 & 0.02 \\
+\quad RV$_\alpha$ & 0.05 & 0.07 & 0.09 & 0.08 & 0.06 & 0.04 & 0.13 & 0.03 & 0.00 & 0.04 & 0.05 & 0.04 & 0.03 & 0.06 & 0.01 & 0.00 & 0.01 & 0.01 & 0.01 & 0.01 & 0.02 \\
+\quad $N$ & \multicolumn{7}{c|}{56,723} & \multicolumn{7}{c|}{56,723} & \multicolumn{7}{c}{34,639} \\
+\midrule
+Chlorine & -0.007 & -0.010** & 0.023** & 0.019*** & 0.029*** & 0.016*** & 0.012 & -0.014*** & 0.018*** & 0.005 & -0.033*** & -0.019*** & -0.058*** & 0.000 & 0.047*** & 0.171*** & -0.007 & -0.005 & -0.010*** & -0.054*** & 0.002 \\
+ & (0.005) & (0.005) & (0.010) & (0.005) & (0.004) & (0.006) & (0.008) & (0.005) & (0.004) & (0.013) & (0.004) & (0.004) & (0.005) & (0.010) & (0.003) & (0.003) & (0.016) & (0.003) & (0.002) & (0.004) & (0.009) \\
+\quad $w_g$ & 0.13 & 0.24 & 0.09 & 0.10 & 0.11 & 0.32 &  & 0.17 & 0.12 & 0.14 & 0.12 & 0.22 & 0.21 &  & 0.30 & 0.14 & 0.08 & 0.16 & 0.17 & 0.15 &  \\
+\quad $w_m$ & 0.20 & 0.20 & 0.07 & 0.17 & 0.17 & 0.19 &  & 0.20 & 0.20 & 0.07 & 0.17 & 0.17 & 0.19 &  & 0.22 & 0.18 & 0.04 & 0.16 & 0.17 & 0.23 &  \\
+\quad RV & 0.00 & 0.00 & 0.01 & 0.00 & 0.01 & 0.00 & 0.00 & 0.00 & 0.00 & 0.00 & 0.01 & 0.00 & 0.01 & 0.00 & 0.01 & 0.04 & 0.00 & 0.00 & 0.00 & 0.01 & 0.00 \\
+\quad RV$_\alpha$ & 0.00 & 0.00 & 0.00 & 0.00 & 0.00 & 0.00 & 0.00 & 0.00 & 0.00 & 0.00 & 0.00 & 0.00 & 0.01 & 0.00 & 0.01 & 0.04 & 0.00 & 0.00 & 0.00 & 0.01 & 0.00 \\
+\quad $N$ & \multicolumn{7}{c|}{56,723} & \multicolumn{7}{c|}{56,723} & \multicolumn{7}{c}{34,639} \\
+\midrule
+Filter & -0.058*** & 0.002 & 0.010 & 0.001 & -0.001 & -0.046*** & 0.013*** & -0.113*** & -0.058*** & -0.123*** & -0.125*** & -0.121*** & -0.146*** & -0.110*** & -0.082*** & -0.008** & -0.030*** & -0.039*** & -0.032*** & -0.066*** & -0.040*** \\
+ & (0.004) & (0.006) & (0.007) & (0.005) & (0.004) & (0.004) & (0.005) & (0.004) & (0.006) & (0.006) & (0.003) & (0.003) & (0.004) & (0.005) & (0.003) & (0.004) & (0.005) & (0.003) & (0.003) & (0.004) & (0.005) \\
+\quad $w_g$ & 0.13 & 0.24 & 0.09 & 0.10 & 0.11 & 0.32 &  & 0.17 & 0.12 & 0.14 & 0.12 & 0.22 & 0.21 &  & 0.30 & 0.14 & 0.08 & 0.16 & 0.17 & 0.15 &  \\
+\quad $w_m$ & 0.20 & 0.20 & 0.07 & 0.17 & 0.17 & 0.19 &  & 0.20 & 0.20 & 0.07 & 0.17 & 0.17 & 0.19 &  & 0.22 & 0.18 & 0.04 & 0.16 & 0.17 & 0.23 &  \\
+\quad RV & 0.01 & 0.00 & 0.00 & 0.00 & 0.00 & 0.01 & 0.01 & 0.02 & 0.01 & 0.03 & 0.02 & 0.03 & 0.03 & 0.04 & 0.02 & 0.00 & 0.01 & 0.01 & 0.01 & 0.02 & 0.01 \\
+\quad RV$_\alpha$ & 0.01 & 0.00 & 0.00 & 0.00 & 0.00 & 0.01 & 0.00 & 0.02 & 0.01 & 0.03 & 0.02 & 0.02 & 0.03 & 0.03 & 0.02 & 0.00 & 0.01 & 0.01 & 0.01 & 0.01 & 0.01 \\
+\quad $N$ & \multicolumn{7}{c|}{56,723} & \multicolumn{7}{c|}{56,723} & \multicolumn{7}{c}{34,639} \\
+\midrule
+Other & -0.279*** & -0.201*** & -0.286*** & -0.315*** & -0.317*** & -0.262*** & -0.228*** & -0.147*** & -0.179*** & -0.228*** & -0.215*** & -0.209*** & -0.182*** & -0.212*** & -0.083*** & -0.056*** & -0.075*** & -0.068*** & -0.059*** & -0.057*** & -0.075*** \\
+ & (0.005) & (0.004) & (0.006) & (0.004) & (0.004) & (0.005) & (0.008) & (0.004) & (0.003) & (0.005) & (0.004) & (0.003) & (0.004) & (0.005) & (0.005) & (0.004) & (0.008) & (0.005) & (0.006) & (0.006) & (0.007) \\
+\quad $w_g$ & 0.13 & 0.24 & 0.09 & 0.10 & 0.11 & 0.32 &  & 0.17 & 0.12 & 0.14 & 0.12 & 0.22 & 0.21 &  & 0.30 & 0.14 & 0.08 & 0.16 & 0.17 & 0.15 &  \\
+\quad $w_m$ & 0.20 & 0.20 & 0.07 & 0.17 & 0.17 & 0.19 &  & 0.20 & 0.20 & 0.07 & 0.17 & 0.17 & 0.19 &  & 0.22 & 0.18 & 0.04 & 0.16 & 0.17 & 0.23 &  \\
+\quad RV & 0.06 & 0.05 & 0.09 & 0.07 & 0.07 & 0.06 & 0.09 & 0.03 & 0.03 & 0.06 & 0.04 & 0.04 & 0.04 & 0.07 & 0.02 & 0.01 & 0.02 & 0.02 & 0.01 & 0.01 & 0.03 \\
+\quad RV$_\alpha$ & 0.06 & 0.04 & 0.08 & 0.07 & 0.07 & 0.06 & 0.09 & 0.03 & 0.03 & 0.06 & 0.04 & 0.04 & 0.04 & 0.07 & 0.02 & 0.01 & 0.02 & 0.01 & 0.01 & 0.01 & 0.02 \\
+\quad $N$ & \multicolumn{7}{c|}{56,723} & \multicolumn{7}{c|}{56,723} & \multicolumn{7}{c}{34,639} \\
+\midrule
+Outcome mean $\bar Y$ & \multicolumn{7}{c|}{0.737} & \multicolumn{7}{c|}{0.309} & \multicolumn{7}{c}{0.139} \\
+Treated (\%) & \multicolumn{7}{c|}{17.2} & \multicolumn{7}{c|}{17.2} & \multicolumn{7}{c}{16.0} \\
+Clusters & \multicolumn{7}{c|}{---} & \multicolumn{7}{c|}{---} & \multicolumn{7}{c}{---} \\
+\bottomrule
+\end{tabular}}
+\par\vspace{3pt}
+\begin{minipage}{\linewidth}\footnotesize \textit{Notes:} Average Potential Outcome (AIPW) contrasts, ATE($d$)$=$E[$Y(d)$]$-$E[$Y(0)$], estimated jointly on the full sample with a multi-class propensity P($D{=}d\mid X$). Each cell: coefficient with stars over (standard error); the $w_g$ and $w_m$ rows give each base learner's meta-weight in the stacked ensemble, shown under that learner's own column. The RV and RV$_\alpha$ rows are the Chernozhukov et al. (2022) robustness value (and its CI-adjusted version). Controls (all models): household wealth quintile, education of the household head, country fixed effects, urban/rural residence, main drinking-water source, an indicator for any under-5 child in the household, indicators for a girl and a boy under~15, sanitation-facility type, and deciles of the source-water E.coli test (100\,ml). The diarrhea (under-5) model additionally controls for the child's age and sex. Cross-fitting: 5 folds $\times$ 3 reps; propensity trimmed to $[0.01,0.99]$. SEs from \texttt{causal\_contrast} (i.i.d.; DoubleMLAPOS has no clustered SE). $^{***}$p$<$0.01, $^{**}$p$<$0.05, $^{*}$p$<$0.1.\end{minipage}
+\end{table}
+\end{landscape}

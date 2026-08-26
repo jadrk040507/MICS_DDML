@@ -1,0 +1,39 @@
+% Requires: \usepackage{booktabs, pdflscape, graphicx, adjustbox}
+\begin{table}[p]
+\centering
+\caption{Group average treatment effects by wealth quintile}
+\label{tab:gate_windex5}
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{adjustbox}{max width=\linewidth, center}
+\begin{tabular}{lccccc}
+\toprule
+\multicolumn{6}{l}{\textbf{Panel A: Some Risk Home (E.coli 1--100 CFU) (HH)}} \\
+Method vs. no treatment & Q1 & Q2 & Q3 & Q4 & Q5 \\
+\midrule
+Boil & -0.018 (0.013) & -0.031** (0.013) & -0.030** (0.013) & -0.059*** (0.012) & -0.048*** (0.012) \\
+Chlorine & -0.021 (0.027) & 0.031 (0.026) & 0.024 (0.026) & 0.005 (0.030) & -0.010 (0.034) \\
+Filter & 0.033* (0.017) & 0.083*** (0.016) & 0.022 (0.016) & 0.057*** (0.014) & 0.045*** (0.014) \\
+Other & -0.075*** (0.014) & -0.025 (0.017) & -0.023 (0.019) & -0.047** (0.021) & 0.004 (0.026) \\
+\addlinespace
+\multicolumn{6}{l}{\textbf{Panel B: Very High Risk Home (E.coli $\geq$ 101 CFU) (HH)}} \\
+Method vs. no treatment & Q1 & Q2 & Q3 & Q4 & Q5 \\
+\midrule
+Boil & -0.138*** (0.010) & -0.126*** (0.011) & -0.120*** (0.010) & -0.078*** (0.009) & -0.046*** (0.009) \\
+Chlorine & -0.014 (0.026) & -0.072*** (0.024) & -0.047** (0.022) & -0.051** (0.024) & 0.057* (0.030) \\
+Filter & -0.054*** (0.016) & -0.063*** (0.014) & -0.036*** (0.014) & -0.003 (0.012) & 0.051*** (0.012) \\
+Other & -0.160*** (0.011) & -0.159*** (0.013) & -0.151*** (0.014) & -0.096*** (0.016) & -0.077*** (0.015) \\
+\addlinespace
+\multicolumn{6}{l}{\textbf{Panel C: Diarrhea (under-5) (U5)}} \\
+Method vs. no treatment & Q1 & Q2 & Q3 & Q4 & Q5 \\
+\midrule
+Boil & -0.040*** (0.010) & -0.042*** (0.010) & -0.047*** (0.010) & 0.007 (0.017) & 0.001 (0.017) \\
+Chlorine & -0.016 (0.022) & -0.018 (0.021) & 0.014 (0.025) & -0.010 (0.034) & 0.056 (0.042) \\
+Filter & 0.001 (0.021) & 0.030 (0.022) & 0.020 (0.021) & 0.001 (0.018) & 0.052** (0.026) \\
+Other & -0.059*** (0.014) & -0.019 (0.020) & -0.027 (0.020) & -0.010 (0.027) & -0.092*** (0.015) \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\par\vspace{3pt}
+\begin{minipage}{\linewidth}\footnotesize \textit{Notes:} Cells report APOS-based group average treatment effects relative to no treatment. Standard errors are in parentheses. $^{***}p<0.01$, $^{**}p<0.05$, $^{*}p<0.10$.\end{minipage}
+\end{table}

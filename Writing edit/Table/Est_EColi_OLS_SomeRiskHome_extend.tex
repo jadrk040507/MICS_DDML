@@ -1,0 +1,25 @@
+{
+\def\sym#1{\ifmmode^{#1}\else\(^{#1}\)\fi}
+\begin{tabular}{l*{8}{c}}
+\hline\hline
+                    &\multicolumn{2}{c}{Across}                 &\multicolumn{2}{c}{Low risk at source}     &\multicolumn{2}{c}{Medium risk at source}  &\multicolumn{2}{c}{High risk at source}    \\\cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-7}\cmidrule(lr){8-9}
+                    &\multicolumn{1}{c}{(1)}         &\multicolumn{1}{c}{(2)}         &\multicolumn{1}{c}{(3)}         &\multicolumn{1}{c}{(4)}         &\multicolumn{1}{c}{(5)}         &\multicolumn{1}{c}{(6)}         &\multicolumn{1}{c}{(7)}         &\multicolumn{1}{c}{(8)}         \\
+\hline
+Any treatment &                     &      -0.094\sym{***}&                     &      -0.071\sym{***}&                     &      -0.121\sym{***}&                     &      -0.089\sym{***}\\
+                    &                     &     (0.004)         &                     &     (0.009)         &                     &     (0.006)         &                     &     (0.005)         \\
+Boiling             &      -0.145\sym{***}&                     &      -0.093\sym{***}&                     &      -0.174\sym{***}&                     &      -0.149\sym{***}&                     \\
+                    &     (0.006)         &                     &     (0.012)         &                     &     (0.008)         &                     &     (0.007)         &                     \\
+Chlorination        &      -0.051\sym{***}&                     &      -0.043\sym{*}  &                     &      -0.093\sym{***}&                     &      -0.049\sym{***}&                     \\
+                    &     (0.010)         &                     &     (0.023)         &                     &     (0.012)         &                     &     (0.009)         &                     \\
+Strain              &      -0.019\sym{**} &                     &      -0.051\sym{**} &                     &      -0.012         &                     &      -0.030\sym{***}&                     \\
+                    &     (0.008)         &                     &     (0.020)         &                     &     (0.010)         &                     &     (0.008)         &                     \\
+Other treatment     &      -0.112\sym{***}&                     &      -0.055\sym{***}&                     &      -0.190\sym{***}&                     &      -0.120\sym{***}&                     \\
+                    &     (0.008)         &                     &     (0.014)         &                     &     (0.010)         &                     &     (0.011)         &                     \\
+Controls            &         Yes         &         Yes         &         Yes         &         Yes         &         Yes         &         Yes         &         Yes         &         Yes         \\
+\hline
+Mean                &        0.78         &        0.78         &        0.53         &        0.53         &        0.95         &        0.95         &        0.99         &        0.99         \\
+Adjusted \(R^{2}\)  &        0.40         &        0.40         &        0.27         &        0.27         &        0.16         &        0.15         &        0.15         &        0.13         \\
+Observations        &      59,620         &      59,620         &      25,511         &      25,511         &      21,841         &      21,841         &      12,268         &      12,268         \\
+\hline\hline
+\end{tabular}
+}

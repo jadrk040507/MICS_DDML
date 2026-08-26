@@ -1,0 +1,23 @@
+% Requires: \usepackage{booktabs, pdflscape, graphicx, adjustbox}
+\begin{table}[p]
+\centering
+\caption{Group average treatment effects by child age}
+\label{tab:gate_childage}
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{adjustbox}{max width=\linewidth, center}
+\begin{tabular}{lccccc}
+\toprule
+\multicolumn{6}{l}{\textbf{Panel A: Diarrhea (under-5) (U5)}} \\
+Method vs. no treatment & 0 & 1 & 2 & 3 & 4 \\
+\midrule
+Boil & -0.026* (0.015) & -0.064*** (0.015) & -0.036*** (0.013) & -0.018** (0.009) & -0.002 (0.010) \\
+Chlorine & 0.039 (0.036) & -0.055** (0.028) & -0.018 (0.022) & 0.005 (0.023) & 0.025 (0.025) \\
+Filter & 0.018 (0.023) & -0.011 (0.023) & 0.018 (0.023) & 0.028 (0.021) & 0.036* (0.020) \\
+Other & -0.034 (0.024) & -0.063** (0.025) & -0.086*** (0.013) & -0.027 (0.017) & 0.006 (0.017) \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\par\vspace{3pt}
+\begin{minipage}{\linewidth}\footnotesize \textit{Notes:} Cells report APOS-based group average treatment effects relative to no treatment. Standard errors are in parentheses. $^{***}p<0.01$, $^{**}p<0.05$, $^{*}p<0.10$.\end{minipage}
+\end{table}

@@ -1,0 +1,32 @@
+% Requires: \usepackage{booktabs}
+\begin{table}[htbp]
+\centering
+\caption{Propensity-score overlap diagnostics for the stacked APOS learner}
+\label{tab:overlap-apos}
+\small\setlength{\tabcolsep}{5pt}
+\begin{adjustbox}{max width=\linewidth, center}
+\begin{tabular}{lllrrrrrr}
+\toprule
+Dataset & Outcome & Treatment & Min. & P1 & Median & P99 & Max. & Outside trim (\%) \\
+\midrule
+HH & Some Risk Home (E.coli 1--100 CFU) & No Treatment & 0.023 & 0.327 & 0.764 & 0.918 & 0.990 & 0.0 \\
+HH & Some Risk Home (E.coli 1--100 CFU) & Boil & 0.053 & 0.073 & 0.097 & 0.195 & 0.357 & 0.0 \\
+HH & Some Risk Home (E.coli 1--100 CFU) & Chlorine & 0.019 & 0.019 & 0.022 & 0.070 & 0.744 & 0.0 \\
+HH & Some Risk Home (E.coli 1--100 CFU) & Filter & 0.025 & 0.033 & 0.042 & 0.947 & 0.990 & 0.0 \\
+HH & Some Risk Home (E.coli 1--100 CFU) & Other & 0.024 & 0.029 & 0.037 & 0.174 & 0.763 & 0.0 \\
+HH & Very High Risk Home (E.coli $\geq$ 101 CFU) & No Treatment & 0.023 & 0.327 & 0.764 & 0.918 & 0.990 & 0.0 \\
+HH & Very High Risk Home (E.coli $\geq$ 101 CFU) & Boil & 0.053 & 0.073 & 0.097 & 0.195 & 0.357 & 0.0 \\
+HH & Very High Risk Home (E.coli $\geq$ 101 CFU) & Chlorine & 0.019 & 0.019 & 0.022 & 0.070 & 0.744 & 0.0 \\
+HH & Very High Risk Home (E.coli $\geq$ 101 CFU) & Filter & 0.025 & 0.033 & 0.042 & 0.947 & 0.990 & 0.0 \\
+HH & Very High Risk Home (E.coli $\geq$ 101 CFU) & Other & 0.024 & 0.029 & 0.037 & 0.174 & 0.763 & 0.0 \\
+U5 & Diarrhea (under-5) & No Treatment & 0.154 & 0.221 & 0.903 & 0.930 & 0.950 & 0.0 \\
+U5 & Diarrhea (under-5) & Boil & 0.031 & 0.031 & 0.037 & 0.507 & 0.621 & 0.0 \\
+U5 & Diarrhea (under-5) & Chlorine & 0.010 & 0.010 & 0.013 & 0.127 & 0.774 & 0.0 \\
+U5 & Diarrhea (under-5) & Filter & 0.016 & 0.017 & 0.021 & 0.962 & 0.987 & 0.0 \\
+U5 & Diarrhea (under-5) & Other & 0.018 & 0.018 & 0.020 & 0.079 & 0.588 & 0.0 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\par\vspace{3pt}
+\begin{minipage}{\linewidth}\footnotesize \textit{Notes:} Entries summarize cross-fitted generalized propensity scores. Outside trim is the percentage below 0.01 or above 0.99. The CSV retains diagnostics for every learner; this publication table reports the stacked learner.\end{minipage}
+\end{table}
