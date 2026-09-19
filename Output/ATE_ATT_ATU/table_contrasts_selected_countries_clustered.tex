@@ -1,0 +1,32 @@
+% Requires: \usepackage{booktabs,adjustbox}
+\begin{table}[htbp]
+\centering
+\caption{ATT--ATU Differences -- Selected Countries}
+\label{tab:ate-att-atu-selected-countries-clustered-aggregated-difference}
+\scriptsize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{0.92}
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{lccc}
+\hline\hline
+ & Some risk & Very high risk & Diarrhea (U5) \\
+\midrule
+\multicolumn{4}{l}{\textit{IRM}} \\
+Any treatment & -0.018 & -0.006 & -0.005 \\
+ & (0.015) & (0.014) & (0.018) \\
+\midrule
+\multicolumn{4}{l}{\textit{APOS}} \\
+Boiling & -0.053** & 0.004 & -0.059* \\
+ & (0.027) & (0.026) & (0.034) \\
+Chlorination/tablets & -0.062*** & -0.008 & 0.016 \\
+ & (0.021) & (0.020) & (0.023) \\
+Straining/settling & 0.043** & -0.036 & -0.009 \\
+ & (0.019) & (0.022) & (0.026) \\
+Other treatment & -0.065** & -0.064*** & 0.041 \\
+ & (0.028) & (0.024) & (0.036) \\
+\hline\hline
+\end{tabular}
+\end{adjustbox}
+\par\vspace{3pt}
+\begin{minipage}{\linewidth}\scriptsize \textit{Notes:} Sample: selected countries; clustered folds; aggregated over 3 repetitions. Coefficients are in probability units (0.01 equals one percentage point); standard errors are in parentheses. Folds keep PSUs together; standard errors are PSU-cluster robust. ATE averages over the analysis sample; ATT targets users of any water treatment; ATU targets nonusers. For U5, targets refer to children in these households. All APOS contrasts use the same any-treatment target for ATT. ATU is derived as $(ATE-p\,ATT)/(1-p)$; inference includes joint covariance and estimated $p$. Descriptive statistics refer to the full estimation sample, without survey weights. Coefficients, p-values and interval endpoints are medians across repetitions. The SE is recovered from the median upper bound using the project rule. ATT minus ATU is aggregated after its repetition-wise calculation. Median coefficients need not satisfy the ATE decomposition. $^{***}p<0.01$, $^{**}p<0.05$, $^{*}p<0.1$; pointwise tests without multiplicity adjustment. Stars in this table test ATT minus ATU directly.\end{minipage}
+\end{table}

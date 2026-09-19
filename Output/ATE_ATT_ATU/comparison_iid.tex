@@ -1,0 +1,49 @@
+% Requires: \usepackage{booktabs,adjustbox}
+\begin{table}[htbp]
+\centering
+\caption{ATE, ATT and ATU -- Full Sample -- Unclustered}
+\label{tab:ate-att-atu-iid-aggregated}
+\scriptsize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{0.92}
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{lccccccccc}
+\hline\hline
+ & \multicolumn{3}{c}{Some risk} & \multicolumn{3}{c}{Very high risk} & \multicolumn{3}{c}{Diarrhea (U5)} \\
+\cmidrule(lr){2-4}\cmidrule(lr){5-7}\cmidrule(lr){8-10}
+ & ATE & ATT & ATU & ATE & ATT & ATU & ATE & ATT & ATU \\
+\addlinespace[3pt]
+\multicolumn{10}{l}{\textit{IRM}} \\
+Any treatment & -0.080*** & -0.120*** & -0.070*** & -0.069*** & -0.060*** & -0.071*** & -0.001 & 0.000 & -0.001 \\
+ & (0.006) & (0.006) & (0.007) & (0.006) & (0.006) & (0.007) & (0.008) & (0.007) & (0.009) \\
+\addlinespace[6pt]
+\multicolumn{10}{l}{\textit{Descriptive statistics and sample}} \\
+Y mean, no treatment (\%) & \multicolumn{3}{c}{77.8\%} & \multicolumn{3}{c}{33.8\%} & \multicolumn{3}{c}{14.6\%} \\
+Treated (\%) & \multicolumn{3}{c}{21.3\%} & \multicolumn{3}{c}{21.3\%} & \multicolumn{3}{c}{19.5\%} \\
+Observations & \multicolumn{3}{c}{59,620} & \multicolumn{3}{c}{59,620} & \multicolumn{3}{c}{36,121} \\
+\midrule
+\multicolumn{10}{l}{\textit{APOS}} \\
+Boiling & -0.129*** & -0.123*** & -0.131*** & -0.105*** & -0.081*** & -0.112*** & -0.017* & 0.009 & -0.023** \\
+ & (0.008) & (0.010) & (0.009) & (0.008) & (0.008) & (0.009) & (0.009) & (0.014) & (0.010) \\
+Chlorination/tablets & -0.041*** & 0.028** & -0.060*** & -0.057*** & -0.017 & -0.067*** & -0.006 & -0.001 & -0.006 \\
+ & (0.009) & (0.013) & (0.010) & (0.010) & (0.010) & (0.011) & (0.011) & (0.010) & (0.012) \\
+Straining/settling & -0.016* & -0.035** & -0.010 & -0.012 & -0.002 & -0.015 & 0.011 & 0.016 & 0.010 \\
+ & (0.009) & (0.015) & (0.009) & (0.011) & (0.015) & (0.012) & (0.011) & (0.017) & (0.013) \\
+Other treatment & -0.082*** & -0.127*** & -0.069*** & -0.094*** & -0.085*** & -0.096*** & -0.026** & 0.004 & -0.031*** \\
+ & (0.009) & (0.016) & (0.009) & (0.010) & (0.011) & (0.011) & (0.011) & (0.017) & (0.011) \\
+\addlinespace[6pt]
+\multicolumn{10}{l}{\textit{Descriptive statistics and sample}} \\
+Y mean, no treatment (\%) & \multicolumn{3}{c}{77.8\%} & \multicolumn{3}{c}{33.8\%} & \multicolumn{3}{c}{14.6\%} \\
+Treated (\%) & \multicolumn{3}{c}{21.2\%} & \multicolumn{3}{c}{21.2\%} & \multicolumn{3}{c}{19.4\%} \\
+Observations & \multicolumn{3}{c}{59,620} & \multicolumn{3}{c}{59,620} & \multicolumn{3}{c}{36,121} \\
+No treatment (\%) & \multicolumn{3}{c}{78.8\%} & \multicolumn{3}{c}{78.8\%} & \multicolumn{3}{c}{80.6\%} \\
+Boiling (\%) & \multicolumn{3}{c}{10.1\%} & \multicolumn{3}{c}{10.1\%} & \multicolumn{3}{c}{7.6\%} \\
+Chlorination/tablets (\%) & \multicolumn{3}{c}{2.2\%} & \multicolumn{3}{c}{2.2\%} & \multicolumn{3}{c}{2.0\%} \\
+Straining/settling (\%) & \multicolumn{3}{c}{5.1\%} & \multicolumn{3}{c}{5.1\%} & \multicolumn{3}{c}{7.2\%} \\
+Other treatment (\%) & \multicolumn{3}{c}{3.9\%} & \multicolumn{3}{c}{3.9\%} & \multicolumn{3}{c}{2.6\%} \\
+\hline\hline
+\end{tabular}
+\end{adjustbox}
+\par\vspace{3pt}
+\begin{minipage}{\linewidth}\scriptsize \textit{Notes:} Sample: full sample; ordinary folds; aggregated over 3 repetitions. Coefficients are in probability units (0.01 equals one percentage point); standard errors are in parentheses. Folds and inference are observation-level. ATE averages over the analysis sample; ATT targets users of any water treatment; ATU targets nonusers. For U5, targets refer to children in these households. All APOS contrasts use the same any-treatment target for ATT. ATU is derived as $(ATE-p\,ATT)/(1-p)$; inference includes joint covariance and estimated $p$. Descriptive statistics refer to the full estimation sample, without survey weights. Coefficients, p-values and interval endpoints are medians across repetitions. The SE is recovered from the median upper bound using the project rule. ATT minus ATU is aggregated after its repetition-wise calculation. Median coefficients need not satisfy the ATE decomposition. $^{***}p<0.01$, $^{**}p<0.05$, $^{*}p<0.1$; pointwise tests without multiplicity adjustment.\end{minipage}
+\end{table}

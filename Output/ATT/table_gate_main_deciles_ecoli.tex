@@ -1,0 +1,48 @@
+% Requires: \usepackage{booktabs, pdflscape, adjustbox}
+\begin{landscape}
+\begin{table}[p]
+\centering
+\caption{GATE (ATT) by Source-Water Deciles: Water Quality}
+\label{tab:table_gate_main_deciles-ecoli}
+\scriptsize\setlength{\tabcolsep}{4pt}
+\begin{adjustbox}{max width=\linewidth, center}
+\begin{tabular}{llcccc}
+\toprule
+Heterogeneity group & \shortstack{Source E. coli range\\(CFU/100 mL)} & Any Treatment & Boiling & Chlorination/tablets & Straining/settling \\
+\midrule
+\multicolumn{6}{l}{Panel A: Some Risk Home (E.coli $>0$ CFU): Initial source-water E. coli decile} \\
+Decile 1 & 0 & -0.093*** & -0.077*** & 0.113*** & -0.042 \\
+ &  & (0.013) & (0.026) & (0.030) & (0.034) \\
+Decile 5 & 1--2 & -0.148*** & -0.124*** & 0.028 & 0.040 \\
+ &  & (0.034) & (0.045) & (0.059) & (0.081) \\
+Decile 6 & 3--9 & -0.186*** & -0.232*** & -0.006 & -0.026 \\
+ &  & (0.019) & (0.030) & (0.035) & (0.031) \\
+Decile 7 & 10--30 & -0.173*** & -0.161*** & -0.124*** & -0.057** \\
+ &  & (0.017) & (0.022) & (0.036) & (0.027) \\
+Decile 8 & 31--$>100$ & -0.119*** & -0.138*** & -0.030*** & -0.053** \\
+ &  & (0.008) & (0.012) & (0.007) & (0.022) \\
+\multicolumn{6}{l}{\textit{Sample}} \\
+\quad Observations &  & 59,620 & 59,620 & 59,620 & 59,620 \\
+\quad PSUs &  & 18,655 & 18,655 & 18,655 & 18,655 \\
+\midrule
+\multicolumn{6}{l}{Panel B: Very High Risk Home (E.coli $>100$ CFU): Initial source-water E. coli decile} \\
+Decile 1 & 0 & -0.011* & -0.021*** & 0.043*** & 0.040* \\
+ &  & (0.006) & (0.007) & (0.010) & (0.023) \\
+Decile 5 & 1--2 & -0.016 & 0.002 & 0.016 & -0.046* \\
+ &  & (0.014) & (0.021) & (0.021) & (0.029) \\
+Decile 6 & 3--9 & -0.018 & -0.060*** & 0.016 & 0.079 \\
+ &  & (0.016) & (0.020) & (0.031) & (0.059) \\
+Decile 7 & 10--30 & -0.045** & -0.051** & -0.055** & -0.043* \\
+ &  & (0.020) & (0.024) & (0.023) & (0.024) \\
+Decile 8 & 31--$>100$ & -0.144*** & -0.190*** & -0.099*** & -0.067* \\
+ &  & (0.016) & (0.020) & (0.024) & (0.035) \\
+\multicolumn{6}{l}{\textit{Sample}} \\
+\quad Observations &  & 59,620 & 59,620 & 59,620 & 59,620 \\
+\quad PSUs &  & 18,655 & 18,655 & 18,655 & 18,655 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\par\vspace{3pt}
+\begin{minipage}{\linewidth}\footnotesize \textit{Notes:} Coefficient rows report group-specific ATT estimates with significance stars; the following rows report standard errors. Clustered folds use cluster-level sample splitting. Source-water E. coli ranges are measured in CFU/100 mL; the upper group includes the top-coded value above 100. The heterogeneity analysis is exploratory.\end{minipage}
+\end{table}
+\end{landscape}

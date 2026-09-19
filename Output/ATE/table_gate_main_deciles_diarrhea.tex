@@ -1,0 +1,33 @@
+% Requires: \usepackage{booktabs, pdflscape, adjustbox}
+\begin{landscape}
+\begin{table}[p]
+\centering
+\caption{GATE (ATE) by Source-Water Deciles: Diarrhea (U5)}
+\label{tab:table_gate_main_deciles-diarrhea}
+\scriptsize\setlength{\tabcolsep}{4pt}
+\begin{adjustbox}{max width=\linewidth, center}
+\begin{tabular}{llcccc}
+\toprule
+Heterogeneity group & \shortstack{Source E. coli range\\(CFU/100 mL)} & Any Treatment & Boiling & Chlorination/tablets & Straining/settling \\
+\midrule
+\multicolumn{6}{l}{Diarrhea (under-5): Initial source-water E. coli decile} \\
+Decile 1 & 0 & 0.015 & -0.019 & 0.019 & -0.003 \\
+ &  & (0.017) & (0.019) & (0.020) & (0.016) \\
+Decile 5 & 1--2 & -0.006 & -0.052*** & -0.002 & 0.058 \\
+ &  & (0.027) & (0.020) & (0.027) & (0.052) \\
+Decile 6 & 3--9 & -0.020 & -0.080*** & -0.002 & 0.012 \\
+ &  & (0.033) & (0.016) & (0.036) & (0.035) \\
+Decile 7 & 10--30 & 0.003 & -0.029 & -0.055*** & 0.053 \\
+ &  & (0.023) & (0.021) & (0.021) & (0.045) \\
+Decile 8 & 31--$>100$ & -0.003 & 0.018 & -0.021 & 0.008 \\
+ &  & (0.014) & (0.018) & (0.022) & (0.024) \\
+\multicolumn{6}{l}{\textit{Sample}} \\
+\quad Observations &  & 36,121 & 36,121 & 36,121 & 36,121 \\
+\quad PSUs &  & 13,596 & 13,596 & 13,596 & 13,596 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\par\vspace{3pt}
+\begin{minipage}{\linewidth}\footnotesize \textit{Notes:} Coefficient rows report GATE estimates with significance stars; the following rows report standard errors. Clustered folds use cluster-level sample splitting. Source-water E. coli ranges are measured in CFU/100 mL; the upper group includes the top-coded value above 100. The heterogeneity analysis is exploratory.\end{minipage}
+\end{table}
+\end{landscape}

@@ -1,7 +1,7 @@
 """Predictors of household water-treatment adoption.
 
 This is the presentation-friendly counterpart of the old treatment-predictors
-script.  The model matrix is deliberately kept in sync with ``mics.py``:
+script.  The model matrix is deliberately kept in sync with ``ate.py``:
 
     i.windex5 i.country_cat i.urban i.WS1_g i.Toilet i.wq27_decile
     Any_U5 Girls_less_than15 Boys_15or_less

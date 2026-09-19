@@ -1,5 +1,5 @@
 *--------------------------------------------------------------------
-* Project: 
+* Project:
 * File Name: Descriptive Statistics
 * Last updated: Akito on XXX
 *--------------------------------------------------------------------
@@ -15,45 +15,45 @@
 	set emptycells      drop
 	set seed            12345
 	*set maxvar         2048
-	set linesize        135	
-						  
+	set linesize        135
+
 /*------------------------------------------------------------------------------
 	1 Select parts of the code to run
 ------------------------------------------------------------------------------*/
-	
+
 	local import		0
 	local deidentify	0
 	local clean			0
 	local tidy			0
 	local construct		0
 	local analyze		0
-	
+
 /*------------------------------------------------------------------------------
 	2 Set file paths
 ------------------------------------------------------------------------------*/
 
 	* Enter the file path to the project folder in Box for every new machine you use
 	* Type 'di c(username)' to see the name of your machine
-	
-	else if c(username) == "akitokamei" {		
+
+	if c(username) == "akitokamei" {
 		global Dropbox "/Users/akitokamei/Library/CloudStorage/Dropbox/"
-		global Overleaf "${Dropbox}Apps/Overleaf/"	
+		global Overleaf "${Dropbox}Apps/Overleaf/"
 	}
-	
-	else if c(username) == "Juan Alvaro" {		
+
+	else if c(username) == "Juan Alvaro" {
 		global Dropbox "C:/Users/Juan Alvaro/Dropbox/"
-		* global Overleaf "----"			
+		* global Overleaf "----"
 	}
-	
+
 	global Tables      "${Overleaf}MICS_DDML/Table/"
 	global Figures     "${Overleaf}MICS_DDML/Figure/"
 	* global Data_Raw   "${Dropbox}MICS_DDML/Data/1. Raw/"
 	global Data_Clean "${Dropbox}MICS_DDML/Data/2. Clean/"
 	global Data_Final "${Dropbox}MICS_DDML/Data/3. Final/"
 
-clear all               
+clear all
 set graph off
-set graph on	
+set graph on
 
 *------------------------------------------------------------ Final data creation ------------------------------------------------------------*
 
@@ -93,7 +93,7 @@ fre age
 global Controls i.windex5 i.helevel i.country_cat i.urban i.WS1_g ///
                 Any_U5 Girls_less_than15 Boys_15or_less i.Toilet i.wq27_decile
 global Controls_U5 male i.age
-			   
+
 foreach i in diarrhea fever {
 
     *----------------------------
@@ -275,12 +275,12 @@ foreach i in VeryHighRiskHome SomeRiskHome {
     eststo clear
 
     * Across (WQ15_g spec)
-    eststo: reg `i' i.WQ15_g 
+    eststo: reg `i' i.WQ15_g
     sum `i' if water_treatment==0
     estadd scalar Mean = r(mean)
 
     * Across (water_treatment spec)
-    eststo: reg `i' water_treatment 
+    eststo: reg `i' water_treatment
     sum `i' if water_treatment==0
     estadd scalar Mean = r(mean)
 
@@ -404,5 +404,4 @@ foreach i in VeryHighRiskHome SomeRiskHome {
 
 * End
 file close _all
-
 

@@ -1,0 +1,70 @@
+% Requires: \usepackage{booktabs, pdflscape, adjustbox}
+\begin{landscape}
+\begin{table}[p]
+\centering
+\caption{GATE (ATE) by Deciles and Risk Groups: Water Quality}
+\label{tab:table_gate_main-ecoli}
+\scriptsize\setlength{\tabcolsep}{4pt}
+\begin{adjustbox}{max width=\linewidth, center}
+\begin{tabular}{llcccc}
+\toprule
+Heterogeneity group & \shortstack{Source E. coli range\\(CFU/100 mL)} & Any Treatment & Boiling & Chlorination/tablets & Straining/settling \\
+\midrule
+\multicolumn{6}{l}{Panel A: Some Risk Home (E.coli $>0$ CFU): Initial source-water E. coli decile} \\
+Decile 1 & 0 & -0.065*** & -0.122*** & 0.002 & -0.002 \\
+ &  & (0.011) & (0.014) & (0.019) & (0.018) \\
+Decile 5 & 1--2 & -0.111*** & -0.165*** & -0.069** & -0.057 \\
+ &  & (0.023) & (0.030) & (0.033) & (0.041) \\
+Decile 6 & 3--9 & -0.101*** & -0.171*** & -0.071*** & -0.006 \\
+ &  & (0.019) & (0.029) & (0.027) & (0.021) \\
+Decile 7 & 10--30 & -0.108*** & -0.134*** & -0.131*** & -0.016 \\
+ &  & (0.016) & (0.025) & (0.024) & (0.010) \\
+Decile 8 & 31--$>100$ & -0.076*** & -0.110*** & -0.060*** & -0.026*** \\
+ &  & (0.007) & (0.010) & (0.010) & (0.009) \\
+\multicolumn{6}{l}{\textit{Sample}} \\
+\quad Observations &  & 59,620 & 59,620 & 59,620 & 59,620 \\
+\quad PSUs &  & 18,655 & 18,655 & 18,655 & 18,655 \\
+\addlinespace[4pt]
+\multicolumn{6}{l}{Panel B: Some Risk Home (E.coli $>0$ CFU): Initial source-water E. coli risk} \\
+No Risk Source & 0 & -0.065*** & -0.122*** & 0.002 & -0.002 \\
+ &  & (0.011) & (0.014) & (0.019) & (0.018) \\
+Some Risk Source & 1--100 & -0.102*** & -0.148*** & -0.088*** & -0.025** \\
+ &  & (0.009) & (0.013) & (0.013) & (0.011) \\
+Very High Risk Source & $>100$ & -0.072*** & -0.104*** & -0.052*** & -0.027** \\
+ &  & (0.007) & (0.013) & (0.011) & (0.012) \\
+\multicolumn{6}{l}{\textit{Sample}} \\
+\quad Observations &  & 59,620 & 59,620 & 59,620 & 59,620 \\
+\quad PSUs &  & 18,655 & 18,655 & 18,655 & 18,655 \\
+\midrule
+\multicolumn{6}{l}{Panel C: Very High Risk Home (E.coli $>100$ CFU): Initial source-water E. coli decile} \\
+Decile 1 & 0 & -0.003 & -0.034*** & 0.027** & 0.055*** \\
+ &  & (0.009) & (0.011) & (0.013) & (0.015) \\
+Decile 5 & 1--2 & -0.074*** & -0.037 & -0.039 & -0.094*** \\
+ &  & (0.018) & (0.031) & (0.026) & (0.029) \\
+Decile 6 & 3--9 & -0.037* & -0.132*** & -0.005 & 0.012 \\
+ &  & (0.022) & (0.018) & (0.036) & (0.040) \\
+Decile 7 & 10--30 & -0.086*** & -0.093*** & -0.090*** & -0.054 \\
+ &  & (0.020) & (0.031) & (0.027) & (0.035) \\
+Decile 8 & 31--$>100$ & -0.166*** & -0.215*** & -0.187*** & -0.081*** \\
+ &  & (0.016) & (0.018) & (0.024) & (0.029) \\
+\multicolumn{6}{l}{\textit{Sample}} \\
+\quad Observations &  & 59,620 & 59,620 & 59,620 & 59,620 \\
+\quad PSUs &  & 18,655 & 18,655 & 18,655 & 18,655 \\
+\addlinespace[4pt]
+\multicolumn{6}{l}{Panel D: Very High Risk Home (E.coli $>100$ CFU): Initial source-water E. coli risk} \\
+No Risk Source & 0 & -0.003 & -0.034*** & 0.027** & 0.055*** \\
+ &  & (0.009) & (0.011) & (0.013) & (0.015) \\
+Some Risk Source & 1--100 & -0.061*** & -0.086*** & -0.033* & -0.023 \\
+ &  & (0.012) & (0.014) & (0.017) & (0.019) \\
+Very High Risk Source & $>100$ & -0.220*** & -0.282*** & -0.272*** & -0.132*** \\
+ &  & (0.020) & (0.022) & (0.029) & (0.038) \\
+\multicolumn{6}{l}{\textit{Sample}} \\
+\quad Observations &  & 59,620 & 59,620 & 59,620 & 59,620 \\
+\quad PSUs &  & 18,655 & 18,655 & 18,655 & 18,655 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\par\vspace{3pt}
+\begin{minipage}{\linewidth}\footnotesize \textit{Notes:} Coefficient rows report GATE estimates with significance stars; the following rows report standard errors. Clustered folds use cluster-level sample splitting. Source-water E. coli ranges are measured in CFU/100 mL; the upper group includes the top-coded value above 100. The heterogeneity analysis is exploratory.\end{minipage}
+\end{table}
+\end{landscape}

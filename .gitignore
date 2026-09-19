@@ -10,15 +10,23 @@ __pycache__/
 .dmypy.json
 .agents/
 .claude/
+.spyproject/
+.vscode/
 .dropboxignore
 skills-lock.json
 
 # --- Raw data (large .dta files) ---
 Data/
 
+# Reference material kept in Dropbox, not redistributed in the repository
+Literature/
+Questionaire/
+
 # --- Editor temp + run logs ---
 *.tmp.*
 *.log
+Do file/Python/archive/
+Do file/Stata/*.pdf
 
 # --- LaTeX build artifacts ---
 *.aux
@@ -38,6 +46,12 @@ Writing edit/main.pdf
 Writing edit/main_old.*
 Writing edit/main_full.pdf
 Writing edit/pdflatex*.fls
+
+# Reproducible tables may be tracked; fitted objects and run caches may not
+Output/**/checkpoints/
+Output/**/*.pkl
+Output/**/*.pdf
+Output/archive/
 
 # --- OS cruft ---
 desktop.ini

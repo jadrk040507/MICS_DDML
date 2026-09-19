@@ -1,0 +1,35 @@
+% Requires: \usepackage{booktabs, pdflscape, adjustbox}
+\begin{landscape}
+\begin{table}[p]
+\centering
+\caption{GATE (ATE) by Three Source-Water Risk Groups: Diarrhea (U5) -- Clustered and Unclustered}
+\label{tab:table_gate_appendix_risk_groups-diarrhea}
+\scriptsize\setlength{\tabcolsep}{4pt}
+\begin{adjustbox}{max width=\linewidth, center}
+\begin{tabular}{llcccccccc}
+\toprule
+Heterogeneity group & \shortstack{Source E. coli range\\(CFU/100 mL)} & \multicolumn{2}{c}{Any Treatment} & \multicolumn{2}{c}{Boiling} & \multicolumn{2}{c}{Chlorination/tablets} & \multicolumn{2}{c}{Straining/settling} \\
+ &  & Clustered folds & Ordinary folds & Clustered folds & Ordinary folds & Clustered folds & Ordinary folds & Clustered folds & Ordinary folds \\
+\midrule
+\multicolumn{10}{l}{Diarrhea (under-5): Initial source-water E. coli risk} \\
+No Risk Source & 0 & 0.015 & 0.010 & -0.019 & -0.021 & 0.019 & 0.018 & -0.003 & 0.002 \\
+ &  & (0.017) & (0.013) & (0.019) & (0.017) & (0.020) & (0.020) & (0.016) & (0.017) \\
+Some Risk Source & 1--100 & -0.003 & -0.003 & -0.027* & -0.031** & -0.009 & -0.009 & 0.039* & 0.037* \\
+ &  & (0.014) & (0.014) & (0.014) & (0.013) & (0.017) & (0.016) & (0.023) & (0.021) \\
+Very High Risk Source & $>100$ & -0.010 & -0.011 & 0.006 & 0.008 & -0.037 & -0.032* & -0.006 & -0.012 \\
+ &  & (0.017) & (0.013) & (0.018) & (0.020) & (0.025) & (0.019) & (0.027) & (0.021) \\
+\multicolumn{10}{l}{\textit{Sample}} \\
+\quad Observations &  & 36,121 & 36,121 & 36,121 & 36,121 & 36,121 & 36,121 & 36,121 & 36,121 \\
+\quad PSUs &  & 13,596 & --- & 13,596 & --- & 13,596 & --- & 13,596 & --- \\
+\multicolumn{10}{l}{\textit{BLP $R^{2}$}} \\
+\quad Any Treatment &  & 0.000 & 0.000 &  &  &  &  &  &  \\
+\quad Boiling &  &  &  & 0.000 & 0.000 &  &  &  &  \\
+\quad Chlorination/tablets &  &  &  &  &  & 0.000 & 0.000 &  &  \\
+\quad Straining/settling &  &  &  &  &  &  &  & 0.000 & 0.000 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\par\vspace{3pt}
+\begin{minipage}{\linewidth}\footnotesize \textit{Notes:} Coefficient rows report GATE estimates with significance stars; the following rows report standard errors. Clustered folds use cluster-level sample splitting; ordinary folds use observation-level splitting. BLP $R^2$ is descriptive; it is not a causal-model $R^2$. Source-water E. coli ranges are measured in CFU/100 mL; the upper group includes the top-coded value above 100. The heterogeneity analysis is exploratory.\end{minipage}
+\end{table}
+\end{landscape}

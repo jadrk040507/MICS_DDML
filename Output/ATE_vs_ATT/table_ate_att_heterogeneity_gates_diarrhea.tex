@@ -1,0 +1,47 @@
+% Requires: \usepackage{booktabs,adjustbox}
+\begin{table}[htbp]
+\centering\scriptsize
+\caption{GATE: original (ATE) versus ATT: Diarrhea (U5)}
+\label{tab:table-ate-att-heterogeneity-gates-diarrhea}
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{lllrr}
+\toprule
+Treatment & Source group & CFU/100 mL & ATE & ATT \\
+\midrule
+Boiling & Decile 1 & 0 & -0.019 (0.019) & 0.004 (0.018) \\
+Boiling & Decile 5 & 1--2 & -0.052*** (0.020) & -0.010 (0.031) \\
+Boiling & Decile 6 & 3--9 & -0.080*** (0.016) & -0.036 (0.029) \\
+Boiling & Decile 7 & 10--30 & -0.029 (0.021) & -0.001 (0.020) \\
+Boiling & Decile 8 & 31--\$\textgreater{}100\$ & 0.018 (0.018) & 0.023 (0.032) \\
+Boiling & No Risk Source & 0 & -0.019 (0.019) & 0.004 (0.018) \\
+Boiling & Some Risk Source & 1--100 & -0.027* (0.014) & 0.029 (0.033) \\
+Boiling & Very High Risk Source & \$\textgreater{}100\$ & 0.006 (0.018) & -0.018 (0.021) \\
+Chlorination/tablets & Decile 1 & 0 & 0.019 (0.020) & 0.018 (0.019) \\
+Chlorination/tablets & Decile 5 & 1--2 & -0.002 (0.027) & 0.033 (0.030) \\
+Chlorination/tablets & Decile 6 & 3--9 & -0.002 (0.036) & -0.012 (0.030) \\
+Chlorination/tablets & Decile 7 & 10--30 & -0.055*** (0.021) & -0.029 (0.021) \\
+Chlorination/tablets & Decile 8 & 31--\$\textgreater{}100\$ & -0.021 (0.022) & -0.015 (0.023) \\
+Chlorination/tablets & No Risk Source & 0 & 0.019 (0.020) & 0.018 (0.019) \\
+Chlorination/tablets & Some Risk Source & 1--100 & -0.009 (0.017) & 0.013 (0.017) \\
+Chlorination/tablets & Very High Risk Source & \$\textgreater{}100\$ & -0.037 (0.025) & -0.048* (0.027) \\
+Straining/settling & Decile 1 & 0 & -0.003 (0.016) & 0.028 (0.035) \\
+Straining/settling & Decile 5 & 1--2 & 0.058 (0.052) & 0.054 (0.056) \\
+Straining/settling & Decile 6 & 3--9 & 0.012 (0.035) & -0.003 (0.042) \\
+Straining/settling & Decile 7 & 10--30 & 0.053 (0.045) & 0.048* (0.030) \\
+Straining/settling & Decile 8 & 31--\$\textgreater{}100\$ & 0.008 (0.024) & 0.005 (0.026) \\
+Straining/settling & No Risk Source & 0 & -0.003 (0.016) & 0.028 (0.035) \\
+Straining/settling & Some Risk Source & 1--100 & 0.039* (0.023) & 0.026 (0.019) \\
+Straining/settling & Very High Risk Source & \$\textgreater{}100\$ & -0.006 (0.027) & 0.000 (0.033) \\
+Any Treatment & Decile 1 & 0 & 0.015 (0.017) & 0.016 (0.011) \\
+Any Treatment & Decile 5 & 1--2 & -0.006 (0.027) & 0.015 (0.028) \\
+Any Treatment & Decile 6 & 3--9 & -0.020 (0.033) & -0.027 (0.032) \\
+Any Treatment & Decile 7 & 10--30 & 0.003 (0.023) & 0.011 (0.020) \\
+Any Treatment & Decile 8 & 31--\$\textgreater{}100\$ & -0.003 (0.014) & -0.012 (0.015) \\
+Any Treatment & No Risk Source & 0 & 0.015 (0.017) & 0.016 (0.011) \\
+Any Treatment & Some Risk Source & 1--100 & -0.003 (0.014) & 0.004 (0.013) \\
+Any Treatment & Very High Risk Source & \$\textgreater{}100\$ & -0.010 (0.017) & -0.024 (0.019) \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\par\vspace{3pt}\begin{minipage}{\linewidth}\scriptsize\textit{Notes:} Clustered estimates by source-water E. coli group. Cells show coefficients and PSU-cluster-robust standard errors. ATE averages within the group; ATT targets observations in households using any treatment within that group, for all treatment contrasts. Only observed groups are shown; missing decile numbers are not imputed. Stars use saved pointwise p-values, not joint inference: $^{***}p<0.01$, $^{**}p<0.05$, $^{*}p<0.1$. Heterogeneity is exploratory. Stars do not test ATE versus ATT or differences between groups. Pointwise and joint confidence intervals are retained in the paired pickle.\end{minipage}
+\end{table}

@@ -1,0 +1,35 @@
+% Requires: \usepackage{booktabs}
+\begin{table}[htbp]
+\centering
+\caption{Super Learner weights: unclustered folds: Dominican Republic, Guyana, Honduras, and Malawi}
+\label{tab:super-learner-weights-unclustered-selected-countries}
+\small
+\begin{tabular}{lrlr}
+\toprule
+Learner $g(X)$ & Weight & Learner $m(X)$ & Weight \\
+\midrule
+\multicolumn{4}{l}{\textit{Panel A: Any detectable E. coli at home}} \\
+ols & 0.092 & logit & 0.604 \\
+lasso & 0.110 & lasso & 0.001 \\
+elastic\_net & 0.108 & elastic\_net & 0.000 \\
+random\_forest & 0.346 & random\_forest & 0.224 \\
+xgboost & 0.343 & xgboost & 0.171 \\
+\midrule
+\multicolumn{4}{l}{\textit{Panel B: Very high E. coli at home (>100 CFU/100 mL)}} \\
+ols & 0.193 & logit & 0.604 \\
+lasso & 0.225 & lasso & 0.001 \\
+elastic\_net & 0.224 & elastic\_net & 0.000 \\
+random\_forest & 0.203 & random\_forest & 0.224 \\
+xgboost & 0.154 & xgboost & 0.171 \\
+\midrule
+\multicolumn{4}{l}{\textit{Panel C: Diarrhea among children under five}} \\
+ols & 0.154 & logit & 0.384 \\
+lasso & 0.254 & lasso & 0.068 \\
+elastic\_net & 0.256 & elastic\_net & 0.000 \\
+random\_forest & 0.256 & random\_forest & 0.478 \\
+xgboost & 0.080 & xgboost & 0.070 \\
+\bottomrule
+\end{tabular}
+\par\vspace{3pt}
+\begin{minipage}{0.9\linewidth}\footnotesize Weights are averaged across outer folds and repetitions. The $g(X)$ learner predicts the outcome; the $m(X)$ learner predicts treatment.\end{minipage}
+\end{table}

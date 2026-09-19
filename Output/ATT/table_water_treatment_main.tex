@@ -1,0 +1,44 @@
+% Requires: \usepackage{booktabs, graphicx, adjustbox}
+\begin{table}[htbp]
+\centering
+\caption{Water-treatment effects on treated households}
+\label{tab:water-treatment-main}
+\scriptsize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{0.92}
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{lccc}
+\hline\hline
+ & Some risk & Very high risk & Diarrhea (U5) \\
+\hline
+\multicolumn{4}{l}{\textit{IRM--ATT}} \\
+Any treatment & -0.121*** & -0.059*** & 0.001 \\
+ & (0.007) & (0.007) & (0.008) \\
+\addlinespace[6pt]
+\multicolumn{4}{l}{\textit{Descriptive statistics}} \\
+Y mean, no treatment (\%) & 77.8\% & 33.8\% & 14.6\% \\
+Treated (\%) & 21.3\% & 21.3\% & 19.5\% \\
+\midrule
+\multicolumn{4}{l}{\textit{Weighted APOS--ATT}} \\
+Boiling & -0.122*** & -0.080*** & 0.006 \\
+ & (0.013) & (0.008) & (0.015) \\
+Chlorination/tablets & 0.026* & -0.019* & -0.003 \\
+ & (0.014) & (0.010) & (0.012) \\
+Straining/settling & -0.041** & -0.002 & 0.019 \\
+ & (0.017) & (0.016) & (0.016) \\
+\addlinespace[6pt]
+No treatment & 78.8\% & 78.8\% & 80.6\% \\
+Boiling & 10.1\% & 10.1\% & 7.6\% \\
+Chlorination/tablets & 2.2\% & 2.2\% & 2.0\% \\
+Straining/settling & 5.1\% & 5.1\% & 7.2\% \\
+Other treatment & 3.9\% & 3.9\% & 2.6\% \\
+\midrule
+\multicolumn{4}{l}{\textit{Sample}} \\
+Observations & 59,620 & 59,620 & 36,121 \\
+PSUs & 18,655 & 18,655 & 13,596 \\
+\hline\hline
+\end{tabular}
+\end{adjustbox}
+\par\vspace{3pt}
+\begin{minipage}{\linewidth}\scriptsize \textit{Notes:} Cells report coefficients with significance stars and standard errors in parentheses. Clustered specifications use cluster-level sample splitting; ordinary specifications use observation-level folds. IRM uses the ATTE score. Weighted APOS effects compare treatment levels 1--3 with level 0 in the population of households that use any water treatment. Cross-fitting uses 5 folds and 3 repetitions. $^{***}p<0.01$, $^{**}p<0.05$, $^{*}p<0.1$.\end{minipage}
+\end{table}

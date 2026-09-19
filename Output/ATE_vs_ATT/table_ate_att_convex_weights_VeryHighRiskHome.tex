@@ -1,0 +1,30 @@
+% Requires: \usepackage{booktabs,adjustbox}
+\begin{table}[htbp]
+\centering\scriptsize
+\caption{Super Learner weights: original versus ATT: Very high risk}
+\label{tab:table-ate-att-convex-weights-VeryHighRiskHome}
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{llrr}
+\toprule
+Nuisance & Learner & ATE fit & ATT fit \\
+\midrule
+ml\_g0 & elastic\_net & 0.108821 & 0.108821 \\
+ml\_g0 & lasso & 0.109100 & 0.109100 \\
+ml\_g0 & ols & 0.143449 & 0.143449 \\
+ml\_g0 & random\_forest & 0.183741 & 0.183741 \\
+ml\_g0 & xgboost & 0.454889 & 0.454890 \\
+ml\_g1 & elastic\_net & 0.142600 & 0.142600 \\
+ml\_g1 & lasso & 0.141987 & 0.141986 \\
+ml\_g1 & ols & 0.172369 & 0.172369 \\
+ml\_g1 & random\_forest & 0.287258 & 0.287258 \\
+ml\_g1 & xgboost & 0.255787 & 0.255787 \\
+ml\_m & elastic\_net & 0.000000 & 0.000000 \\
+ml\_m & lasso & 0.000000 & 0.000000 \\
+ml\_m & logit & 0.000000 & 0.000000 \\
+ml\_m & random\_forest & 0.000000 & 0.000000 \\
+ml\_m & xgboost & 1.000000 & 1.000000 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\par\vspace{3pt}\begin{minipage}{\linewidth}\scriptsize\textit{Notes:} Only clustered IRM weights are available in these result files. Weights are averaged across outer folds and repetitions. ml\_g0 and ml\_g1 predict outcomes under no treatment and treatment; ml\_m predicts treatment. The outcome components are reported separately, without pooling their weights. Each nuisance ensemble sums to one before rounding. These are prediction weights, not causal effects or variable importance. No APOS weights are inferred from IRM weights.\end{minipage}
+\end{table}

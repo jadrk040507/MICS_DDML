@@ -1,0 +1,40 @@
+% Requires: \usepackage{booktabs, pdflscape, adjustbox}
+\begin{landscape}
+\begin{table}[p]
+\centering
+\caption{GATE (ATT) by Three Source-Water Risk Groups: Water Quality}
+\label{tab:table_gate_main_risk_groups-ecoli}
+\scriptsize\setlength{\tabcolsep}{4pt}
+\begin{adjustbox}{max width=\linewidth, center}
+\begin{tabular}{llcccc}
+\toprule
+Heterogeneity group & \shortstack{Source E. coli range\\(CFU/100 mL)} & Any Treatment & Boiling & Chlorination/tablets & Straining/settling \\
+\midrule
+\multicolumn{6}{l}{Panel A: Some Risk Home (E.coli $>0$ CFU): Initial source-water E. coli risk} \\
+No Risk Source & 0 & -0.093*** & -0.077*** & 0.113*** & -0.042 \\
+ &  & (0.013) & (0.026) & (0.030) & (0.034) \\
+Some Risk Source & 1--100 & -0.162*** & -0.176*** & -0.044** & -0.029 \\
+ &  & (0.010) & (0.016) & (0.018) & (0.018) \\
+Very High Risk Source & $>100$ & -0.108*** & -0.118*** & -0.028*** & -0.059* \\
+ &  & (0.008) & (0.012) & (0.008) & (0.032) \\
+\multicolumn{6}{l}{\textit{Sample}} \\
+\quad Observations &  & 59,620 & 59,620 & 59,620 & 59,620 \\
+\quad PSUs &  & 18,655 & 18,655 & 18,655 & 18,655 \\
+\midrule
+\multicolumn{6}{l}{Panel B: Very High Risk Home (E.coli $>100$ CFU): Initial source-water E. coli risk} \\
+No Risk Source & 0 & -0.011* & -0.021*** & 0.043*** & 0.040* \\
+ &  & (0.006) & (0.007) & (0.010) & (0.023) \\
+Some Risk Source & 1--100 & -0.032*** & -0.049*** & 0.021 & 0.006 \\
+ &  & (0.012) & (0.017) & (0.018) & (0.022) \\
+Very High Risk Source & $>100$ & -0.196*** & -0.247*** & -0.196*** & -0.111** \\
+ &  & (0.019) & (0.022) & (0.033) & (0.048) \\
+\multicolumn{6}{l}{\textit{Sample}} \\
+\quad Observations &  & 59,620 & 59,620 & 59,620 & 59,620 \\
+\quad PSUs &  & 18,655 & 18,655 & 18,655 & 18,655 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\par\vspace{3pt}
+\begin{minipage}{\linewidth}\footnotesize \textit{Notes:} Coefficient rows report group-specific ATT estimates with significance stars; the following rows report standard errors. Clustered folds use cluster-level sample splitting. Source-water E. coli ranges are measured in CFU/100 mL; the upper group includes the top-coded value above 100. The heterogeneity analysis is exploratory.\end{minipage}
+\end{table}
+\end{landscape}

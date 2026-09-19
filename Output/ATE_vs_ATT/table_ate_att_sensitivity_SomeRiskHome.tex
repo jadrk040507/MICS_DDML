@@ -1,0 +1,31 @@
+% Requires: \usepackage{booktabs,adjustbox}
+\begin{table}[htbp]
+\centering\scriptsize
+\caption{Sensitivity: original (ATE) versus ATT: Some risk}
+\label{tab:table-ate-att-sensitivity-SomeRiskHome}
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{lllrr}
+\toprule
+Method & Treatment & Measure & ATE & ATT \\
+\midrule
+APOS & Boiling & $cf_y$ & 21.2126\% & 21.2126\% \\
+APOS & Boiling & $cf_d$ & 0.0000\% & 0.0188\% \\
+APOS & Boiling & RV & 3.9254\% & 3.3062\% \\
+APOS & Boiling & RV$_\alpha$ & 3.5054\% & 2.6405\% \\
+APOS & Chlorination/tablets & $cf_y$ & 21.0974\% & 21.0974\% \\
+APOS & Chlorination/tablets & $cf_d$ & 1.3109\% & 0.0000\% \\
+APOS & Chlorination/tablets & RV & 1.2036\% & 0.4061\% \\
+APOS & Chlorination/tablets & RV$_\alpha$ & 0.7604\% & 0.0407\% \\
+APOS & Straining/settling & $cf_y$ & 21.0991\% & 21.0991\% \\
+APOS & Straining/settling & $cf_d$ & 1.6395\% & 2.3608\% \\
+APOS & Straining/settling & RV & 0.4531\% & 1.0279\% \\
+APOS & Straining/settling & RV$_\alpha$ & 0.0006\% & 0.3347\% \\
+IRM & Any treatment & $cf_y$ & 21.1482\% & 21.1482\% \\
+IRM & Any treatment & $cf_d$ & 2.3190\% & 0.2896\% \\
+IRM & Any treatment & RV & 4.9021\% & 7.0225\% \\
+IRM & Any treatment & RV$_\alpha$ & 4.2838\% & 6.2493\% \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\par\vspace{3pt}\begin{minipage}{\linewidth}\scriptsize\textit{Notes:} Clustered results. All measures are percentages, with four decimals to preserve small values. The benchmark omits the source-water E. coli decile block. $cf_y$ and $cf_d$ are its benchmark confounding-strength measures. RV is the confounding strength required to bring the estimate to zero; RV$_\alpha$ brings its 95\% confidence interval to include zero. Comparisons retain the original sensitivity assumptions; ATE and ATT target different populations. Larger RV indicates greater robustness under those assumptions.\end{minipage}
+\end{table}

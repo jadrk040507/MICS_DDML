@@ -1,0 +1,33 @@
+% Requires: \usepackage{booktabs,adjustbox}
+\begin{table}[htbp]
+\centering
+\caption{Original (ATE) and ATT water-treatment effects: clustered}
+\label{tab:table-ate-att-main}
+\scriptsize
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{lrrrrrr}
+\toprule
+ & \multicolumn{2}{c}{Some risk} & \multicolumn{2}{c}{Very high risk} & \multicolumn{2}{c}{Diarrhea (U5)} \\
+ & ATE & ATT & ATE & ATT & ATE & ATT \\
+\midrule
+\multicolumn{7}{l}{\textit{IRM}} \\
+Any treatment & -0.080*** & -0.121*** & -0.069*** & -0.059*** & 0.001 & 0.001 \\
+ & (0.006) & (0.007) & (0.007) & (0.007) & (0.009) & (0.008) \\
+Observations & 59,620 & 59,620 & 59,620 & 59,620 & 36,121 & 36,121 \\
+PSUs & 18,655 & 18,655 & 18,655 & 18,655 & 13,596 & 13,596 \\
+\midrule
+\multicolumn{7}{l}{\textit{APOS}} \\
+Boiling & -0.128*** & -0.122*** & -0.104*** & -0.080*** & -0.016 & 0.006 \\
+ & (0.008) & (0.013) & (0.008) & (0.008) & (0.010) & (0.015) \\
+Chlorination/tablets & -0.043*** & 0.026* & -0.057*** & -0.019* & -0.006 & -0.003 \\
+ & (0.010) & (0.014) & (0.010) & (0.010) & (0.012) & (0.012) \\
+Straining/settling & -0.015 & -0.041** & -0.012 & -0.002 & 0.012 & 0.019 \\
+ & (0.009) & (0.017) & (0.012) & (0.016) & (0.013) & (0.016) \\
+Observations & 59,620 & 59,620 & 59,620 & 59,620 & 36,121 & 36,121 \\
+PSUs & 18,655 & 18,655 & 18,655 & 18,655 & 13,596 & 13,596 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\par\vspace{3pt}
+\begin{minipage}{\linewidth}\scriptsize \textit{Notes:} Coefficients and standard errors in parentheses are taken from saved results. Only clustered estimates are used: folds keep PSUs together and standard errors are PSU-cluster robust. ATE averages over the analysis population; ATT targets observations in households using any water treatment (including children in those households for the U5 outcome). All APOS contrasts compare the stated method with no treatment; ATT APOS uses the same any-treatment target population for every contrast. Observations report the full estimation sample, not the number of treated observations. Coefficients are in probability units (0.01 equals one percentage point). The two columns target different estimands; no test of their difference is reported. $^{***}p<0.01$, $^{**}p<0.05$, $^{*}p<0.1$. \end{minipage}
+\end{table}
