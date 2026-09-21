@@ -18,11 +18,12 @@ class SavedModels:
     """Load one checkpoint at a time, using the existing bundle interface."""
     def __init__(self, module, dataset, outcome):
         self.module, self.prefix = module, f'{dataset}_{outcome}_'
+        self.store = module.CheckpointStore(False)
 
     def __getitem__(self, key):
         suffix = {'irm_cluster':'IRM_clustered', 'irm_no_cluster':'IRM_iid',
                   'apos_cluster':'APOS', 'apos_no_cluster':'APOS_iid'}[key]
-        value = joblib.load(self.module.CHECKPOINT_DIR / f'{self.prefix}{suffix}.pkl')
+        value = joblib.load(self.store.path(f'{self.prefix}{suffix}'))
         return value['model'] if isinstance(value, dict) else value
 
 

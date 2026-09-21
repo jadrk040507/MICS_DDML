@@ -1,9 +1,9 @@
 """MICS DoubleML analysis written as a fully commented do-file.
 
 Read this file by following the numbered sections. The first sections state
-the analysis choices. The technical Super Learner code is kept in a separate
-section that normally does not need editing. The ``main()`` function at the
-end shows the complete order of the analysis.
+the analysis choices. Shared prediction and inference machinery lives in
+``ddml_engine.py``. The ``main()`` function at the end shows the complete
+order of the ATE analysis.
 
 Files produced:
     Output/ATE/checkpoints/*.pkl   fitted IRM and APOS models
@@ -27,9 +27,7 @@ import joblib
 import numpy as np
 import pandas as pd
 from joblib import parallel_backend
-from scipy.optimize import minimize
 from scipy.stats import norm
-from sklearn.base import BaseEstimator, ClassifierMixin, RegressorMixin, clone
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.exceptions import ConvergenceWarning
 from sklearn.linear_model import (
@@ -40,14 +38,26 @@ from sklearn.linear_model import (
     LogisticRegressionCV,
 )
 from sklearn.model_selection import (
-    GroupKFold,
-    KFold,
     StratifiedGroupKFold,
     StratifiedKFold,
 )
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from xgboost import XGBClassifier, XGBRegressor
+
+from ddml_engine import (
+    ConvexClassifier,
+    ConvexRegressor,
+    build_clustered_sensitivity_framework,
+    cluster_robust_framework_inference,
+    collect_convex_weights,
+    convex_weights,
+    format_coefficient,
+    score_array_with_named_dimensions,
+    sensitivity_params,
+    sum_rows_within_psu,
+)
+from provenance import build_checkpoint_provenance
 
 
 # Hide repeated convergence messages from penalized regression learners.
@@ -57,12 +67,12 @@ warnings.filterwarnings("ignore", category=ConvergenceWarning)
 # =============================================================================
 # FILE MAP — READ THIS FIRST
 # =============================================================================
-# This script intentionally stays in ONE file. To move around it, search for
-# "SECTION" or for a subsection code such as "5C".
+# This script keeps the ATE-specific workflow together. Shared statistical
+# machinery lives in ddml_engine.py. Search for "SECTION" to navigate here.
 #
 #   SECTION 1  Choices, folds, repetitions, paths, and analysis list
 #   SECTION 2  Controls, complete-case sample, and model-ready data
-#   SECTION 3  How the Super Learner combines predictions
+#   SECTION 3  Boundary with the shared Super Learner engine
 #   SECTION 4  Which candidate learners enter the Super Learner
 #   SECTION 5  Reusable checkpoints, folds, fitting, and inference machinery
 #   SECTION 6  The four estimations run for each outcome
@@ -72,7 +82,7 @@ warnings.filterwarnings("ignore", category=ConvergenceWarning)
 #   SECTION 10 Complete run order and manifest
 #
 # If you only want to change or run the analysis, start with SECTIONS 1 and 10.
-# SECTIONS 3–5 contain technical machinery that normally does not need editing.
+# SECTIONS 3–5 connect the ATE workflow to shared technical machinery.
 #
 # CLUSTERED versus UNCLUSTERED, in one glance:
 #   - Both use the same prespecified controls from SECTION 2.
@@ -116,9 +126,9 @@ TABLE_DIR = OUTPUT_DIR
 CHECKPOINT_DIR.mkdir(parents=True, exist_ok=True)
 TABLE_DIR.mkdir(parents=True, exist_ok=True)
 
-# Checkpoints use the ordinary model name without a version suffix. Historical
-# incompatible checkpoints are archived separately before a fresh estimation.
-MODEL_VERSION = None
+# Checkpoint filenames include an automatic provenance fingerprint. Existing
+# unversioned files remain on disk but are never mistaken for current models.
+CHECKPOINT_SCHEMA_VERSION = 2
 
 
 # Each item contains:
@@ -314,261 +324,12 @@ def make_frame(
 # =============================================================================
 
 # -----------------------------------------------------------------------------
-# 3A. Convex-weight optimizer
+# 3A. Shared prediction engine
 # -----------------------------------------------------------------------------
 
-def convex_weights(predictions, target, classification=False):
-    """Choose nonnegative Super Learner weights that sum to one.
-
-    Parameters
-    ----------
-    predictions : numpy.ndarray
-        Out-of-fold predictions with shape observations x learners.
-    target : array-like
-        Observed outcome or treatment indicator.
-    classification : bool, default=False
-        Use log loss instead of mean squared error when ``True``.
-
-    Returns
-    -------
-    numpy.ndarray
-        One convex weight per learner, in prediction-column order.
-    """
-
-    n_learners = predictions.shape[1]
-    initial = np.repeat(1 / n_learners, n_learners)
-
-    def loss(weights):
-        """Return ensemble log loss or mean squared error for candidate weights."""
-
-        fitted = predictions @ weights
-        if classification:
-            fitted = np.clip(fitted, 1e-8, 1 - 1e-8)
-            return -np.mean(
-                target * np.log(fitted) + (1 - target) * np.log(1 - fitted)
-            )
-        return np.mean((target - fitted) ** 2)
-
-    def weights_sum_to_one(weights):
-        """Return zero exactly when candidate weights satisfy the constraint."""
-
-        return weights.sum() - 1
-
-    result = minimize(
-        loss,
-        initial,
-        method="SLSQP",
-        bounds=[(0, 1)] * n_learners,
-        constraints={"type": "eq", "fun": weights_sum_to_one},
-    )
-    weights = np.clip(result.x, 0, 1)
-    return weights / weights.sum()
-
-
-# -----------------------------------------------------------------------------
-# 3B. Probability helper shared by classification learners
-# -----------------------------------------------------------------------------
-
-def _positive_probability(model, x):
-    """Extract the probability of class 1 from a fitted classifier.
-
-    Parameters
-    ----------
-    model : classifier
-        Fitted object exposing ``classes_`` and ``predict_proba``.
-    x : array-like
-        Predictor rows.
-
-    Returns
-    -------
-    numpy.ndarray
-        Probability of class 1 for each row.
-    """
-
-    positive = int(np.where(np.asarray(model.classes_) == 1)[0][0])
-    return model.predict_proba(x)[:, positive]
-
-
-# -----------------------------------------------------------------------------
-# 3C. Super Learner for outcome regression
-# -----------------------------------------------------------------------------
-
-class ConvexRegressor(RegressorMixin, BaseEstimator):
-    """Convex combination used to predict the outcome.
-
-    If ``group_column=-1``, the final column identifies the cluster used to
-    build the inner folds. That column is removed before fitting OLS, LASSO,
-    Elastic Net, Random Forest, and XGBoost.
-    """
-
-    def __init__(self, estimators, random_state=42, group_column=None):
-        """Store candidate regressors and inner-fold configuration.
-
-        Parameters
-        ----------
-        estimators : list[tuple[str, regressor]]
-            Named candidate outcome learners.
-        random_state : int, default=42
-            Seed for reproducible inner folds.
-        group_column : int or None
-            Temporary PSU-column position; ``None`` requests ordinary folds.
-        """
-
-        self.estimators = estimators
-        self.random_state = random_state
-        self.group_column = group_column
-
-    def _features_and_groups(self, x):
-        """Separate the temporary PSU column from explanatory variables.
-
-        Returns ``(predictor_array, psu_array_or_none)``.
-        """
-
-        x = np.asarray(x, dtype=float)
-        if self.group_column is None:
-            return x, None
-        if self.group_column >= 0:
-            index = self.group_column
-        else:
-            index = x.shape[1] + self.group_column
-        groups = x[:, index].astype(int)
-        return np.delete(x, index, axis=1), groups
-
-    def fit(self, x, y):
-        """Fit candidate regressors and learn convex weights.
-
-        Parameters are predictor rows ``x`` and continuous outcome ``y``.
-        Returns this fitted estimator, following the scikit-learn convention.
-        """
-
-        x, groups = self._features_and_groups(x)
-        y = np.asarray(y, dtype=float)
-        if groups is None:
-            splits = KFold(
-                INNER_FOLDS, shuffle=True, random_state=self.random_state
-            ).split(x)
-        else:
-            splits = GroupKFold(INNER_FOLDS).split(x, y, groups)
-        splits = list(splits)
-        oof = np.zeros((len(y), len(self.estimators)))
-        self.models_ = []
-
-        for learner_number, (name, estimator) in enumerate(self.estimators):
-            fold_models = []
-            for train, test in splits:
-                fitted = clone(estimator).fit(x[train], y[train])
-                oof[test, learner_number] = fitted.predict(x[test])
-                fold_models.append(fitted)
-            self.models_.append((name, fold_models))
-
-        self.weights_ = convex_weights(oof, y, classification=False)
-        self.n_features_in_ = x.shape[1]
-        return self
-
-    def predict(self, x):
-        """Return one weighted outcome prediction for every row in ``x``."""
-
-        x, _ = self._features_and_groups(x)
-        predictions_by_learner = []
-        for _, fold_models in self.models_:
-            fold_predictions = [model.predict(x) for model in fold_models]
-            average_prediction = np.mean(fold_predictions, axis=0)
-            predictions_by_learner.append(average_prediction)
-        predictions = np.column_stack(predictions_by_learner)
-        return predictions @ self.weights_
-
-
-# -----------------------------------------------------------------------------
-# 3D. Super Learner for treatment classification
-# -----------------------------------------------------------------------------
-
-class ConvexClassifier(ClassifierMixin, BaseEstimator):
-    """Convex combination used to predict the binary treatment."""
-
-    def __init__(self, estimators, random_state=42, group_column=None):
-        """Store candidate classifiers and inner-fold configuration.
-
-        Parameters mirror ``ConvexRegressor`` but candidates predict binary
-        treatment rather than the outcome.
-        """
-
-        self.estimators = estimators
-        self.random_state = random_state
-        self.group_column = group_column
-
-    def _features_and_groups(self, x):
-        """Separate the temporary PSU column from explanatory variables.
-
-        Returns ``(predictor_array, psu_array_or_none)``.
-        """
-
-        x = np.asarray(x, dtype=float)
-        if self.group_column is None:
-            return x, None
-        if self.group_column >= 0:
-            index = self.group_column
-        else:
-            index = x.shape[1] + self.group_column
-        groups = x[:, index].astype(int)
-        return np.delete(x, index, axis=1), groups
-
-    def fit(self, x, y):
-        """Fit candidate classifiers and learn convex weights.
-
-        Parameters are predictor rows ``x`` and binary treatment ``y``.
-        Returns this fitted estimator.
-        """
-
-        x, groups = self._features_and_groups(x)
-        y = np.asarray(y, dtype=int)
-        if groups is None:
-            splits = StratifiedKFold(
-                INNER_FOLDS, shuffle=True, random_state=self.random_state
-            ).split(x, y)
-        else:
-            splits = StratifiedGroupKFold(
-                INNER_FOLDS, shuffle=True, random_state=self.random_state
-            ).split(x, y, groups)
-        splits = list(splits)
-        oof = np.zeros((len(y), len(self.estimators)))
-        self.models_ = []
-
-        for learner_number, (name, estimator) in enumerate(self.estimators):
-            fold_models = []
-            for train, test in splits:
-                fitted = clone(estimator).fit(x[train], y[train])
-                oof[test, learner_number] = _positive_probability(
-                    fitted,
-                    x[test],
-                )
-                fold_models.append(fitted)
-            self.models_.append((name, fold_models))
-
-        self.weights_ = convex_weights(oof, y, classification=True)
-        self.classes_ = np.array([0, 1])
-        self.n_features_in_ = x.shape[1]
-        return self
-
-    def predict_proba(self, x):
-        """Return an N x 2 array of weighted class-0/class-1 probabilities."""
-
-        x, _ = self._features_and_groups(x)
-        predictions_by_learner = []
-        for _, fold_models in self.models_:
-            fold_predictions = [
-                _positive_probability(model, x)
-                for model in fold_models
-            ]
-            average_prediction = np.mean(fold_predictions, axis=0)
-            predictions_by_learner.append(average_prediction)
-        predictions = np.column_stack(predictions_by_learner)
-        positive = np.clip(predictions @ self.weights_, 1e-8, 1 - 1e-8)
-        return np.column_stack([1 - positive, positive])
-
-    def predict(self, x):
-        """Return binary class labels using a 0.5 probability threshold."""
-
-        return (self.predict_proba(x)[:, 1] >= 0.5).astype(int)
+# The shared implementation lives in ddml_engine.py and is imported above.
+# Keeping the estimand scripts free of prediction-engine details makes the
+# ATE/ATT distinction visible without duplicating the Super Learner.
 
 
 # =============================================================================
@@ -692,6 +453,36 @@ if SAMPLED:
     CLASSIFIERS = CLASSIFIERS[:2]
 
 
+def checkpoint_provenance():
+    """Describe every input that determines checkpoint compatibility."""
+
+    files = {
+        "analysis_script": Path(__file__),
+        "shared_engine": Path(__file__).with_name("ddml_engine.py"),
+        "environment_lock": PROJECT / "uv.lock",
+    }
+    for dataset, data_path, _, _ in ANALYSIS_SPECS:
+        files[f"data_{dataset}"] = data_path
+    settings = {
+        "estimand": "ATE",
+        "seed": SEED,
+        "sampled": SAMPLED,
+        "sample_fraction": SAMPLE_FRAC if SAMPLED else None,
+        "folds": FOLDS,
+        "repetitions": REPETITIONS,
+        "inner_folds": INNER_FOLDS,
+        "treatment_levels": list(TREATMENT_LEVELS),
+        "reported_levels": list(REPORTED_LEVELS),
+        "outcome_learners": [name for name, _ in REGRESSORS],
+        "treatment_learners": [name for name, _ in CLASSIFIERS],
+    }
+    return build_checkpoint_provenance(
+        CHECKPOINT_SCHEMA_VERSION,
+        files,
+        settings,
+    )
+
+
 # =============================================================================
 # SECTION 5 OF 10 — REUSABLE ANALYSIS BUILDING BLOCKS
 # Purpose: checkpoints, clustered inference, GATE projection, model fitting,
@@ -717,7 +508,7 @@ class CheckpointStore:
         a quick diagnostic run from loading or overwriting full-run models.
     """
 
-    def __init__(self, quick_sample):
+    def __init__(self, quick_sample, fingerprint=None):
         """Remember whether this store belongs to a full or sample run.
 
         Parameters
@@ -727,6 +518,12 @@ class CheckpointStore:
         """
 
         self.quick_sample = bool(quick_sample)
+        if fingerprint is None:
+            fingerprint, provenance = checkpoint_provenance()
+        else:
+            provenance = None
+        self.fingerprint = str(fingerprint)
+        self.provenance = provenance
 
     def path(self, name):
         """Return the filesystem path for a logical checkpoint name.
@@ -747,8 +544,8 @@ class CheckpointStore:
             if self.quick_sample
             else ""
         )
-        version_tag = f"_{MODEL_VERSION}" if MODEL_VERSION else ""
-        return CHECKPOINT_DIR / f"{name}{version_tag}{sample_tag}.pkl"
+        provenance_tag = f"_{self.fingerprint[:12]}"
+        return CHECKPOINT_DIR / f"{name}{provenance_tag}{sample_tag}.pkl"
 
     def exists(self, name):
         """Check whether a named checkpoint is already on disk.
@@ -899,49 +696,6 @@ def result_pickle_path(name, quick_sample, file_suffix=""):
     return OUTPUT_DIR / f"{name}{file_suffix}{sample_tag}.pkl"
 
 
-def collect_convex_weights(model):
-    """Average stored Super Learner weights over folds and repetitions.
-
-    Parameters
-    ----------
-    model : fitted DoubleML model
-        Model whose nested nuisance learners contain ``weights_`` arrays.
-
-    Returns
-    -------
-    dict[str, dict[str, float]]
-        Average learner weight for each nuisance model.
-    """
-
-    collected = {}
-
-    def visit(value, nuisance="unknown"):
-        """Recursively find fitted convex learners inside DoubleML storage."""
-
-        if isinstance(value, dict):
-            for key, item in value.items():
-                next_nuisance = key if str(key).startswith("ml_") else nuisance
-                visit(item, next_nuisance)
-        elif isinstance(value, (list, tuple)):
-            for item in value:
-                visit(item, nuisance)
-        elif isinstance(value, np.ndarray):
-            for item in value.flat:
-                visit(item, nuisance)
-        elif hasattr(value, "weights_") and hasattr(value, "estimators"):
-            names = [name for name, _ in value.estimators]
-            row = dict(zip(names, np.asarray(value.weights_, dtype=float)))
-            collected.setdefault(nuisance, []).append(row)
-
-    visit(model._models)
-    averaged = {}
-    for nuisance, rows in collected.items():
-        names = list(dict.fromkeys(name for row in rows for name in row))
-        averaged[nuisance] = {
-            name: float(np.mean([row[name] for row in rows if name in row]))
-            for name in names
-        }
-    return averaged
 
 
 # -----------------------------------------------------------------------------
@@ -950,178 +704,10 @@ def collect_convex_weights(model):
 # -> one reported SE/p-value/confidence interval across repetitions.
 # -----------------------------------------------------------------------------
 
-def score_array_with_named_dimensions(score_values):
-    """Return scores with dimensions (observations, effects, repetitions).
-
-    DoubleML normally already uses this three-dimensional layout. The checks
-    below make the layout explicit and also handle simpler one- or two-
-    dimensional inputs in the intuitive way. Keeping this conversion in one
-    named function is easier to follow than repeating ``np.atleast_3d``.
-
-    Parameters
-    ----------
-    score_values : array-like
-        Influence-score values with observations in the first dimension.
-
-    Returns
-    -------
-    numpy.ndarray
-        Numeric array with shape N observations x J effects x R repetitions.
-    """
-
-    scores = np.asarray(score_values, dtype=float)
-    if scores.ndim == 1:
-        # One effect and one repetition: N becomes N x 1 x 1.
-        scores = scores[:, np.newaxis, np.newaxis]
-    elif scores.ndim == 2:
-        # Several effects and one repetition: N x J becomes N x J x 1.
-        scores = scores[:, :, np.newaxis]
-    elif scores.ndim != 3:
-        raise ValueError(
-            "Scores must have one, two, or three dimensions; "
-            f"received shape {scores.shape}."
-        )
-    return scores
 
 
-def sum_rows_within_psu(values, cluster_ids):
-    """Sum observation-level array rows within each sampling PSU.
-
-    Parameters
-    ----------
-    values
-        Array whose first dimension represents observations. Any remaining
-        dimensions, such as effects and repetitions, are preserved.
-    cluster_ids
-        PSU identifier for every observation, in the same row order.
-
-    Returns
-    -------
-    tuple
-        The PSU sums and the corresponding unique PSU labels.
-    """
-
-    values = np.asarray(values, dtype=float)
-    cluster_ids = np.asarray(cluster_ids)
-    if values.shape[0] != len(cluster_ids):
-        raise ValueError(
-            "Scores and cluster IDs must contain the same number of rows."
-        )
-
-    # return_inverse=True converts arbitrary labels into safe array positions.
-    # Example: PSU labels [101, 101, 205] become positions [0, 0, 1].
-    unique_clusters, cluster_position = np.unique(
-        cluster_ids,
-        return_inverse=True,
-    )
-    psu_sums = np.zeros(
-        (len(unique_clusters), *values.shape[1:]),
-        dtype=float,
-    )
-
-    # A normal assignment would overwrite repeated positions. np.add.at adds
-    # every observation to its PSU, including when many rows share that PSU.
-    np.add.at(psu_sums, cluster_position, values)
-    return psu_sums, unique_clusters
 
 
-def cluster_robust_framework_inference(framework, cluster_ids, level=0.95):
-    """Calculate repeated-cross-fitting inference clustered by PSU.
-
-    The cluster sandwich is evaluated separately for every repetition. Point
-    estimates, p-values, and confidence limits are then aggregated using the
-    same repetition-wise rules as ``DoubleMLFramework``.
-
-    Parameters
-    ----------
-    framework : DoubleMLFramework
-        Fitted treatment contrast containing ``scaled_psi`` and
-        repetition-specific coefficients.
-    cluster_ids : array-like
-        PSU identifier for every observation, in framework row order.
-    level : float, default=0.95
-        Confidence level for the reported interval.
-
-    Returns
-    -------
-    dict[str, numpy.ndarray]
-        Final ``coef``, ``se``, ``pval``, and confidence limits, plus
-        repetition-specific ``se_rep`` and ``pval_rep`` arrays.
-    """
-
-    # Shape: N observations x J treatment contrasts x R repetitions.
-    influence_scores = score_array_with_named_dimensions(
-        framework.scaled_psi
-    )
-
-    # One-way cluster sandwich:
-    # sum_g (sum_i in g influence_i)^2 / N^2.
-    cluster_scores, _ = sum_rows_within_psu(
-        influence_scores,
-        cluster_ids,
-    )
-
-    # Keep one clustered SE for every contrast and repetition (shape J x R).
-    # These are se_rep: they are intermediate repeated-cross-fitting results,
-    # not the single SE eventually printed in the tables.
-    standard_errors_by_repetition = np.sqrt(
-        np.sum(cluster_scores ** 2, axis=0) / len(cluster_ids) ** 2
-    )
-
-    # all_thetas also has shape J x R. Each column contains the estimates from
-    # one independently drawn cross-fitting split.
-    coefficients_by_repetition = np.asarray(
-        framework.all_thetas,
-        dtype=float,
-    )
-
-    # The reported coefficient is the median estimate across repetitions
-    # (shape J). With R=1 this is simply the estimate from that one run.
-    coefficients = np.median(coefficients_by_repetition, axis=1)
-
-    # Convert the J x R values in se_rep into one reported SE per contrast.
-    # DoubleML does this by taking the median upper 95% bound and solving
-    # backwards for the SE around the median coefficient.
-    aggregated_upper = np.median(
-        coefficients_by_repetition
-        + 1.96 * standard_errors_by_repetition,
-        axis=1,
-    )
-    standard_errors = (aggregated_upper - coefficients) / 1.96
-
-    # pval_rep has shape J x R: one two-sided normal p-value for each
-    # contrast and repetition, calculated with theta_rep / se_rep.
-    p_values_by_repetition = 2 * norm.sf(np.abs(
-        coefficients_by_repetition / standard_errors_by_repetition
-    ))
-
-    # pval has shape J and is the median p-value across repetitions. This is
-    # the p-value saved in results_apos.pkl and used for table stars.
-    p_values = np.median(p_values_by_repetition, axis=1)
-
-    # Confidence limits are also constructed within each repetition first and
-    # then aggregated by their median, matching DoubleMLFramework.confint().
-    critical_value = norm.ppf(1 - (1 - float(level)) / 2)
-    ci_lower = np.median(
-        coefficients_by_repetition
-        - critical_value * standard_errors_by_repetition,
-        axis=1,
-    )
-    ci_upper = np.median(
-        coefficients_by_repetition
-        + critical_value * standard_errors_by_repetition,
-        axis=1,
-    )
-
-    return {
-        "coef": coefficients,
-        "se": standard_errors,  # J reported SEs used in results and tables.
-        "se_rep": standard_errors_by_repetition,  # J x R intermediate SEs.
-        "pval": p_values,  # J reported p-values used for significance stars.
-        "pval_rep": p_values_by_repetition,  # J x R intermediate p-values.
-        "ci_lower": ci_lower,
-        "ci_upper": ci_upper,
-    }
 
 
 # -----------------------------------------------------------------------------
@@ -1129,129 +715,8 @@ def cluster_robust_framework_inference(framework, cluster_ids, level=0.95):
 # This repackages already estimated scores by PSU; it does not refit the model.
 # -----------------------------------------------------------------------------
 
-def build_clustered_sensitivity_framework(framework, cluster_ids):
-    """Prepare PSU-level scores for DoubleML's sensitivity calculations.
-
-    Aggregating the scores once makes the sensitivity calculations both exact
-    for the observation-weighted sandwich and much faster than repeatedly
-    scanning every observation for every cluster.
-
-    Parameters
-    ----------
-    framework : DoubleMLFramework
-        Observation-level fitted model or treatment contrast.
-    cluster_ids : array-like
-        PSU identifier for each framework row.
-
-    Returns
-    -------
-    DoubleMLFramework
-        A result framework whose rows represent PSU-level pseudo-observations.
-    """
-
-    # These classes are result containers, not new estimators:
-    # - DoubleMLCore holds estimates, SEs, influence scores, and sensitivity
-    #   ingredients as arrays.
-    # - DoubleMLFramework wraps that core and supplies methods such as
-    #   sensitivity_analysis() and confint().
-    # They are imported here, instead of at the top of the file, because this
-    # specialized conversion is the only place that needs them.
-    from doubleml.double_ml_framework import DoubleMLCore, DoubleMLFramework
-
-    original_core = framework.dml_core
-    cluster_scores, unique_clusters = sum_rows_within_psu(
-        original_core.scaled_psi,
-        cluster_ids,
-    )
-    number_of_clusters = len(unique_clusters)
-    number_of_observations = len(cluster_ids)
-
-    # Multiplication by G/N turns each cluster sum into a pseudo-observation.
-    # The ordinary variance of these G pseudo-observations is exactly
-    # sum_g(score_g^2) / N^2.
-    cluster_scale = number_of_clusters / number_of_observations
-    cluster_scores *= cluster_scale
-    standard_errors_by_repetition = np.sqrt(
-        np.mean(cluster_scores ** 2, axis=0) / number_of_clusters
-    )
-
-    sensitivity_elements = {
-        key: value.copy()
-        for key, value in original_core.sensitivity_elements.items()
-    }
-    # psi_max_bias is another observation-level score used only by sensitivity
-    # analysis. It must be summed by PSU in exactly the same way as scaled_psi.
-    cluster_bias_scores, _ = sum_rows_within_psu(
-        sensitivity_elements["psi_max_bias"],
-        cluster_ids,
-    )
-    cluster_bias_scores *= cluster_scale
-    sensitivity_elements["psi_max_bias"] = cluster_bias_scores
-
-    # Build a new result container whose "observations" are PSUs. No model is
-    # fitted here; we are only repackaging already estimated score arrays so
-    # DoubleML can run its standard sensitivity formulas at the PSU level.
-    clustered_core = DoubleMLCore(
-        all_thetas=original_core.all_thetas,
-        all_ses=standard_errors_by_repetition,
-        var_scaling_factors=np.full_like(
-            original_core.var_scaling_factors,
-            number_of_clusters,
-        ),
-        scaled_psi=cluster_scores,
-        is_cluster_data=False,
-        sensitivity_elements=sensitivity_elements,
-    )
-    treatment_names = None
-    if framework.treatment_names is not None:
-        treatment_names = list(framework.treatment_names)
-
-    return DoubleMLFramework(
-        clustered_core,
-        treatment_names=treatment_names,
-    )
 
 
-def sensitivity_params(model_or_contrast, cluster_ids=None):
-    """Calculate robustness values for an IRM or APOS estimand.
-
-    Parameters
-    ----------
-    model_or_contrast : DoubleML model or framework
-        Fitted estimand with sensitivity elements.
-    cluster_ids : array-like or None
-        PSU identifiers. When supplied, sensitivity uses PSU-level scores.
-
-    Returns
-    -------
-    tuple[numpy.ndarray, numpy.ndarray]
-        RV and RV-alpha, one value per treatment contrast.
-    """
-
-    if cluster_ids is not None:
-        model_or_contrast = build_clustered_sensitivity_framework(
-            model_or_contrast,
-            cluster_ids,
-        )
-
-    analyzed = model_or_contrast.sensitivity_analysis(
-        cf_y=0.03,
-        cf_d=0.03,
-        rho=1.0,
-        level=0.95,
-    )
-    parameters = analyzed.sensitivity_params
-    # reshape(-1) flattens scalar/row/column outputs into the same predictable
-    # one-dimensional vector: one robustness value per treatment contrast.
-    robustness_value = np.asarray(
-        parameters["rv"],
-        dtype=float,
-    ).reshape(-1)
-    robustness_value_alpha = np.asarray(
-        parameters["rva"],
-        dtype=float,
-    ).reshape(-1)
-    return robustness_value, robustness_value_alpha
 
 
 # -----------------------------------------------------------------------------
@@ -1439,11 +904,13 @@ def fit_irm(frame, x_columns, outcome, treatment, clustered):
             REGRESSORS,
             random_state=SEED,
             group_column=-1 if clustered else None,
+            inner_folds=INNER_FOLDS,
         ),
         ConvexClassifier(
             CLASSIFIERS,
             random_state=SEED,
             group_column=-1 if clustered else None,
+            inner_folds=INNER_FOLDS,
         ),
         n_folds=FOLDS,
         n_rep=REPETITIONS,
@@ -1488,8 +955,18 @@ def fit_apos(frame, x_columns, outcome):
     )
     model = dml.DoubleMLAPOS(
         data,
-        ConvexRegressor(REGRESSORS, random_state=SEED, group_column=None),
-        ConvexClassifier(CLASSIFIERS, random_state=SEED, group_column=None),
+        ConvexRegressor(
+            REGRESSORS,
+            random_state=SEED,
+            group_column=None,
+            inner_folds=INNER_FOLDS,
+        ),
+        ConvexClassifier(
+            CLASSIFIERS,
+            random_state=SEED,
+            group_column=None,
+            inner_folds=INNER_FOLDS,
+        ),
         treatment_levels=list(TREATMENT_LEVELS),
         n_folds=FOLDS,
         n_rep=REPETITIONS,
@@ -1674,8 +1151,18 @@ def fit_apos_clustered(frame, x_columns, outcome, splits):
     )
     model = dml.DoubleMLAPOS(
         data,
-        ConvexRegressor(REGRESSORS, random_state=SEED, group_column=-1),
-        ConvexClassifier(CLASSIFIERS, random_state=SEED, group_column=-1),
+        ConvexRegressor(
+            REGRESSORS,
+            random_state=SEED,
+            group_column=-1,
+            inner_folds=INNER_FOLDS,
+        ),
+        ConvexClassifier(
+            CLASSIFIERS,
+            random_state=SEED,
+            group_column=-1,
+            inner_folds=INNER_FOLDS,
+        ),
         treatment_levels=list(TREATMENT_LEVELS),
         n_folds=FOLDS,
         n_rep=REPETITIONS,
@@ -2268,39 +1755,6 @@ TREATMENT_LABELS = {
 }
 
 
-def format_coefficient(coefficient, standard_error, p_value=None):
-    """Format one coefficient with conventional significance stars.
-
-    Parameters
-    ----------
-    coefficient : float
-        Point estimate.
-    standard_error : float
-        Reported SE, used only for a fallback p-value when necessary.
-    p_value : float or None
-        Preferred p-value, already aggregated across repetitions.
-
-    Returns
-    -------
-    str
-        Three-decimal coefficient followed by zero to three stars.
-    """
-
-    if standard_error == 0 or np.isnan(standard_error):
-        return f"{coefficient:.3f}"
-
-    if p_value is None:
-        p_value = 2 * norm.sf(abs(coefficient / standard_error))
-
-    if p_value < 0.01:
-        stars = "***"
-    elif p_value < 0.05:
-        stars = "**"
-    elif p_value < 0.10:
-        stars = "*"
-    else:
-        stars = ""
-    return f"{coefficient:.3f}{stars}"
 
 
 # -----------------------------------------------------------------------------
@@ -3931,8 +3385,11 @@ def write_manifest():
         Writes ``Output/ATE/manifest.json``.
     """
 
+    checkpoint_fingerprint, checkpoint_details = checkpoint_provenance()
     manifest = {
-        "model_version": MODEL_VERSION,
+        "checkpoint_schema_version": CHECKPOINT_SCHEMA_VERSION,
+        "checkpoint_fingerprint": checkpoint_fingerprint,
+        "checkpoint_provenance": checkpoint_details,
         "seed": SEED,
         "sampled": SAMPLED,
         "sample_frac": SAMPLE_FRAC if SAMPLED else None,
@@ -3946,7 +3403,9 @@ def write_manifest():
         "treatment_levels": list(TREATMENT_LEVELS),
         "selected_countries": SELECTED_COUNTRIES,
         "checkpoints": sorted(
-            path.name for path in CHECKPOINT_DIR.glob("*.pkl")
+            path.name
+            for path in CHECKPOINT_DIR.glob("*.pkl")
+            if f"_{checkpoint_fingerprint[:12]}" in path.stem
         ),
         "tables": sorted(path.name for path in TABLE_DIR.glob("*.tex")),
     }

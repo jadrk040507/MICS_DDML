@@ -12,6 +12,8 @@ import pandas as pd
 from scipy.stats import norm
 
 # Old project checkpoints reference these two classes in __main__.
+import ate
+import att
 from ate import ConvexRegressor, ConvexClassifier, ANALYSIS_SPECS, PROJECT
 
 
@@ -54,9 +56,8 @@ def linear_combination(theta, covariance, weights):
 
 
 def load_pair(dataset, outcome, method, prefix):
-    name = f'{prefix}{dataset}_{outcome}_{method}.pkl'
-    paths = [PROJECT / 'Output' / 'ATE' / 'checkpoints' / name,
-             PROJECT / 'Output' / 'ATT' / 'checkpoints' / name]
+    name = f'{prefix}{dataset}_{outcome}_{method}'
+    paths = [module.CheckpointStore(False).path(name) for module in (ate, att)]
     models = []
     for path in paths:
         m = joblib.load(path)

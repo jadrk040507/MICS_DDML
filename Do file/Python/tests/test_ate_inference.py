@@ -80,17 +80,31 @@ class RepeatedInferenceTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary_directory:
             temporary_path = Path(temporary_directory)
             with patch.object(ate, "CHECKPOINT_DIR", temporary_path):
-                full_store = ate.CheckpointStore(quick_sample=False)
-                sample_store = ate.CheckpointStore(quick_sample=True)
+                full_store = ate.CheckpointStore(
+                    quick_sample=False,
+                    fingerprint="testfingerprint",
+                )
+                sample_store = ate.CheckpointStore(
+                    quick_sample=True,
+                    fingerprint="testfingerprint",
+                )
 
-                self.assertEqual(full_store.path("example").name, "example.pkl")
+                self.assertEqual(
+                    full_store.path("example").name,
+                    "example_testfingerpr.pkl",
+                )
                 self.assertEqual(
                     sample_store.path("example").name,
-                    "example_sample05.pkl",
+                    "example_testfingerpr_sample05.pkl",
                 )
 
                 full_store.save("example", [{"run": "full"}])
                 sample_store.save("example", [{"run": "sample"}])
+
+                # An older unversioned file must never be mistaken for the
+                # checkpoint produced by the current code and inputs.
+                (temporary_path / "legacy.pkl").write_bytes(b"historical")
+                self.assertFalse(full_store.exists("legacy"))
 
                 self.assertEqual(full_store.load("example"), [{"run": "full"}])
                 self.assertEqual(

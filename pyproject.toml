@@ -1,5 +1,5 @@
 [project]
-name = "python"
+name = "mics-ddml"
 version = "0.1.0"
 description = "Double/debiased machine-learning analysis of household water treatment and child health"
 readme = "README.md"
@@ -18,4 +18,9 @@ dependencies = [
     "jupyter>=1.1.1",
     "narwhals>=2.22.1",
     "tqdm>=4.68",
+]
+
+[dependency-groups]
+dev = [
+    "spyder-kernels>=3.1,<3.2",
 ]
