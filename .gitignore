@@ -12,6 +12,7 @@ __pycache__/
 .claude/
 .spyproject/
 .vscode/
+.worktrees/
 .dropboxignore
 skills-lock.json
 
