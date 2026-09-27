@@ -24,8 +24,8 @@ class RepositoryLayoutTests(unittest.TestCase):
             "_analysis_runner.py",
             "_compare_ate_att_atu.py",
             "_joint_inference.py",
-            "_model_checkpoint_compat.py",
-            "_provenance.py",
+            "ddml.py",
+            "artifacts.py",
             "_sensitivity_groups.py",
             "_sensitivity_scale.py",
         ]
