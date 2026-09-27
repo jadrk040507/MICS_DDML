@@ -8,7 +8,7 @@ from unittest.mock import patch
 import numpy as np
 from scipy.stats import norm
 
-import _ate_impl as ate
+import analysis as ate
 
 
 class FakeFramework:

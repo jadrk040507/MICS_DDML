@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 from scipy.stats import norm
 
-from _ate_impl import cluster_robust_framework_inference
+from analysis import cluster_robust_framework_inference
 from _compare_ate_att_atu import aggregate_repetitions
 
 

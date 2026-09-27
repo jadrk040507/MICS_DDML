@@ -7,8 +7,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-import _ate_impl as ate
-import _att_impl as att
+import analysis as ate
+import analysis as att
 
 
 class GateGroupTests(unittest.TestCase):
@@ -32,7 +32,9 @@ class GateGroupTests(unittest.TestCase):
         scores = kept_signal[:, None, None]
         framework = SimpleNamespace(all_thetas=np.zeros((1, 1)), scaled_psi=-scores)
         contrast = SimpleNamespace(all_thetas=np.zeros((3, 1)), scaled_psi=-np.repeat(scores, 3, axis=1))
-        for module in (ate, att):
+        for estimand in ("ate", "att"):
+            module = ate
+            module._set_active_spec(module.get_analysis_spec(estimand))
             sample = module.complete_case_sample(data, 'SomeRiskHome', 'water_treatment', extra_columns=('RiskSource',))
             self.assertEqual(len(sample), n - 1)
             self.assertTrue(pd.isna(sample.RiskSource.iloc[0]))
@@ -42,7 +44,7 @@ class GateGroupTests(unittest.TestCase):
             }) for level in (0, 1, 2, 3)]
             apos = SimpleNamespace(causal_contrast=lambda **kwargs: contrast, modellist=models)
             for clustered in (False, True):
-                with self.subTest(module=module.__name__, clustered=clustered):
+                with self.subTest(estimand=estimand, clustered=clustered):
                     bundle = {'irm_cluster': irm, 'irm_no_cluster': irm, 'apos_cluster': apos, 'apos_no_cluster': apos}
                     rows = module.gate_for_specification(bundle, data, 'HH', 'SomeRiskHome', False, 'clustered_folds' if clustered else 'unclustered', clustered)
                     result = pd.concat(rows, ignore_index=True)

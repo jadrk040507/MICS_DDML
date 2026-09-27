@@ -5,8 +5,8 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-import _ate_impl as ate
-import _att_impl as att
+import analysis as ate
+import analysis as att
 import artifacts
 from artifacts import build_checkpoint_provenance
 

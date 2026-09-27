@@ -7,14 +7,14 @@ import numpy as np
 import pandas as pd
 from sklearn.linear_model import LinearRegression, LogisticRegression
 
-import _att_impl as att
+import analysis as att
 
 
 class AttPipelineTests(unittest.TestCase):
     def test_att_outputs_are_isolated_from_ate_outputs(self):
-        self.assertEqual(att.ESTIMAND, "ATT")
-        self.assertEqual(att.OUTPUT_DIR.name, "ATT")
-        self.assertEqual(att.CHECKPOINT_DIR.parent, att.OUTPUT_DIR)
+        spec = att.get_analysis_spec("att")
+        self.assertEqual(spec.estimand, "ATT")
+        self.assertEqual(spec.output_dir.name, "ATT")
 
     def test_multivalued_att_weights_target_any_treated_household(self):
         levels = np.tile(np.asarray(att.TREATMENT_LEVELS), 20)
@@ -25,6 +25,7 @@ class AttPipelineTests(unittest.TestCase):
         classifiers = [("logit", LogisticRegression(max_iter=1000))]
 
         with (
+            att.use_analysis_spec(att.get_analysis_spec("att")),
             patch.object(att, "FOLDS", 2),
             patch.object(att, "REPETITIONS", 1),
             patch.object(att, "INNER_FOLDS", 2),
@@ -54,6 +55,7 @@ class AttPipelineTests(unittest.TestCase):
         frame = pd.DataFrame({"y": outcome, "d": treatment, "x": x})
 
         with (
+            att.use_analysis_spec(att.get_analysis_spec("att")),
             patch.object(att, "FOLDS", 2),
             patch.object(att, "REPETITIONS", 1),
             patch.object(att, "INNER_FOLDS", 2),
