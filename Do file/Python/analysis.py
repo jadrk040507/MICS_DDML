@@ -30,6 +30,7 @@ from sklearn.preprocessing import StandardScaler
 from xgboost import XGBClassifier, XGBRegressor
 
 import ddml
+import reporting
 from reporting import benchmark_diagonal_equivalent, benchmark_groups
 from artifacts import (
     CheckpointStore, OutcomeCheckpointBundle, atomic_dump,
@@ -96,6 +97,44 @@ class AnalysisSpec:
     propensity_clip: float
     uses_att_weights: bool
     att_gate_strategy: bool
+
+    @staticmethod
+    def _fold_mode(fold_modes):
+        return "both" if len(fold_modes) == 2 else fold_modes[0]
+
+    def effect_writer(self, payload, *, quick_sample, file_suffix, fold_modes):
+        """Write effect files from one estimation payload."""
+        fold_mode = self._fold_mode(fold_modes)
+        with use_analysis_spec(self, fold_mode):
+            return save_main_results_and_tables(
+                estimates=payload["estimates"],
+                irm_result_tables=payload["irm_result_tables"],
+                apos_result_tables=payload["apos_result_tables"],
+                weight_rows=payload["weight_rows"],
+                checkpoint_prefix=payload["checkpoint_prefix"],
+                file_suffix=file_suffix,
+                caption_suffix=payload["caption_suffix"],
+                quick_sample=quick_sample,
+                fold_mode=fold_mode,
+            )
+
+    def sensitivity_runner(self, estimates, *, quick_sample, fold_modes):
+        """Run sensitivity outputs through the shared reporting boundary."""
+        fold_mode = self._fold_mode(fold_modes)
+        with use_analysis_spec(self, fold_mode):
+            return run_sensitivity_analysis(estimates, quick_sample, fold_mode)
+
+    def gate_runner(self, estimates, *, quick_sample, fold_modes):
+        """Run GATE outputs through the shared reporting boundary."""
+        fold_mode = self._fold_mode(fold_modes)
+        with use_analysis_spec(self, fold_mode):
+            return run_gate_analysis(estimates, quick_sample, fold_mode)
+
+    def manifest_writer(self, *, model_provenance, sensitivity_provenance, fold_mode):
+        """Write and return the active estimand manifest path."""
+        del fold_mode
+        write_manifest(model_provenance, sensitivity_provenance)
+        return OUTPUT_DIR / "manifest.json"
 
 
 def get_analysis_spec(estimand):
@@ -3194,7 +3233,7 @@ def run_gate_analysis(estimates, quick_sample, fold_mode="both"):
 # 10A. Record settings and produced files
 # -----------------------------------------------------------------------------
 
-def write_manifest():
+def write_manifest(model_provenance=None, sensitivity_provenance=None):
     """Record run settings and generated filenames in JSON.
 
     Parameters
@@ -3207,10 +3246,16 @@ def write_manifest():
         Writes the active estimand manifest.
     """
 
-    checkpoint_fingerprint, checkpoint_details = checkpoint_provenance()
-    sensitivity_fingerprint, sensitivity_details = (
-        sensitivity_checkpoint_provenance(checkpoint_fingerprint)
-    )
+    if model_provenance is None:
+        checkpoint_fingerprint, checkpoint_details = checkpoint_provenance()
+    else:
+        checkpoint_fingerprint, checkpoint_details = model_provenance
+    if sensitivity_provenance is None:
+        sensitivity_fingerprint, sensitivity_details = (
+            sensitivity_checkpoint_provenance(checkpoint_fingerprint)
+        )
+    else:
+        sensitivity_fingerprint, sensitivity_details = sensitivity_provenance
     manifest = {
         "checkpoint_schema_version": CHECKPOINT_SCHEMA_VERSION,
         "checkpoint_fingerprint": checkpoint_fingerprint,
@@ -3287,23 +3332,29 @@ def _run_active_analysis(fold_mode="clustered", stage="all"):
 
     if stage in ("all", "effects"):
         # Step 2. Save results and build the main publication tables.
-        save_main_results_and_tables(
-            estimates=estimates,
-            irm_result_tables=irm_tables,
-            apos_result_tables=apos_tables,
-            weight_rows=weight_rows,
-            checkpoint_prefix="",
-            file_suffix="",
-            caption_suffix="",
+        reporting.save_effect_outputs(
+            _ACTIVE_SPEC,
+            {
+                "estimates": estimates,
+                "irm_result_tables": irm_tables,
+                "apos_result_tables": apos_tables,
+                "weight_rows": weight_rows,
+                "checkpoint_prefix": "",
+                "caption_suffix": "",
+            },
             quick_sample=SAMPLED,
             fold_mode=fold_mode,
         )
 
     if stage in ("all", "sensitivity"):
-        run_sensitivity_analysis(estimates, quick_sample=SAMPLED, fold_mode=fold_mode)
+        reporting.run_sensitivity(
+            _ACTIVE_SPEC, estimates, quick_sample=SAMPLED, fold_mode=fold_mode
+        )
 
     if stage in ("all", "gate"):
-        run_gate_analysis(estimates, quick_sample=SAMPLED, fold_mode=fold_mode)
+        reporting.run_gate(
+            _ACTIVE_SPEC, estimates, quick_sample=SAMPLED, fold_mode=fold_mode
+        )
 
     if stage in ("all", "effects"):
         # Step 5. Repeat the main analysis in four selected countries.
@@ -3326,23 +3377,35 @@ def _run_active_analysis(fold_mode="clustered", stage="all"):
             quick_sample=SAMPLED,
             fold_mode=fold_mode,
         )
-        save_main_results_and_tables(
-            estimates=selected_estimates,
-            irm_result_tables=selected_irm_tables,
-            apos_result_tables=selected_apos_tables,
-            weight_rows=selected_weight_rows,
-            checkpoint_prefix="selected_countries_",
-            file_suffix="_selected_countries",
-            caption_suffix=(
-                ": Dominican Republic, Guyana, Honduras, and Malawi"
-            ),
+        reporting.save_effect_outputs(
+            _ACTIVE_SPEC,
+            {
+                "estimates": selected_estimates,
+                "irm_result_tables": selected_irm_tables,
+                "apos_result_tables": selected_apos_tables,
+                "weight_rows": selected_weight_rows,
+                "checkpoint_prefix": "selected_countries_",
+                "caption_suffix": (
+                    ": Dominican Republic, Guyana, Honduras, and Malawi"
+                ),
+            },
             quick_sample=SAMPLED,
+            file_suffix="_selected_countries",
             fold_mode=fold_mode,
         )
         print("Selected-country main analysis completed.", flush=True)
 
     # Step 6. Record the options and files produced.
-    write_manifest()
+    checkpoint_fingerprint, checkpoint_details = checkpoint_provenance()
+    sensitivity_fingerprint, sensitivity_details = (
+        sensitivity_checkpoint_provenance(checkpoint_fingerprint)
+    )
+    reporting.write_manifest(
+        _ACTIVE_SPEC,
+        model_provenance=(checkpoint_fingerprint, checkpoint_details),
+        sensitivity_provenance=(sensitivity_fingerprint, sensitivity_details),
+        fold_mode=fold_mode,
+    )
 
     print("\nAnalysis finished.")
     print(f"Checkpoints: {CHECKPOINT_DIR}")
