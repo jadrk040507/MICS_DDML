@@ -7,8 +7,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-import ate
-import att
+import _ate_impl as ate
+import _att_impl as att
 
 
 class GateGroupTests(unittest.TestCase):
@@ -67,3 +67,4 @@ class GateGroupTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+

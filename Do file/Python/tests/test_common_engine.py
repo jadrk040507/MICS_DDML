@@ -5,14 +5,43 @@ from pathlib import Path
 import unittest
 
 import numpy as np
+from types import SimpleNamespace
+from unittest.mock import patch
 from sklearn.linear_model import LinearRegression, LogisticRegression, Ridge
 
-import ate
-import att
-import ddml_engine
+import _ate_impl as ate
+import _att_impl as att
+import _ddml_engine as ddml_engine
 
 
 class CommonEngineEquivalenceTests(unittest.TestCase):
+    def test_shared_inference_helpers_are_imported_by_both_estimands(self):
+        for name in ("summary_with_clustered_inference", "estimate_gate_from_contrast"):
+            with self.subTest(helper=name):
+                shared = getattr(ddml_engine, name)
+                self.assertIs(getattr(ate, name), shared)
+                self.assertIs(getattr(att, name), shared)
+
+    def test_convex_weights_reject_nonfinite_predictions(self):
+        predictions = np.array([[np.nan, 0.2], [0.3, 0.4]])
+        target = np.array([0.0, 1.0])
+
+        with self.assertRaisesRegex(ValueError, "finite"):
+            ddml_engine.convex_weights(predictions, target)
+
+    def test_convex_weights_reject_unsuccessful_optimization(self):
+        failed = SimpleNamespace(
+            success=False,
+            x=np.array([0.5, 0.5]),
+            message="iteration limit reached",
+        )
+        with patch.object(ddml_engine, "minimize", return_value=failed):
+            with self.assertRaisesRegex(RuntimeError, "iteration limit"):
+                ddml_engine.convex_weights(
+                    np.array([[0.0, 1.0], [1.0, 0.0]]),
+                    np.array([0.0, 1.0]),
+                )
+
     def test_both_estimands_use_the_same_engine_objects(self):
         self.assertIs(ate.ConvexRegressor, ddml_engine.ConvexRegressor)
         self.assertIs(att.ConvexRegressor, ddml_engine.ConvexRegressor)
@@ -149,3 +178,4 @@ class CommonEngineEquivalenceTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+

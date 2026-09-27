@@ -46,6 +46,8 @@ import _ddml_engine as _legacy_ddml_engine
 sys.modules.setdefault("ddml_engine", _legacy_ddml_engine)
 
 from _ddml_engine import (
+    estimate_gate_from_contrast,
+    summary_with_clustered_inference,
     ConvexClassifier,
     ConvexRegressor,
     build_clustered_sensitivity_framework,
@@ -620,146 +622,6 @@ def result_pickle_path(name, quick_sample, file_suffix=""):
 # The fitted model is reused for projections onto prespecified groups.
 # -----------------------------------------------------------------------------
 
-def estimate_gate_from_contrast(
-    contrast,
-    treatment_level,
-    effect_index,
-    group_values,
-    cluster_ids,
-    group_labels,
-    level=0.95,
-    n_rep_boot=500,
-):
-    """Project a fitted orthogonal signal onto prespecified GATE groups.
-
-    Parameters
-    ----------
-    contrast : DoubleMLFramework
-        Fitted IRM effect or APOS treatment contrast.
-    treatment_level : object
-        Treatment label copied into the returned rows.
-    effect_index : int
-        Contrast column projected from the J effects in ``contrast``.
-    group_values : array-like
-        Numeric group code for every observation.
-    cluster_ids : array-like or None
-        PSU identifiers for clustered covariance; ``None`` requests HC0.
-    group_labels : dict[str, str]
-        Mapping from numeric group strings to readable labels.
-    level : float, default=0.95
-        Pointwise and joint confidence level.
-    n_rep_boot : int, default=500
-        Gaussian draws used for joint intervals.
-
-    Returns
-    -------
-    pandas.DataFrame
-        One row per observed group with coefficient, SE, p-value, intervals,
-        sample counts, and median BLP R-squared.
-    """
-
-    # Use the same N observations x J effects x R repetitions layout as the
-    # clustered-inference section above.
-    scaled_influence_scores = score_array_with_named_dimensions(
-        contrast.scaled_psi
-    )
-    # DoubleML stores scaled_psi = theta - orthogonal_signal for these linear
-    # scores. GATEs must project the orthogonal signal itself, as the native
-    # IRM gate() method does, rather than project the centered influence term.
-    all_thetas = np.asarray(contrast.all_thetas, dtype=float)
-    # all_thetas is J x R. np.newaxis inserts an observation dimension, making
-    # it 1 x J x R; NumPy then broadcasts each theta across all N observations
-    # when subtracting the N x J x R influence-score array.
-    orthogonal_signals = (
-        all_thetas[np.newaxis, :, :] - scaled_influence_scores
-    )
-
-    values = pd.Series(group_values).reset_index(drop=True)
-    valid_observation = values.notna().to_numpy()
-    values = values.loc[valid_observation].reset_index(drop=True)
-    orthogonal_signals = orthogonal_signals[valid_observation, :, :]
-
-    # Normalize numeric group codes to strings before creating indicators.
-    numeric_values = pd.to_numeric(values)
-    values = numeric_values.astype(int).astype("string")
-
-    if cluster_ids is not None:
-        cluster_ids = np.asarray(cluster_ids)[valid_observation]
-
-    group_indicators = pd.get_dummies(
-        values.astype("string"),
-        prefix="group",
-        dtype=float,
-    )
-    observed_groups = group_indicators.sum(axis=0) > 0
-    group_indicators = group_indicators.loc[:, observed_groups]
-
-    blp = dml.DoubleMLBLP(
-        orthogonal_signals[:, effect_index, :],
-        basis=group_indicators,
-        is_gate=True,
-    )
-    if cluster_ids is None:
-        blp.fit(cov_type="HC0")
-    else:
-        blp.fit(
-            cov_type="cluster",
-            cov_kwds={"groups": cluster_ids},
-        )
-
-    pointwise_interval = blp.confint(joint=False, level=float(level))
-    joint_interval = blp.confint(
-        joint=True,
-        level=float(level),
-        n_rep_boot=int(n_rep_boot),
-    )
-
-    labels = group_labels
-    r_squared_by_repetition = [
-        float(fitted_model.rsquared)
-        for fitted_model in blp._blp_model
-    ]
-    median_r_squared = float(np.median(r_squared_by_repetition))
-
-    rows = []
-    for indicator_name in group_indicators.columns:
-        raw_value = indicator_name.removeprefix("group_")
-        readable_label = labels[raw_value]
-
-        group_mask = values.astype("string").eq(raw_value).to_numpy()
-        if cluster_ids is None:
-            number_of_group_clusters = np.nan
-        else:
-            number_of_group_clusters = pd.Series(
-                cluster_ids[group_mask]
-            ).nunique()
-
-        result = blp.summary.loc[indicator_name]
-        rows.append({
-            "treatment_level": treatment_level,
-            "group_value": raw_value,
-            "group_label": readable_label,
-            "n": int(group_indicators[indicator_name].sum()),
-            "n_psu": (
-                int(number_of_group_clusters)
-                if pd.notna(number_of_group_clusters)
-                else np.nan
-            ),
-            "r2": median_r_squared,
-            "coef": float(result["coef"]),
-            "se": float(result["std err"]),
-            "pval": float(result["P>|t|"]),
-            "ci_lower": float(pointwise_interval.loc[indicator_name].iloc[0]),
-            "ci_upper": float(pointwise_interval.loc[indicator_name].iloc[-1]),
-            "ci_lower_joint": float(
-                joint_interval.loc[indicator_name].iloc[0]
-            ),
-            "ci_upper_joint": float(
-                joint_interval.loc[indicator_name].iloc[-1]
-            ),
-        })
-
-    return pd.DataFrame(rows)
 
 
 # -----------------------------------------------------------------------------
@@ -1302,47 +1164,6 @@ def _add_metadata(summary, dataset, outcome, method, specification, n, clusters)
     return table
 
 
-def summary_with_clustered_inference(summary, clustered_inference):
-    """Replace ordinary APOS inference with repeated clustered inference.
-
-    This copy is saved in ``results_apos.pkl``. The result file and LaTeX
-    tables therefore report the same standard errors, t statistics, p-values,
-    and confidence intervals.
-
-    Parameters
-    ----------
-    summary : pandas.DataFrame
-        Ordinary DoubleML contrast summary providing coefficients and rows.
-    clustered_inference : dict[str, numpy.ndarray]
-        Output from ``cluster_robust_framework_inference``.
-
-    Returns
-    -------
-    pandas.DataFrame
-        Summary with clustered SEs, p-values, and confidence intervals.
-    """
-
-    adjusted = summary.copy()
-    standard_errors = np.asarray(clustered_inference["se"], dtype=float)
-
-    coefficients = adjusted["coef"].to_numpy(dtype=float)
-    t_statistics = coefficients / standard_errors
-
-    adjusted["std err"] = standard_errors
-    adjusted["t"] = t_statistics
-    adjusted["P>|t|"] = np.asarray(
-        clustered_inference["pval"],
-        dtype=float,
-    )
-    adjusted["2.5 %"] = np.asarray(
-        clustered_inference["ci_lower"],
-        dtype=float,
-    )
-    adjusted["97.5 %"] = np.asarray(
-        clustered_inference["ci_upper"],
-        dtype=float,
-    )
-    return adjusted
 
 
 # =============================================================================
