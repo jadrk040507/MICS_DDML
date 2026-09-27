@@ -1,9 +1,4 @@
-"""Shared Super Learner engine used by the ATE and ATT analyses.
-
-This module contains shared prediction and inference machinery. The separate
-ATE and ATT workflows in ``_ate_impl.py`` and ``_att_impl.py`` call these
-helpers while keeping their estimands and target populations distinct.
-"""
+"""Shared data preparation, cross-fitting, Super Learner, and inference tools."""
 
 import os
 from time import perf_counter
@@ -20,6 +15,194 @@ from sklearn.model_selection import (
     StratifiedGroupKFold,
     StratifiedKFold,
 )
+
+def controls_for_sample(common_controls, child_controls, child):
+    """Return controls in their prespecified modeling order."""
+    controls = list(common_controls)
+    if child:
+        controls.extend(child_controls)
+    return controls
+
+
+def complete_case_sample(
+    data,
+    outcome,
+    treatment,
+    controls,
+    *,
+    cluster=True,
+    cluster_column="Cluster_var",
+    country_column="country_cat",
+    allowed_levels=None,
+    extra_columns=(),
+):
+    """Select model-complete rows while retaining optional metadata."""
+    required = [outcome, treatment, *controls, country_column]
+    if cluster:
+        required.append(cluster_column)
+
+    frame = data[required].copy().dropna()
+    if allowed_levels is not None:
+        frame = frame[frame[treatment].isin(allowed_levels)].copy()
+    for column in extra_columns:
+        frame[column] = data.loc[frame.index, column]
+    return frame.reset_index(drop=True)
+
+
+def make_frame(
+    data,
+    outcome,
+    treatment,
+    controls,
+    *,
+    categorical_controls,
+    cluster=True,
+    cluster_column="Cluster_var",
+    country_column="country_cat",
+    allowed_levels=None,
+):
+    """Create the encoded DoubleML frame and ordered predictor names."""
+    frame = complete_case_sample(
+        data,
+        outcome,
+        treatment,
+        controls,
+        cluster=cluster,
+        cluster_column=cluster_column,
+        country_column=country_column,
+        allowed_levels=allowed_levels,
+    )
+
+    categorical = list(categorical_controls)
+    numeric = [name for name in controls if name not in categorical]
+    controls_frame = frame[numeric + categorical].copy()
+    x = pd.get_dummies(
+        controls_frame,
+        columns=categorical,
+        drop_first=True,
+        dtype=float,
+    ).astype(float).reset_index(drop=True)
+    if cluster:
+        x["_cluster_model_code"] = pd.factorize(
+            frame[cluster_column], sort=True
+        )[0].astype(float)
+
+    columns = [outcome, treatment]
+    if cluster:
+        columns.append(cluster_column)
+    model_frame = pd.concat([frame[columns], x], axis=1)
+    return model_frame, list(x.columns)
+
+
+def load_analysis_data(
+    path,
+    outcome,
+    controls,
+    *,
+    country_codes=None,
+    quick_sample=False,
+    sample_fraction=0.05,
+    sample_seed=42,
+):
+    """Load only analysis columns, filter countries, then draw a sample."""
+    country_column = "country_cat"
+    columns = set(controls)
+    columns.update({
+        outcome,
+        "water_treatment",
+        "WQ15_g",
+        country_column,
+        "Cluster_var",
+        "RiskSource",
+    })
+    data = pd.read_stata(
+        path,
+        columns=sorted(columns),
+        convert_categoricals=False,
+    )
+    if country_codes is not None:
+        data = data[data[country_column].isin(country_codes)].copy()
+        print(f"Selected countries: {len(data):,} observations before sampling")
+    if quick_sample:
+        data = data.sample(
+            frac=sample_fraction,
+            random_state=sample_seed,
+        ).reset_index(drop=True)
+        print(
+            f"Quick sample: {len(data):,} observations "
+            f"({sample_fraction:.0%} of loaded data)"
+        )
+    return data
+
+def validate_splits(splits, target, groups=None):
+    """Check sample coverage, treatment support, and optional PSU isolation."""
+    expected_levels = np.unique(target)
+    expected_rows = np.arange(len(target))
+    for repetition in splits:
+        tested_rows = np.concatenate([test for _, test in repetition])
+        if not np.array_equal(np.sort(tested_rows), expected_rows):
+            raise ValueError("Test folds do not partition the analysis sample.")
+        for train, test in repetition:
+            if not np.array_equal(np.unique(target[train]), expected_levels):
+                raise ValueError("A training fold is missing a treatment level.")
+            if not np.array_equal(np.unique(target[test]), expected_levels):
+                raise ValueError("A test fold is missing a treatment level.")
+            if groups is not None:
+                overlap = np.intersect1d(groups[train], groups[test])
+                if overlap.size:
+                    raise ValueError("A sampling cluster appears in train and test.")
+
+
+def make_iid_splits(frame, treatment, *, n_folds, repetitions, seed):
+    """Create deterministic stratified folds for observation-level fitting."""
+    target = frame[treatment].to_numpy()
+    all_repetitions = []
+    for repetition in range(repetitions):
+        splitter = StratifiedKFold(
+            n_splits=n_folds,
+            shuffle=True,
+            random_state=seed + repetition,
+        )
+        all_repetitions.append(
+            list(splitter.split(np.zeros(len(frame)), target))
+        )
+    validate_splits(all_repetitions, target)
+    return all_repetitions
+
+
+def make_cluster_splits(
+    frame, treatment, *, n_folds, repetitions, seed,
+    cluster_column="Cluster_var",
+):
+    """Create stratified folds that keep every sampling cluster together."""
+    groups = frame[cluster_column].to_numpy()
+    target = frame[treatment].to_numpy()
+    all_repetitions = []
+    for repetition in range(repetitions):
+        splitter = StratifiedGroupKFold(
+            n_splits=n_folds,
+            shuffle=True,
+            random_state=seed + repetition,
+        )
+        all_repetitions.append(
+            list(splitter.split(np.zeros(len(frame)), target, groups))
+        )
+    validate_splits(all_repetitions, target, groups=groups)
+    return all_repetitions
+
+
+def make_cluster_split_metadata(
+    frame, splits, *, cluster_column="Cluster_var",
+):
+    """Translate observation folds into DoubleML's PSU-fold metadata."""
+    groups = frame[cluster_column].to_numpy()
+    return [
+        [
+            ([np.unique(groups[train])], [np.unique(groups[test])])
+            for train, test in repetition
+        ]
+        for repetition in splits
+    ]
 
 def estimate_gate_from_contrast(
     contrast,

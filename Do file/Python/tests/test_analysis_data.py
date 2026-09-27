@@ -7,9 +7,9 @@ from unittest.mock import patch
 import pandas as pd
 
 try:
-    analysis_data = importlib.import_module("_analysis_data")
+    analysis_data = importlib.import_module("ddml")
 except ModuleNotFoundError as error:
-    if error.name != "_analysis_data":
+    if error.name != "ddml":
         raise
     analysis_data = None
 
@@ -32,6 +32,40 @@ class SharedAnalysisDataTests(unittest.TestCase):
             self.helper("controls_for_sample")(common, child, True),
             ["wealth", "urban", "age", "male"],
         )
+
+    def test_ddml_exports_data_fold_and_inference_api(self):
+        required = (
+            "controls_for_sample",
+            "complete_case_sample",
+            "make_frame",
+            "load_analysis_data",
+            "make_iid_splits",
+            "make_cluster_splits",
+            "cluster_robust_framework_inference",
+        )
+        for name in required:
+            with self.subTest(name=name):
+                self.assertTrue(callable(getattr(analysis_data, name, None)))
+
+    def test_clustered_sample_drops_missing_psu(self):
+        data = pd.DataFrame({
+            "y": [1.0, 2.0], "d": [0, 1], "x": [3.0, 4.0],
+            "country_cat": [1, 1], "Cluster_var": [10.0, None],
+        })
+        sample = self.helper("complete_case_sample")(data, "y", "d", ["x"])
+        self.assertEqual(sample["y"].tolist(), [1.0])
+
+    def test_optional_metadata_does_not_drop_rows(self):
+        data = pd.DataFrame({
+            "y": [1.0, 2.0], "d": [0, 1], "x": [3.0, 4.0],
+            "country_cat": [1, 1], "Cluster_var": [10, 11],
+            "metadata": [None, "present"],
+        })
+        sample = self.helper("complete_case_sample")(
+            data, "y", "d", ["x"], extra_columns=("metadata",),
+        )
+        self.assertEqual(len(sample), 2)
+        self.assertTrue(pd.isna(sample.loc[0, "metadata"]))
 
     def test_complete_case_rows_and_optional_metadata(self):
         data = pd.DataFrame({

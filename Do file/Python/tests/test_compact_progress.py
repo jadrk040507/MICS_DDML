@@ -8,7 +8,7 @@ from unittest.mock import patch
 import numpy as np
 from sklearn.linear_model import LinearRegression
 
-from _ddml_engine import ConvexRegressor
+from ddml import ConvexRegressor
 
 
 class CompactProgressTests(unittest.TestCase):

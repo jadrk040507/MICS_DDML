@@ -8,7 +8,7 @@ the equivalent weighted-APO score for that same treated population.
 
 Read the numbered section map below to find analysis choices, data
 preparation, model fitting, inference, sensitivity analysis, or GATE results.
-The shared prediction engine is in ``_ddml_engine.py``. Results and
+The shared prediction engine is in ``ddml.py``. Results and
 checkpoints go to ``Output/ATT_C/`` (clustered folds) or ``Output/ATT_U/``
 (unclustered folds).
 """
@@ -35,19 +35,14 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from xgboost import XGBClassifier, XGBRegressor
 
-import _analysis_data
-import _cross_fitting
+import ddml
 from _sensitivity_scale import benchmark_diagonal_equivalent
 from _sensitivity_groups import benchmark_groups
 from _checkpoint_io import (
     OutcomeCheckpointBundle, atomic_dump, valid_sensitivity_rows,
 )
 from _model_checkpoint_compat import legacy_model_path
-import sys
-import _ddml_engine as _legacy_ddml_engine
-sys.modules.setdefault("ddml_engine", _legacy_ddml_engine)
-
-from _ddml_engine import (
+from ddml import (
     estimate_gate_from_contrast,
     summary_with_clustered_inference,
     ConvexClassifier,
@@ -75,7 +70,7 @@ warnings.filterwarnings("ignore", category=ConvergenceWarning)
 # FILE MAP — READ THIS FIRST
 # =============================================================================
 # This script keeps the ATT-specific workflow together. Shared statistical
-# machinery lives in _ddml_engine.py. Search for "SECTION" to navigate here.
+# machinery lives in ddml.py. Search for "SECTION" to navigate here.
 #
 #   SECTION 1  Choices, folds, repetitions, paths, and analysis list
 #   SECTION 2  Controls, complete-case sample, and model-ready data
@@ -184,7 +179,7 @@ COMMON_CONTROLS = [
 
 def controls_for_sample(child):
     """Return the prespecified controls for a household or child sample."""
-    return _analysis_data.controls_for_sample(
+    return ddml.controls_for_sample(
         COMMON_CONTROLS, ("age", "male"), child
     )
 
@@ -194,7 +189,7 @@ def complete_case_sample(
     allowed_levels=None, extra_columns=(),
 ):
     """Select complete-case observations for this estimand's controls."""
-    return _analysis_data.complete_case_sample(
+    return ddml.complete_case_sample(
         data, outcome, treatment, controls_for_sample(child),
         cluster=cluster, allowed_levels=allowed_levels,
         extra_columns=extra_columns,
@@ -205,7 +200,7 @@ def make_frame(
     data, outcome, treatment, child=False, cluster=True, allowed_levels=None,
 ):
     """Build the encoded model frame using shared data preparation."""
-    return _analysis_data.make_frame(
+    return ddml.make_frame(
         data, outcome, treatment, controls_for_sample(child),
         categorical_controls=(
             "windex5", "WS1_g", "wq27_decile", "Toilet", "country_cat",
@@ -216,7 +211,7 @@ def make_frame(
 
 # SECTION 3 OF 10 — SHARED PREDICTION ENGINE
 # Prediction and inference code shared by both estimands lives in
-# _ddml_engine.py. The candidate models used by this workflow are listed next.
+# ddml.py. The candidate models used by this workflow are listed next.
 # =============================================================================
 
 # =============================================================================
@@ -298,9 +293,9 @@ def checkpoint_provenance():
 
     files = {
         "analysis_script": Path(__file__),
-        "shared_engine": Path(__file__).with_name("_ddml_engine.py"),
-        "analysis_data": Path(__file__).with_name("_analysis_data.py"),
-        "cross_fitting": Path(__file__).with_name("_cross_fitting.py"),
+        "shared_engine": Path(__file__).with_name("ddml.py"),
+        "analysis_data": Path(__file__).with_name("ddml.py"),
+        "cross_fitting": Path(__file__).with_name("ddml.py"),
         "checkpoint_io": Path(__file__).with_name("_checkpoint_io.py"),
         "environment_lock": PROJECT / "uv.lock",
         "project_config": PROJECT / "pyproject.toml",
@@ -972,26 +967,26 @@ def fit_apos(frame, x_columns, outcome):
 
 def _validate_splits(splits, target, groups=None):
     """Keep the existing local helper name for downstream callers."""
-    return _cross_fitting.validate_splits(splits, target, groups)
+    return ddml.validate_splits(splits, target, groups)
 
 
 def make_iid_splits(frame, treatment):
     """Build reproducible observation-level folds with the run settings."""
-    return _cross_fitting.make_iid_splits(
+    return ddml.make_iid_splits(
         frame, treatment, n_folds=FOLDS, repetitions=REPETITIONS, seed=SEED
     )
 
 
 def make_cluster_splits(frame, treatment):
     """Build reproducible PSU-level folds with the run settings."""
-    return _cross_fitting.make_cluster_splits(
+    return ddml.make_cluster_splits(
         frame, treatment, n_folds=FOLDS, repetitions=REPETITIONS, seed=SEED
     )
 
 
 def make_cluster_split_metadata(frame, splits):
     """Build DoubleML's cluster-fold metadata for an observation split."""
-    return _cross_fitting.make_cluster_split_metadata(frame, splits)
+    return ddml.make_cluster_split_metadata(frame, splits)
 
 
 # -----------------------------------------------------------------------------
@@ -1114,7 +1109,7 @@ def _add_metadata(summary, dataset, outcome, method, specification, n, clusters)
 
 def load_analysis_data(path, outcome, child, country_codes, quick_sample):
     """Load columns needed for one household or child outcome."""
-    return _analysis_data.load_analysis_data(
+    return ddml.load_analysis_data(
         path, outcome, controls_for_sample(child),
         country_codes=country_codes, quick_sample=quick_sample,
         sample_fraction=SAMPLE_FRAC, sample_seed=SAMPLE_SEED,

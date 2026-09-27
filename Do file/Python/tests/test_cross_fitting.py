@@ -4,7 +4,7 @@ import unittest
 import numpy as np
 import pandas as pd
 
-from _cross_fitting import (
+from ddml import (
     make_cluster_split_metadata,
     make_cluster_splits,
     make_iid_splits,
