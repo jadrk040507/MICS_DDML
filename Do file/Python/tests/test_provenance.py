@@ -7,18 +7,13 @@ from unittest.mock import patch
 
 import _ate_impl as ate
 import _att_impl as att
-import _provenance
-from _provenance import build_checkpoint_provenance
+import artifacts
+from artifacts import build_checkpoint_provenance
 
 
 class CheckpointProvenanceTests(unittest.TestCase):
     def test_model_provenance_tracks_shared_workflow_helpers(self):
-        expected = {
-            "analysis_data",
-            "cross_fitting",
-            "shared_engine",
-            "checkpoint_io",
-        }
+        expected = {"analysis_script", "ddml", "artifacts"}
         for module in (ate, att):
             with self.subTest(module=module.__name__):
                 _, details = module.checkpoint_provenance()
@@ -27,7 +22,7 @@ class CheckpointProvenanceTests(unittest.TestCase):
                     self.assertEqual(details["files"][name]["status"], "present")
 
     def test_sensitivity_helper_change_invalidates_only_sensitivity_fingerprint(self):
-        builder = getattr(_provenance, "build_sensitivity_provenance", None)
+        builder = getattr(artifacts, "build_sensitivity_provenance", None)
         self.assertTrue(callable(builder), "sensitivity provenance builder is missing")
         with tempfile.TemporaryDirectory() as directory:
             helper = Path(directory) / "sensitivity_scale.py"
@@ -49,26 +44,19 @@ class CheckpointProvenanceTests(unittest.TestCase):
         )
 
     def test_sensitivity_checkpoints_use_their_own_fingerprint(self):
-        for module in (ate, att):
-            with self.subTest(module=module.__name__), tempfile.TemporaryDirectory() as directory:
-                with (
-                    patch.object(module, "CHECKPOINT_DIR", Path(directory)),
-                    patch.object(
-                        module,
-                        "sensitivity_checkpoint_provenance",
-                        return_value=("s" * 64, {}),
-                        create=True,
-                    ),
-                ):
-                    store = module.CheckpointStore(
-                        quick_sample=False,
-                        fingerprint="model_fingerprint",
-                    )
-                    sensitivity_path = store.path("sensitivity_groups_v1_example")
-                    model_path = store.path("HH_example_IRM_clustered")
+        with tempfile.TemporaryDirectory() as directory:
+            store = artifacts.CheckpointStore(
+                Path(directory),
+                estimand="ATE",
+                quick_sample=False,
+                model_fingerprint="m" * 64,
+                sensitivity_fingerprint="s" * 64,
+            )
+            sensitivity_path = store.path("sensitivity_groups_v1_example")
+            model_path = store.path("HH_example_IRM_clustered")
 
-            self.assertIn("_ssssssssssss", sensitivity_path.name)
-            self.assertIn("_model_finger", model_path.name)
+        self.assertIn(f"_{'s' * 12}", sensitivity_path.name)
+        self.assertIn(f"_{'m' * 12}", model_path.name)
 
     def test_worker_configuration_invalidates_model_checkpoint(self):
         for module in (ate, att):

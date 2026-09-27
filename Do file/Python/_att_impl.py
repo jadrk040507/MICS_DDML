@@ -38,10 +38,11 @@ from xgboost import XGBClassifier, XGBRegressor
 import ddml
 from _sensitivity_scale import benchmark_diagonal_equivalent
 from _sensitivity_groups import benchmark_groups
-from _checkpoint_io import (
-    OutcomeCheckpointBundle, atomic_dump, valid_sensitivity_rows,
+from artifacts import (
+    CheckpointStore, OutcomeCheckpointBundle, atomic_dump,
+    build_checkpoint_provenance, build_sensitivity_provenance,
+    valid_sensitivity_rows,
 )
-from _model_checkpoint_compat import legacy_model_path
 from ddml import (
     estimate_gate_from_contrast,
     summary_with_clustered_inference,
@@ -55,10 +56,6 @@ from ddml import (
     score_array_with_named_dimensions,
     sensitivity_params,
     sum_rows_within_psu,
-)
-from _provenance import (
-    build_checkpoint_provenance,
-    build_sensitivity_provenance,
 )
 
 
@@ -293,10 +290,8 @@ def checkpoint_provenance():
 
     files = {
         "analysis_script": Path(__file__),
-        "shared_engine": Path(__file__).with_name("ddml.py"),
-        "analysis_data": Path(__file__).with_name("ddml.py"),
-        "cross_fitting": Path(__file__).with_name("ddml.py"),
-        "checkpoint_io": Path(__file__).with_name("_checkpoint_io.py"),
+        "ddml": Path(__file__).with_name("ddml.py"),
+        "artifacts": Path(__file__).with_name("artifacts.py"),
         "environment_lock": PROJECT / "uv.lock",
         "project_config": PROJECT / "pyproject.toml",
     }
@@ -333,8 +328,7 @@ def sensitivity_checkpoint_provenance(model_fingerprint=None):
         model_fingerprint, _ = checkpoint_provenance()
     helper_dir = Path(__file__).parent
     files = {
-        "checkpoint_io": helper_dir / "_checkpoint_io.py",
-        "provenance_builder": helper_dir / "_provenance.py",
+        "artifacts": helper_dir / "artifacts.py",
         "sensitivity_groups": helper_dir / "_sensitivity_groups.py",
         "sensitivity_scale": helper_dir / "_sensitivity_scale.py",
     }
@@ -342,6 +336,22 @@ def sensitivity_checkpoint_provenance(model_fingerprint=None):
         CHECKPOINT_SCHEMA_VERSION,
         model_fingerprint,
         files,
+    )
+
+
+def make_checkpoint_store(quick_sample):
+    """Build a current-only ATT checkpoint store."""
+    model_fingerprint, _ = checkpoint_provenance()
+    sensitivity_fingerprint, _ = sensitivity_checkpoint_provenance(
+        model_fingerprint
+    )
+    return CheckpointStore(
+        CHECKPOINT_DIR,
+        estimand=ESTIMAND,
+        quick_sample=quick_sample,
+        model_fingerprint=model_fingerprint,
+        sensitivity_fingerprint=sensitivity_fingerprint,
+        sample_fraction=SAMPLE_FRAC,
     )
 
 
@@ -355,148 +365,6 @@ def sensitivity_checkpoint_provenance(model_fingerprint=None):
 # 5A. Checkpoint files and resume logic
 # One place controls full versus sample filenames and prevents overwriting.
 # -----------------------------------------------------------------------------
-
-class CheckpointStore:
-    """Read and write checkpoints for either a full or quick-sample run.
-
-    This class is the single place that knows how checkpoint filenames are
-    constructed, how fitted models are made smaller before saving, and how
-    load/save activity is reported to the person running the script.
-
-    Parameters
-    ----------
-    quick_sample : bool
-        If ``True``, add ``_sample05`` to every checkpoint name. This prevents
-        a quick diagnostic run from loading or overwriting full-run models.
-    """
-
-    def __init__(self, quick_sample, fingerprint=None):
-        """Remember whether this store belongs to a full or sample run.
-
-        Parameters
-        ----------
-        quick_sample : bool
-            Select sample-tagged filenames when ``True``.
-        """
-
-        self.quick_sample = bool(quick_sample)
-        if fingerprint is None:
-            fingerprint, provenance = checkpoint_provenance()
-        else:
-            provenance = None
-        self.fingerprint = str(fingerprint)
-        self.provenance = provenance
-        self.sensitivity_fingerprint, self.sensitivity_provenance = (
-            sensitivity_checkpoint_provenance(self.fingerprint)
-        )
-
-    def path(self, name):
-        """Return the filesystem path for a logical checkpoint name.
-
-        Parameters
-        ----------
-        name : str
-            Human-readable model or analysis name without ``.pkl``.
-
-        Returns
-        -------
-        pathlib.Path
-            Full checkpoint path, including version and sample tags.
-        """
-
-        sample_tag = (
-            f"_sample{int(SAMPLE_FRAC * 100):02d}"
-            if self.quick_sample
-            else ""
-        )
-        fingerprint = (
-            self.sensitivity_fingerprint
-            if name.startswith("sensitivity_")
-            else self.fingerprint
-        )
-        provenance_tag = f"_{fingerprint[:12]}"
-        current = CHECKPOINT_DIR / f"{name}{provenance_tag}{sample_tag}.pkl"
-        if current.exists():
-            return current
-        legacy = legacy_model_path(
-            PROJECT, "ATT", name, self.provenance, self.quick_sample,
-        )
-        return legacy if legacy is not None else current
-
-    def exists(self, name):
-        """Check whether a named checkpoint is already on disk.
-
-        Parameters
-        ----------
-        name : str
-            Logical checkpoint name.
-
-        Returns
-        -------
-        bool
-            ``True`` when the matching full/sample file exists.
-        """
-
-        return self.path(name).exists()
-
-    def load(self, name):
-        """Load one checkpoint and announce the reused filename.
-
-        Parameters
-        ----------
-        name : str
-            Logical checkpoint name.
-
-        Returns
-        -------
-        object
-            Deserialized model or sensitivity rows.
-        """
-
-        path = self.path(name)
-        print(f"Loading checkpoint: {path.name}", flush=True)
-        return joblib.load(path)
-
-    def save(self, name, value, fitted_model=False):
-        """Save one checkpoint and return the same value.
-
-        Parameters
-        ----------
-        name : str
-            Logical checkpoint name without a suffix or extension.
-        value : object
-            Python object to serialize with joblib.
-        fitted_model : bool, default=False
-            Set to ``True`` for fitted IRM/APOS checkpoints. IRM learner
-            weights are retained while bulky fitted nuisance models are
-            removed. Plain sensitivity rows are saved unchanged.
-
-        Returns
-        -------
-        object
-            The unmodified input ``value``, allowing save calls in workflows.
-        """
-
-        if fitted_model:
-            # Clustered APOS is stored as {"model": ..., "cluster_se": ...};
-            # other model checkpoints contain the DoubleML model directly.
-            model = value["model"] if isinstance(value, dict) else value
-            if not isinstance(model, dml.DoubleMLAPOS):
-                # Preserve the interpretable Super Learner weights before
-                # releasing fitted nuisance learners that make IRM very large.
-                model.convex_weights = collect_convex_weights(model)
-                model._models = None
-
-        path = self.path(name)
-        if name.startswith("sensitivity_"):
-            atomic_dump(value, path)
-        else:
-            joblib.dump(value, path, compress=3)
-        print(f"Saved checkpoint: {path.name}", flush=True)
-        return value
-
-
-
 
 # -----------------------------------------------------------------------------
 # 5B. Result filenames and saved Super Learner weights
@@ -1161,7 +1029,7 @@ def estimate_one_outcome(
         Result tables, Super Learner weights, and an on-demand model bundle.
     """
 
-    checkpoints = CheckpointStore(quick_sample)
+    checkpoints = make_checkpoint_store(quick_sample)
     print(f"\nPreparing {dataset} — {outcome}", flush=True)
     print("Step 1 of 4: IRM with clustered folds", flush=True)
     data = load_analysis_data(
@@ -2448,7 +2316,7 @@ def run_sensitivity_analysis(estimates, quick_sample, fold_mode="both"):
         files after every block is available.
     """
 
-    checkpoints = CheckpointStore(quick_sample)
+    checkpoints = make_checkpoint_store(quick_sample)
     print("\nSensitivity analysis", flush=True)
     sensitivity_rows = []
     for (dataset, outcome), bundle in estimates.items():

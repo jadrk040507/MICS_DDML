@@ -81,12 +81,14 @@ class RepeatedInferenceTests(unittest.TestCase):
             temporary_path = Path(temporary_directory)
             with patch.object(ate, "CHECKPOINT_DIR", temporary_path):
                 full_store = ate.CheckpointStore(
-                    quick_sample=False,
-                    fingerprint="testfingerprint",
+                    temporary_path, estimand="ATE", quick_sample=False,
+                    model_fingerprint="testfingerprint",
+                    sensitivity_fingerprint="sensitivityfingerprint",
                 )
                 sample_store = ate.CheckpointStore(
-                    quick_sample=True,
-                    fingerprint="testfingerprint",
+                    temporary_path, estimand="ATE", quick_sample=True,
+                    model_fingerprint="testfingerprint",
+                    sensitivity_fingerprint="sensitivityfingerprint",
                 )
 
                 self.assertEqual(
