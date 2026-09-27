@@ -3,11 +3,82 @@
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 
-from provenance import build_checkpoint_provenance
+import _ate_impl as ate
+import _att_impl as att
+import _provenance
+from _provenance import build_checkpoint_provenance
 
 
 class CheckpointProvenanceTests(unittest.TestCase):
+    def test_model_provenance_tracks_shared_workflow_helpers(self):
+        expected = {
+            "analysis_data",
+            "cross_fitting",
+            "shared_engine",
+            "checkpoint_io",
+        }
+        for module in (ate, att):
+            with self.subTest(module=module.__name__):
+                _, details = module.checkpoint_provenance()
+                self.assertTrue(expected.issubset(details["files"]))
+                for name in expected:
+                    self.assertEqual(details["files"][name]["status"], "present")
+
+    def test_sensitivity_helper_change_invalidates_only_sensitivity_fingerprint(self):
+        builder = getattr(_provenance, "build_sensitivity_provenance", None)
+        self.assertTrue(callable(builder), "sensitivity provenance builder is missing")
+        with tempfile.TemporaryDirectory() as directory:
+            helper = Path(directory) / "sensitivity_scale.py"
+            helper.write_text("formula = 'old'", encoding="utf-8")
+            model_fingerprint = "a" * 64
+            first, first_details = builder(2, model_fingerprint, {"scale": helper})
+            helper.write_text("formula = 'new'", encoding="utf-8")
+            second, second_details = builder(2, model_fingerprint, {"scale": helper})
+
+        self.assertEqual(
+            first_details["settings"]["model_checkpoint_fingerprint"],
+            model_fingerprint,
+        )
+        self.assertEqual(model_fingerprint, "a" * 64)
+        self.assertNotEqual(first, second)
+        self.assertNotEqual(
+            first_details["files"]["scale"]["sha256"],
+            second_details["files"]["scale"]["sha256"],
+        )
+
+    def test_sensitivity_checkpoints_use_their_own_fingerprint(self):
+        for module in (ate, att):
+            with self.subTest(module=module.__name__), tempfile.TemporaryDirectory() as directory:
+                with (
+                    patch.object(module, "CHECKPOINT_DIR", Path(directory)),
+                    patch.object(
+                        module,
+                        "sensitivity_checkpoint_provenance",
+                        return_value=("s" * 64, {}),
+                        create=True,
+                    ),
+                ):
+                    store = module.CheckpointStore(
+                        quick_sample=False,
+                        fingerprint="model_fingerprint",
+                    )
+                    sensitivity_path = store.path("sensitivity_groups_v1_example")
+                    model_path = store.path("HH_example_IRM_clustered")
+
+            self.assertIn("_ssssssssssss", sensitivity_path.name)
+            self.assertIn("_model_finger", model_path.name)
+
+    def test_worker_configuration_invalidates_model_checkpoint(self):
+        for module in (ate, att):
+            with self.subTest(module=module.__name__):
+                with patch.object(module, "LEARNER_JOBS", 2):
+                    two_workers, _ = module.checkpoint_provenance()
+                with patch.object(module, "LEARNER_JOBS", 3):
+                    three_workers, _ = module.checkpoint_provenance()
+                self.assertNotEqual(two_workers, three_workers)
+
     def test_fingerprint_is_stable_for_identical_inputs(self):
         with tempfile.TemporaryDirectory() as directory:
             data = Path(directory) / "data.dta"

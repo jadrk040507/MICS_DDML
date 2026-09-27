@@ -214,37 +214,18 @@ def make_frame(
     )
 
 
-# SECTION 3 OF 10 — HOW THE SUPER LEARNER COMBINES PREDICTIONS
-# Purpose: estimate nonnegative learner weights that add to one, separately for
-# outcome regression and treatment classification. Normally do not edit here.
+# SECTION 3 OF 10 — SHARED PREDICTION ENGINE
+# Prediction and inference code shared by both estimands lives in
+# _ddml_engine.py. The candidate models used by this workflow are listed next.
+# =============================================================================
+
+# =============================================================================
+# SECTION 4 OF 10 — CANDIDATE LEARNERS USED BY THE SUPER LEARNER
+# Edit here only when intentionally changing the nuisance-learning library.
 # =============================================================================
 
 # -----------------------------------------------------------------------------
-# 3A. Shared prediction engine
-# -----------------------------------------------------------------------------
-
-def make_frame(
-    data,
-    outcome,
-    treatment,
-    child=False,
-    cluster=True,
-    allowed_levels=None,
-):
-    """Build the encoded model frame using the shared data preparation."""
-    return _analysis_data.make_frame(
-        data,
-        outcome,
-        treatment,
-        controls_for_sample(child),
-        categorical_controls=(
-            "windex5", "WS1_g", "wq27_decile", "Toilet", "country_cat",
-        ),
-        cluster=cluster,
-        allowed_levels=allowed_levels,
-    )
-
-# # 4A. Learner libraries used in the complete analysis
+# 4A. Learner libraries used in the complete analysis
 # -----------------------------------------------------------------------------
 
 REGRESSORS = [
@@ -318,6 +299,9 @@ def checkpoint_provenance():
     files = {
         "analysis_script": Path(__file__),
         "shared_engine": Path(__file__).with_name("_ddml_engine.py"),
+        "analysis_data": Path(__file__).with_name("_analysis_data.py"),
+        "cross_fitting": Path(__file__).with_name("_cross_fitting.py"),
+        "checkpoint_io": Path(__file__).with_name("_checkpoint_io.py"),
         "environment_lock": PROJECT / "uv.lock",
         "project_config": PROJECT / "pyproject.toml",
     }
