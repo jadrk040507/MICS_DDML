@@ -1,9 +1,12 @@
 """Tests for the single public analysis command."""
 
 import unittest
+
+import numpy as np
 from unittest.mock import patch
 
 try:
+    import analysis
     import run_analysis
 except ModuleNotFoundError as error:
     if error.name != "run_analysis":
@@ -40,6 +43,24 @@ class RunAnalysisModeTests(unittest.TestCase):
             self.calls_for(estimand="att", stage="gate"),
             [("ATT", "clustered", "gate")],
         )
+
+    def test_each_execution_uses_the_analysis_seed_and_restores_state(self):
+        draws = []
+
+        def record_draw(*_args, **_kwargs):
+            draws.append(np.random.random())
+
+        np.random.seed(999)
+        before = np.random.get_state()
+        with patch("analysis.run_analysis", side_effect=record_draw):
+            run_analysis.run(estimand="both", stage="gate")
+        after = np.random.get_state()
+
+        expected = np.random.RandomState(analysis.SEED).random_sample()
+        self.assertEqual(draws, [expected, expected])
+        self.assertEqual(before[0], after[0])
+        np.testing.assert_array_equal(before[1], after[1])
+        self.assertEqual(before[2:], after[2:])
 
     def test_invalid_cli_value_exits_with_argparse_error(self):
         with self.assertRaises(SystemExit) as raised:

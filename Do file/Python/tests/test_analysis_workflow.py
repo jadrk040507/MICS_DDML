@@ -29,6 +29,13 @@ class AnalysisWorkflowTests(unittest.TestCase):
         self.assertIsNone(result)
         make_weights.assert_not_called()
 
+    def test_fold_modes_keep_canonical_estimand_output_directory(self):
+        for estimand in ("ate", "att"):
+            spec = analysis.get_analysis_spec(estimand)
+            for fold_mode in ("clustered", "unclustered", "both"):
+                with analysis.use_analysis_spec(spec, fold_mode):
+                    self.assertEqual(analysis.OUTPUT_DIR, spec.output_dir)
+
     def test_analysis_rejects_unknown_estimand(self):
         with self.assertRaisesRegex(ValueError, "estimand"):
             analysis.get_analysis_spec("atu")

@@ -32,6 +32,7 @@ def run(fold_mode="clustered", estimand="both", stage="all"):
         for selected_estimand in estimands:
             random_state = np.random.get_state()
             try:
+                np.random.seed(analysis.SEED)
                 analysis.run_analysis(
                     analysis.get_analysis_spec(selected_estimand),
                     fold_mode=selected_fold,

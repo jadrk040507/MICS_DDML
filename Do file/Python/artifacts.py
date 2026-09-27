@@ -235,10 +235,6 @@ class CheckpointStore:
                 model._models = None
 
         path = self.path(name)
-        if name.startswith("sensitivity_"):
-            atomic_dump(value, path)
-        else:
-            path.parent.mkdir(parents=True, exist_ok=True)
-            joblib.dump(value, path, compress=3)
+        atomic_dump(value, path)
         print(f"Saved checkpoint: {path.name}", flush=True)
         return value

@@ -173,10 +173,7 @@ def _set_active_spec(spec, fold_mode="both"):
     ESTIMAND = spec.estimand
     ATT_TARGET_LEVELS = spec.target_levels
     PROPENSITY_CLIP = spec.propensity_clip
-    suffix = ""
-    if fold_mode in {"clustered", "unclustered"}:
-        suffix = "_C" if fold_mode == "clustered" else "_U"
-    OUTPUT_DIR = spec.output_dir.with_name(spec.output_dir.name + suffix)
+    OUTPUT_DIR = spec.output_dir
     CHECKPOINT_DIR = OUTPUT_DIR / "checkpoints"
     TABLE_DIR = OUTPUT_DIR
     CHECKPOINT_DIR.mkdir(parents=True, exist_ok=True)

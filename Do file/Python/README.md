@@ -45,9 +45,10 @@ ATE and ATT use the same orchestration. Their differences are explicit in `Analy
 
 Inputs are read from `Data/3. Final/`. Outputs are written to:
 
-- `Output/ATE_C/` and `Output/ATT_C/` for clustered runs;
-- `Output/ATE_U/` and `Output/ATT_U/` for unclustered runs;
-- `Output/ATE/` and `Output/ATT/` when code explicitly requests both fold modes together.
+- `Output/ATE/` for ATE results;
+- `Output/ATT/` for ATT results.
+
+Fold mode is recorded in checkpoint and result specifications inside those canonical estimand directories.
 
 Each output directory contains result files, LaTeX tables, a manifest, and `checkpoints/`. Existing output and checkpoint files are not deleted by the workflow.
 

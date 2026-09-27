@@ -3,6 +3,7 @@
 from pathlib import Path
 import tempfile
 import unittest
+from unittest import mock
 
 import joblib
 
@@ -47,6 +48,14 @@ class ArtifactTests(unittest.TestCase):
             expected = root / "current" / f"model_{'m' * 12}.pkl"
             self.assertEqual(store.path("model"), expected)
             self.assertFalse(store.exists("model"))
+
+    def test_model_checkpoint_save_is_atomic(self):
+        with tempfile.TemporaryDirectory() as directory:
+            store = self.make_store(Path(directory))
+            with mock.patch("artifacts.atomic_dump") as dump:
+                value = {"model": "small"}
+                store.save("model", value)
+            dump.assert_called_once_with(value, store.path("model"))
 
     def test_corrupt_current_checkpoint_raises_load_error(self):
         with tempfile.TemporaryDirectory() as directory:
