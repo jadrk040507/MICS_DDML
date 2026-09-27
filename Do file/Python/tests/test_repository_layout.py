@@ -26,8 +26,7 @@ class RepositoryLayoutTests(unittest.TestCase):
             "_joint_inference.py",
             "ddml.py",
             "artifacts.py",
-            "_sensitivity_groups.py",
-            "_sensitivity_scale.py",
+            "reporting.py",
         ]
         relative = [str(path.relative_to(PROJECT)) for path in map(PYTHON_DIR.joinpath, required)]
         result = subprocess.run(

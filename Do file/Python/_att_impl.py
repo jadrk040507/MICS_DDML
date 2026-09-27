@@ -36,8 +36,7 @@ from sklearn.preprocessing import StandardScaler
 from xgboost import XGBClassifier, XGBRegressor
 
 import ddml
-from _sensitivity_scale import benchmark_diagonal_equivalent
-from _sensitivity_groups import benchmark_groups
+from reporting import benchmark_diagonal_equivalent, benchmark_groups
 from artifacts import (
     CheckpointStore, OutcomeCheckpointBundle, atomic_dump,
     build_checkpoint_provenance, build_sensitivity_provenance,
@@ -292,6 +291,7 @@ def checkpoint_provenance():
         "analysis_script": Path(__file__),
         "ddml": Path(__file__).with_name("ddml.py"),
         "artifacts": Path(__file__).with_name("artifacts.py"),
+        "reporting": Path(__file__).with_name("reporting.py"),
         "environment_lock": PROJECT / "uv.lock",
         "project_config": PROJECT / "pyproject.toml",
     }
@@ -329,8 +329,7 @@ def sensitivity_checkpoint_provenance(model_fingerprint=None):
     helper_dir = Path(__file__).parent
     files = {
         "artifacts": helper_dir / "artifacts.py",
-        "sensitivity_groups": helper_dir / "_sensitivity_groups.py",
-        "sensitivity_scale": helper_dir / "_sensitivity_scale.py",
+        "reporting": helper_dir / "reporting.py",
     }
     return build_sensitivity_provenance(
         CHECKPOINT_SCHEMA_VERSION,
