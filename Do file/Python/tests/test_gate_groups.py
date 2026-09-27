@@ -9,6 +9,7 @@ import pandas as pd
 
 import analysis as ate
 import analysis as att
+import reporting
 
 
 class GateGroupTests(unittest.TestCase):
@@ -61,10 +62,29 @@ class GateGroupTests(unittest.TestCase):
                     self.assertTrue(result.sample_n.eq(n - 1).all())
                     result['source_ecoli_range'] = '0--100'
                     with tempfile.TemporaryDirectory() as directory:
-                        paths = module.create_heterogeneity_comparison_tables(result, directory, 'test_gate', (result.specification.iloc[0],), False)
+                        paths = reporting.create_heterogeneity_comparison_tables(
+                            result, directory, 'test_gate',
+                            (result.specification.iloc[0],), False,
+                            estimand=estimand,
+                            outcome_labels=reporting.OUTCOME_LABELS,
+                        )
                         table = Path(paths[0]).read_text()
                         for label in ('Decile 1', 'No Risk Source', 'Some Risk Source', 'Very High Risk Source'):
                             self.assertIn(label, table)
+
+
+                        published = reporting.write_gate_tables(
+                            result,
+                            fold_mode='clustered' if clustered else 'unclustered',
+                            output_dir=directory,
+                            estimand=estimand,
+                            outcome_labels=reporting.OUTCOME_LABELS,
+                        )
+                        self.assertTrue(published)
+                        self.assertIn(
+                            f'GATE ({estimand.upper()})',
+                            Path(published[0]).read_text(),
+                        )
 
 
 if __name__ == '__main__':
