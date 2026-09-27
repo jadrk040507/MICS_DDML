@@ -31,15 +31,12 @@ from sklearn.exceptions import ConvergenceWarning
 from sklearn.linear_model import (
     LinearRegression, LogisticRegression, Ridge,
 )
-from sklearn.model_selection import (
-    StratifiedGroupKFold,
-    StratifiedKFold,
-)
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from xgboost import XGBClassifier, XGBRegressor
 
 import _analysis_data
+import _cross_fitting
 from _sensitivity_scale import benchmark_diagonal_equivalent
 from _sensitivity_groups import benchmark_groups
 from _checkpoint_io import atomic_dump, valid_sensitivity_rows
@@ -1176,128 +1173,27 @@ def fit_apos(frame, x_columns, outcome):
 # -----------------------------------------------------------------------------
 
 def _validate_splits(splits, target, groups=None):
-    """Reject invalid external or inner sample splits before estimation.
-
-    Parameters
-    ----------
-    splits : list
-        Repetitions containing ``(train_indices, test_indices)`` folds.
-    target : array-like
-        Treatment values used to check support.
-    groups : array-like or None
-        PSU identifiers used to check train/test isolation.
-
-    Returns
-    -------
-    None
-        Raises ``ValueError`` when coverage, support, or isolation fails.
-    """
-
-    expected_levels = np.unique(target)
-    expected_rows = np.arange(len(target))
-    for repetition in splits:
-        tested_rows = np.concatenate([test for _, test in repetition])
-        if not np.array_equal(np.sort(tested_rows), expected_rows):
-            raise ValueError("Test folds do not partition the analysis sample.")
-        for train, test in repetition:
-            if not np.array_equal(np.unique(target[train]), expected_levels):
-                raise ValueError("A training fold is missing a treatment level.")
-            if not np.array_equal(np.unique(target[test]), expected_levels):
-                raise ValueError("A test fold is missing a treatment level.")
-            if groups is not None:
-                overlap = np.intersect1d(groups[train], groups[test])
-                if overlap.size:
-                    raise ValueError("A sampling cluster appears in train and test.")
+    """Keep the existing local helper name for downstream callers."""
+    return _cross_fitting.validate_splits(splits, target, groups)
 
 
 def make_iid_splits(frame, treatment):
-    """Build reproducible observation-level cross-fitting folds.
-
-    Parameters
-    ----------
-    frame : pandas.DataFrame
-        Analysis observations.
-    treatment : str
-        Column whose treatment levels are stratified.
-
-    Returns
-    -------
-    list
-        R repetitions of F train/test index pairs.
-    """
-
-    target = frame[treatment].to_numpy()
-    all_repetitions = []
-    for repetition in range(REPETITIONS):
-        splitter = StratifiedKFold(
-            n_splits=FOLDS,
-            shuffle=True,
-            random_state=SEED + repetition,
-        )
-        splits = list(splitter.split(np.zeros(len(frame)), target))
-        all_repetitions.append(splits)
-
-    _validate_splits(all_repetitions, target)
-    return all_repetitions
+    """Build reproducible observation-level folds with the run settings."""
+    return _cross_fitting.make_iid_splits(
+        frame, treatment, n_folds=FOLDS, repetitions=REPETITIONS, seed=SEED
+    )
 
 
 def make_cluster_splits(frame, treatment):
-    """Build reproducible folds that keep every PSU together.
-
-    Parameters
-    ----------
-    frame : pandas.DataFrame
-        Analysis observations containing ``Cluster_var``.
-    treatment : str
-        Column whose treatment levels are balanced across folds.
-
-    Returns
-    -------
-    list
-        R repetitions of F train/test index pairs with no PSU overlap.
-    """
-
-    groups = frame["Cluster_var"].to_numpy()
-    target = frame[treatment].to_numpy()
-    all_repetitions = []
-
-    for repetition in range(REPETITIONS):
-        splitter = StratifiedGroupKFold(
-            n_splits=FOLDS,
-            shuffle=True,
-            random_state=SEED + repetition,
-        )
-        splits = list(splitter.split(np.zeros(len(frame)), target, groups))
-        all_repetitions.append(splits)
-
-    _validate_splits(all_repetitions, target, groups=groups)
-    return all_repetitions
+    """Build reproducible PSU-level folds with the run settings."""
+    return _cross_fitting.make_cluster_splits(
+        frame, treatment, n_folds=FOLDS, repetitions=REPETITIONS, seed=SEED
+    )
 
 
 def make_cluster_split_metadata(frame, splits):
-    """Translate observation folds into DoubleML's PSU-fold metadata.
-
-    Parameters
-    ----------
-    frame : pandas.DataFrame
-        Analysis frame containing ``Cluster_var``.
-    splits : list
-        Observation-index folds from ``make_cluster_splits``.
-
-    Returns
-    -------
-    list
-        Matching train/test PSU-label arrays for every fold and repetition.
-    """
-
-    groups = frame["Cluster_var"].to_numpy()
-    return [
-        [
-            ([np.unique(groups[train])], [np.unique(groups[test])])
-            for train, test in repetition
-        ]
-        for repetition in splits
-    ]
+    """Build DoubleML's cluster-fold metadata for an observation split."""
+    return _cross_fitting.make_cluster_split_metadata(frame, splits)
 
 
 # -----------------------------------------------------------------------------
