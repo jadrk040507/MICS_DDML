@@ -6,8 +6,8 @@ import numpy as np
 import pandas as pd
 from scipy.stats import norm
 
-from ate import cluster_robust_framework_inference
-from compare_ate_att_atu import aggregate_repetitions
+from _ate_impl import cluster_robust_framework_inference
+from _compare_ate_att_atu import aggregate_repetitions
 
 
 class AggregateEffectsTests(unittest.TestCase):

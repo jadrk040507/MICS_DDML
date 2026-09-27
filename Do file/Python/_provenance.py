@@ -59,3 +59,18 @@ def build_checkpoint_provenance(schema_version, files, settings):
         ensure_ascii=True,
     ).encode("utf-8")
     return sha256(serialized).hexdigest(), payload
+
+
+def build_sensitivity_provenance(schema_version, model_fingerprint, files, settings=None):
+    """Fingerprint sensitivity checkpoints separately from fitted models."""
+
+    sensitivity_settings = {
+        "model_checkpoint_fingerprint": str(model_fingerprint),
+    }
+    if settings:
+        sensitivity_settings.update(settings)
+    return build_checkpoint_provenance(
+        schema_version,
+        files,
+        sensitivity_settings,
+    )
