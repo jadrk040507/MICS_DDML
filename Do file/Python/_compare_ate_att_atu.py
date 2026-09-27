@@ -12,51 +12,24 @@ import pandas as pd
 from scipy.stats import norm
 
 # Old project checkpoints reference these two classes in __main__.
-from ate import ConvexRegressor, ConvexClassifier, ANALYSIS_SPECS, PROJECT
+import _ate_impl as ate
+import _att_impl as att
+from _ate_impl import ConvexRegressor, ConvexClassifier, ANALYSIS_SPECS, PROJECT
 
 
-def joint_effects(a, t, influence_a, influence_t, treated, clusters):
-    """Delta-method joint inference for (ATE, ATT, ATU, p), one repetition.
-
-    ATU=(ATE-p*ATT)/(1-p). Its influence includes estimated p and all
-    covariances. Treatment effects retain the treated-minus-untreated sign.
-    """
-    d = np.asarray(treated, dtype=float)
-    ia, it = np.asarray(influence_a), np.asarray(influence_t)
-    if d.ndim != 1 or not np.isin(d, [0, 1]).all():
-        raise ValueError('Treatment must be a binary vector')
-    if ia.shape != d.shape or it.shape != d.shape or len(clusters) != len(d):
-        raise ValueError('Influences, treatment, and clusters must align')
-    if not np.isfinite(np.r_[a, t, ia, it]).all() or pd.isna(clusters).any():
-        raise ValueError('Nonfinite inputs or missing clusters')
-    p = d.mean()
-    if not 0 < p < 1:
-        raise ValueError('Both target populations are required')
-    u = (a - p * t) / (1 - p)
-    ip = d - p
-    iu = (ia - p * it + (u - t) * ip) / (1 - p)
-    influence = np.column_stack([ia, it, iu, ip])
-    codes, labels = pd.factorize(clusters)
-    if len(labels) < 2:
-        raise ValueError('At least two PSUs required')
-    sums = np.zeros((len(labels), 4))
-    np.add.at(sums, codes, influence)
-    covariance = sums.T @ sums / len(d)**2
-    return np.array([a, t, u, p]), covariance
-
-
-def linear_combination(theta, covariance, weights):
-    """Fixed-coefficient contrast with its full joint covariance."""
-    w = np.asarray(weights, dtype=float)
-    if w.shape != (4,) or not np.isfinite(w).all():
-        raise ValueError('Provide four finite weights: ATE, ATT, ATU, p')
-    return float(w @ theta), float(np.sqrt(max(0., w @ covariance @ w)))
+from _joint_inference import joint_effects, linear_combination
 
 
 def load_pair(dataset, outcome, method, prefix):
-    name = f'{prefix}{dataset}_{outcome}_{method}.pkl'
-    paths = [PROJECT / 'Output' / 'ATE' / 'checkpoints' / name,
-             PROJECT / 'Output' / 'ATT' / 'checkpoints' / name]
+    name = f'{prefix}{dataset}_{outcome}_{method}'
+    fold_mode = 'unclustered' if method.endswith('_iid') else 'clustered'
+    paths = []
+    for module, estimand in ((ate, 'ATE'), (att, 'ATT')):
+        # The new workflow stores C and U checkpoints separately. A module's
+        # default OUTPUT_DIR points to the old legacy folder until main() runs.
+        module.OUTPUT_DIR = PROJECT / 'Output' / f'{estimand}_{"U" if fold_mode == "unclustered" else "C"}'
+        module.CHECKPOINT_DIR = module.OUTPUT_DIR / 'checkpoints'
+        paths.append(module.CheckpointStore(False).path(name))
     models = []
     for path in paths:
         m = joblib.load(path)
@@ -90,9 +63,12 @@ def run_scope(selected_countries=False):
                  else data['WQ15_g'].ne(0).to_numpy())
             for j, contrast in enumerate(fa.treatment_names):
                 for r in range(fa.all_thetas.shape[1]):
+                    # DoubleMLFramework.scaled_psi = psi / E[psi_deriv].
+                    # The influence function for an estimated root is its
+                    # NEGATIVE. Its sign matters for covariance with D - p.
                     theta, cov = joint_effects(
                         fa.all_thetas[j, r], ft.all_thetas[j, r],
-                        fa.scaled_psi[:, j, r], ft.scaled_psi[:, j, r],
+                        -fa.scaled_psi[:, j, r], -ft.scaled_psi[:, j, r],
                         d, data['Cluster_var'].to_numpy() if not method.endswith('_iid') else np.arange(len(d)))
                     a, t, u, p = theta
                     meta = dict(dataset=dataset, outcome=outcome, method=method,

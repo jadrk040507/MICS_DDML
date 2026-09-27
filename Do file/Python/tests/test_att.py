@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 from sklearn.linear_model import LinearRegression, LogisticRegression
 
-import att
+import _att_impl as att
 
 
 class AttPipelineTests(unittest.TestCase):

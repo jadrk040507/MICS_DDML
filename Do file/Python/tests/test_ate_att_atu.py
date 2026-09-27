@@ -1,7 +1,7 @@
 """Checks for the estimated-share delta method and joint contrasts."""
 import unittest
 import numpy as np
-from compare_ate_att_atu import joint_effects, linear_combination
+from _compare_ate_att_atu import joint_effects, linear_combination
 
 
 class JointEffectsTests(unittest.TestCase):
