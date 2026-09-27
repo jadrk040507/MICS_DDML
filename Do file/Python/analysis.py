@@ -1,16 +1,8 @@
 """Unified ATE and ATT workflow for the MICS DoubleML analysis.
 
-Run this workflow through ``run_analysis.py``; this module contains the
-shared ATE and ATT implementation.
-The target population is households reporting any water treatment. The
-binary IRM uses DoubleML's ``ATTE`` score; multivalued APOS contrasts use
-the equivalent weighted-APO score for that same treated population.
-
-Read the numbered section map below to find analysis choices, data
-preparation, model fitting, inference, sensitivity analysis, or GATE results.
-The shared prediction engine is in ``ddml.py``. Results and
-checkpoints go to ``Output/ATT_C/`` (clustered folds) or ``Output/ATT_U/``
-(unclustered folds).
+Run it through ``run_analysis.py``. Statistical mechanics live in ``ddml.py``;
+checkpoint persistence lives in ``artifacts.py``; sensitivity definitions and
+reporting boundaries live in ``reporting.py``.
 """
 
 from contextlib import contextmanager
@@ -65,36 +57,7 @@ warnings.filterwarnings("ignore", category=ConvergenceWarning)
 
 
 # =============================================================================
-# FILE MAP — READ THIS FIRST
-# =============================================================================
-# This script keeps the ATT-specific workflow together. Shared statistical
-# machinery lives in ddml.py. Search for "SECTION" to navigate here.
-#
-#   SECTION 1  Choices, folds, repetitions, paths, and analysis list
-#   SECTION 2  Controls, complete-case sample, and model-ready data
-#   SECTION 3  Boundary with the shared Super Learner engine
-#   SECTION 4  Which candidate learners enter the Super Learner
-#   SECTION 5  Reusable checkpoints, folds, fitting, and inference machinery
-#   SECTION 6  The four estimations run for each outcome
-#   SECTION 7  Main results and LaTeX publication tables
-#   SECTION 8  Sensitivity analysis and its step-by-step checkpoints
-#   SECTION 9  GATE heterogeneity analysis by E. coli decile and risk group
-#   SECTION 10 Complete run order and manifest
-#
-# If you only want to change or run the analysis, start with SECTIONS 1 and 10.
-# SECTIONS 3–5 connect the ATT workflow to shared technical machinery.
-#
-# CLUSTERED versus UNCLUSTERED, in one glance:
-#   - Both use the same prespecified controls from SECTION 2.
-#   - Clustered specifications keep each PSU together when creating folds and
-#     calculate PSU-cluster-robust standard errors.
-#   - Unclustered specifications create ordinary observation-level folds and
-#     use the ordinary DoubleML standard errors.
-# =============================================================================
-
-
-# =============================================================================
-# SECTION 1 OF 10 — ANALYSIS CHOICES AND PATHS
+# RUN SETTINGS AND ANALYSIS INPUTS
 # Edit here: run size, fold counts, treatment levels, files, and outcomes.
 # =============================================================================
 
@@ -222,7 +185,7 @@ SELECTED_COUNTRIES = {
 
 
 # =============================================================================
-# SECTION 2 OF 10 — VARIABLES AND DATA PREPARATION
+# CONTROLS AND MODEL FRAMES
 # Purpose: define controls once and construct the exact rows/columns modeled.
 # Key guarantee: clustered and unclustered models use the same substantive
 # controls; a PSU code used internally for grouped fitting is never a control.
@@ -270,13 +233,13 @@ def make_frame(
     )
 
 
-# SECTION 3 OF 10 — SHARED PREDICTION ENGINE
+# SHARED STATISTICAL ENGINE
 # Prediction and inference code shared by both estimands lives in
 # ddml.py. The candidate models used by this workflow are listed next.
 # =============================================================================
 
 # =============================================================================
-# SECTION 4 OF 10 — CANDIDATE LEARNERS USED BY THE SUPER LEARNER
+# SUPER LEARNER CANDIDATES
 # Edit here only when intentionally changing the nuisance-learning library.
 # =============================================================================
 
@@ -407,7 +370,7 @@ def sensitivity_checkpoint_provenance(model_fingerprint=None):
 
 
 def make_checkpoint_store(quick_sample):
-    """Build a current-only ATT checkpoint store."""
+    """Build the current-fingerprint checkpoint store."""
     model_fingerprint, _ = checkpoint_provenance()
     sensitivity_fingerprint, _ = sensitivity_checkpoint_provenance(
         model_fingerprint
@@ -423,18 +386,12 @@ def make_checkpoint_store(quick_sample):
 
 
 # =============================================================================
-# SECTION 5 OF 10 — REUSABLE ANALYSIS BUILDING BLOCKS
-# Purpose: checkpoints, clustered inference, GATE projection, model fitting,
-# and folds used by the readable workflow in SECTION 6. Normally do not edit.
+# ESTIMATION HELPERS
+# Checkpoint naming, fitted-model strategies, and fold construction.
 # =============================================================================
 
 # -----------------------------------------------------------------------------
-# 5A. Checkpoint files and resume logic
-# One place controls full versus sample filenames and prevents overwriting.
-# -----------------------------------------------------------------------------
-
-# -----------------------------------------------------------------------------
-# 5B. Result filenames and saved Super Learner weights
+# Result filenames and saved Super Learner weights
 # These helpers organize outputs; they do not estimate coefficients or SEs.
 # -----------------------------------------------------------------------------
 
@@ -463,35 +420,7 @@ def result_pickle_path(name, quick_sample, file_suffix=""):
 
 
 # -----------------------------------------------------------------------------
-# 5C. PSU-clustered sandwich SEs and repeated-cross-fitting inference
-# Statistical order: observation scores -> PSU sums -> SE for each repetition
-# -> one reported SE/p-value/confidence interval across repetitions.
-# -----------------------------------------------------------------------------
-
-
-
-
-
-
-
-# -----------------------------------------------------------------------------
-# 5D. Clustered score framework used by the sensitivity analysis
-# This repackages already estimated scores by PSU; it does not refit the model.
-# -----------------------------------------------------------------------------
-
-
-
-
-
-# -----------------------------------------------------------------------------
-# 5E. GATE projection from an already fitted treatment contrast
-# The fitted model is reused for projections onto prespecified groups.
-# -----------------------------------------------------------------------------
-
-
-
-# -----------------------------------------------------------------------------
-# 5E-ATT. Conditional ATT by group from weighted orthogonal scores
+# ATT GATE from weighted orthogonal scores
 # A weighted ATT score cannot be sent through the unweighted ATE projection
 # above. Group effects are ratios of weighted score sums instead.
 # -----------------------------------------------------------------------------
@@ -699,7 +628,7 @@ def estimate_att_gate_from_scores(
 
 
 # -----------------------------------------------------------------------------
-# 5F. ATT weights and basic DoubleML fitting functions
+# ATT weights and DoubleML fitting
 # IRM handles binary any-treatment; weighted APOS handles multiple levels.
 # -----------------------------------------------------------------------------
 
@@ -840,7 +769,7 @@ def fit_irm(frame, x_columns, outcome, treatment, clustered):
 
 
 def fit_apos(frame, x_columns, outcome):
-    """Fit ATT-weighted APOS with ordinary observation-level folds.
+    """Fit APOS with optional ATT weights and ordinary folds.
 
     Parameters
     ----------
@@ -900,7 +829,7 @@ def fit_apos(frame, x_columns, outcome):
 
 
 # -----------------------------------------------------------------------------
-# 5G. Build and validate cross-fitting folds
+# Cross-fitting folds
 # Audit here when checking PSU isolation, FOLDS, or REPETITIONS.
 # -----------------------------------------------------------------------------
 
@@ -929,12 +858,12 @@ def make_cluster_split_metadata(frame, splits):
 
 
 # -----------------------------------------------------------------------------
-# 5H. Fit clustered APOS and standardize result summaries
+# Clustered APOS and result summaries
 # Clustered inference is inserted into the APOS summary before tables are made.
 # -----------------------------------------------------------------------------
 
 def fit_apos_clustered(frame, x_columns, outcome, splits):
-    """Fit ATT-weighted APOS using folds that keep each PSU together.
+    """Fit APOS with optional ATT weights and PSU-preserving folds.
 
     Clustered inference is calculated later from the saved model's contrast,
     in ``cluster_robust_framework_inference``. Keeping fitting and inference
@@ -1035,7 +964,7 @@ def _add_metadata(summary, dataset, outcome, method, specification, n, clusters)
 
 
 # =============================================================================
-# SECTION 6 OF 10 — LOAD DATA AND ESTIMATE IRM/APOS
+# OUTCOME ESTIMATION
 # This is the main economist-facing estimation workflow. For every outcome it
 # visibly runs: IRM clustered, IRM unclustered, APOS clustered, APOS unclustered.
 # =============================================================================
@@ -1493,7 +1422,7 @@ def estimate_all_models(
 
 
 # =============================================================================
-# SECTION 7 OF 10 — MAIN RESULTS AND PUBLICATION TABLES
+# MAIN RESULTS AND TABLES
 # Purpose: turn completed model summaries into result pickles and LaTeX tables.
 # Important: table stars use the final aggregated p-value, not pval_rep.
 # =============================================================================
@@ -1726,7 +1655,7 @@ def write_publication_table(
 
     # IRM coefficient and descriptive statistics.
     lines.append(
-        rf"\multicolumn{{{number_of_columns + 1}}}{{l}}{{\textit{{IRM--ATT}}}} \\"
+        rf"\multicolumn{{{number_of_columns + 1}}}{{l}}{{\textit{{{'IRM--ATT' if _ACTIVE_SPEC.uses_att_weights else 'IRM'}}}}} \\"
     )
     irm_cells = [
         result_cell(column["irm_summary"], 0)
@@ -1766,7 +1695,7 @@ def write_publication_table(
     lines.append(r"\midrule")
     lines.append(
         rf"\multicolumn{{{number_of_columns + 1}}}{{l}}"
-        r"{\textit{Weighted APOS--ATT}} \\"
+        rf"{{\textit{{{'Weighted APOS--ATT' if _ACTIVE_SPEC.uses_att_weights else 'APOS'}}}}} \\"
     )
     reported_treatments = [
         "Boiling",
@@ -1824,21 +1753,29 @@ def write_publication_table(
         show_once_per_outcome(clusters),
     ))
 
+    estimand_note = (
+        r"folds. IRM uses the ATTE score. Weighted APOS effects compare "
+        r"treatment levels 1--3 with level 0 in the population of households "
+        r"that use any water treatment. "
+        if _ACTIVE_SPEC.uses_att_weights
+        else r"folds. APOS effects compare treatment levels 1--3 with level 0. "
+    )
+    notes = (
+        r"\begin{minipage}{\linewidth}\scriptsize \textit{Notes:} "
+        r"Cells report coefficients with significance stars and standard "
+        r"errors in parentheses. Clustered specifications use cluster-level "
+        r"sample splitting; ordinary specifications use observation-level "
+        + estimand_note
+        + f"Cross-fitting uses {folds} folds and {repetitions} repetitions. "
+        + r"$^{***}p<0.01$, $^{**}p<0.05$, $^{*}p<0.1$."
+        + r"\end{minipage}"
+    )
     lines.extend([
         r"\hline\hline",
         r"\end{tabular}",
         r"\end{adjustbox}",
         r"\par\vspace{3pt}",
-        r"\begin{minipage}{\linewidth}\scriptsize \textit{Notes:} "
-        r"Cells report coefficients with significance stars and standard "
-        r"errors in parentheses. Clustered specifications use cluster-level "
-        r"sample splitting; ordinary specifications use observation-level "
-        r"folds. IRM uses the ATTE score. Weighted APOS effects compare "
-        r"treatment levels 1--3 with level 0 in the population of households "
-        r"that use any water treatment. "
-        rf"Cross-fitting uses {folds} folds and {repetitions} repetitions. "
-        r"$^{***}p<0.01$, $^{**}p<0.05$, $^{*}p<0.1$."
-        r"\end{minipage}",
+        notes,
         r"\end{table}",
     ])
 
@@ -2026,13 +1963,19 @@ def save_main_results_and_tables(
 
     outcomes = ["SomeRiskHome", "VeryHighRiskHome", "diarrhea"]
 
+    caption_base = (
+        "Water-treatment effects on treated households"
+        if _ACTIVE_SPEC.uses_att_weights
+        else "Stacked water-treatment effects"
+    )
+
     # Main table: only the preferred clustered specification.
     write_publication_table(
         TABLE_DIR,
         estimates,
         outcomes,
         f"table_water_treatment_main{file_suffix}.tex",
-        f"Water-treatment effects on treated households{caption_suffix}",
+        f"{caption_base}{caption_suffix}",
         f"tab:water-treatment-main{file_suffix.replace('_', '-')}",
         REPORTED_LEVELS,
         FOLDS,
@@ -2047,8 +1990,7 @@ def save_main_results_and_tables(
             estimates,
             outcomes,
             f"table_water_treatment_appendix{file_suffix}.tex",
-            "Water-treatment effects on treated households: clustered and "
-            "ordinary folds"
+            f"{caption_base}: clustered and ordinary folds"
             f"{caption_suffix}",
             f"tab:water-treatment-appendix{file_suffix.replace('_', '-')}",
             REPORTED_LEVELS,
@@ -2069,7 +2011,7 @@ def save_main_results_and_tables(
 
 
 # =============================================================================
-# SECTION 8 OF 10 — SENSITIVITY ANALYSIS
+# SENSITIVITY ANALYSIS
 # Purpose: benchmark omitted-confounding strength and report RV/RV-alpha.
 # Runtime note: every method/specification benchmark may refit nuisance models,
 # so each completed block is checkpointed immediately and can be resumed.
@@ -2524,7 +2466,7 @@ def run_sensitivity_analysis(estimates, quick_sample, fold_mode="both"):
 
 
 # =============================================================================
-# SECTION 9 OF 10 — HETEROGENEITY BY E. COLI DECILE AND RISK (GATE)
+# GATE HETEROGENEITY
 # Purpose: project the fitted orthogonal signal onto initial-contamination
 # deciles and risk categories and compare clustered with unclustered specifications.
 # =============================================================================
@@ -2847,21 +2789,23 @@ def create_heterogeneity_comparison_tables(
                 " Weighted-score $R^2$ is descriptive; it is not a "
                 "causal-model $R^2$."
             )
-        lines.extend([
-            r"\bottomrule",
-            r"\end{tabular}",
-            r"\end{adjustbox}",
-            r"\par\vspace{3pt}",
+        gate_notes = (
             r"\begin{minipage}{\linewidth}\footnotesize \textit{Notes:} "
-            r"Coefficient rows report group-specific ATT estimates with "
-            r"significance "
-            r"stars; the following rows report standard errors. "
+            + f"Coefficient rows report group-specific {ESTIMAND} estimates "
+            + r"with significance stars; the following rows report standard errors. "
             + fold_note
             + r_squared_note
             + " Source-water E. coli ranges are measured in CFU/100 mL; "
             + "the upper group includes the top-coded value above 100."
             + " The heterogeneity analysis is exploratory."
-            + r"\end{minipage}",
+            + r"\end{minipage}"
+        )
+        lines.extend([
+            r"\bottomrule",
+            r"\end{tabular}",
+            r"\end{adjustbox}",
+            r"\par\vspace{3pt}",
+            gate_notes,
             r"\end{table}",
             r"\end{landscape}",
         ])
@@ -2974,7 +2918,7 @@ def gate_for_group(
     clustered,
     group,
 ):
-    """Calculate group-specific IRM and APOS ATTs for one specification.
+    """Calculate group-specific IRM and APOS effects for one specification.
 
     Parameters
     ----------
@@ -3160,7 +3104,7 @@ def write_gate_tables(gate_results, fold_mode="both"):
 
 
 def run_gate_analysis(estimates, quick_sample, fold_mode="both"):
-    """Run all group-specific ATT estimations and write result/table files.
+    """Run all group-specific estimations and write result/table files.
 
     Parameters
     ----------
@@ -3242,7 +3186,7 @@ def run_gate_analysis(estimates, quick_sample, fold_mode="both"):
 
 
 # =============================================================================
-# SECTION 10 OF 10 — COMPLETE RUN ORDER AND MANIFEST
+# RUN ORDER AND MANIFEST
 # Read main() below for the shortest end-to-end description of the script.
 # =============================================================================
 
@@ -3260,7 +3204,7 @@ def write_manifest():
     Returns
     -------
     None
-        Writes ``Output/ATT/manifest.json``.
+        Writes the active estimand manifest.
     """
 
     checkpoint_fingerprint, checkpoint_details = checkpoint_provenance()
