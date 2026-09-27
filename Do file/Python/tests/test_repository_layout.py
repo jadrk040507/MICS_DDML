@@ -12,21 +12,11 @@ PROJECT = PYTHON_DIR.parents[1]
 class RepositoryLayoutTests(unittest.TestCase):
     def test_documented_workflow_files_are_tracked(self):
         required = [
-            "01_run_analysis.py",
-            "02_ate_c.py",
-            "03_att_c.py",
-            "04_sensitivity_c.py",
-            "05_gate_c.py",
-            "06_ate_u.py",
-            "07_att_u.py",
-            "08_sensitivity_u.py",
-            "09_gate_u.py",
-            "_analysis_runner.py",
-            "_compare_ate_att_atu.py",
-            "_joint_inference.py",
+            "run_analysis.py",
+            "analysis.py",
             "ddml.py",
-            "artifacts.py",
             "reporting.py",
+            "artifacts.py",
         ]
         relative = [str(path.relative_to(PROJECT)) for path in map(PYTHON_DIR.joinpath, required)]
         result = subprocess.run(

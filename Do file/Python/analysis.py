@@ -1,7 +1,7 @@
-"""ATT workflow for the MICS DoubleML analysis.
+"""Unified ATE and ATT workflow for the MICS DoubleML analysis.
 
-Run this analysis through ``01_run_analysis.py`` or the numbered stage
-scripts; this module is the implementation imported by those entry points.
+Run this workflow through ``run_analysis.py``; this module contains the
+shared ATE and ATT implementation.
 The target population is households reporting any water treatment. The
 binary IRM uses DoubleML's ``ATTE`` score; multivalued APOS contrasts use
 the equivalent weighted-APO score for that same treated population.
