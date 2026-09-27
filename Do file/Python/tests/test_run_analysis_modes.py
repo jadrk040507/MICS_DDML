@@ -1,46 +1,72 @@
-import sys
-import types
+"""Tests for the single public analysis command."""
+
 import unittest
-from unittest.mock import patch
 
 import numpy as np
-import pandas as pd
-from doubleml import DoubleMLBLP
+from unittest.mock import patch
 
-import _analysis_runner as run_analysis
+try:
+    import analysis
+    import run_analysis
+except ModuleNotFoundError as error:
+    if error.name != "run_analysis":
+        raise
+    run_analysis = None
 
 
-class RunAnalysisModesTest(unittest.TestCase):
-    def test_default_runs_only_clustered_stages_in_order(self):
-        calls = []
-        modules = {
-            name: types.SimpleNamespace(
-                SEED=42,
-                main=lambda name=name, **kw: calls.append((name, kw)),
-            )
-            for name in ("_ate_impl", "_att_impl")
-        }
-        with patch.dict(sys.modules, modules):
-            run_analysis.run()
-        self.assertEqual(calls, [
-            ("_ate_impl", {"fold_mode": "clustered", "stage": "effects"}),
-            ("_att_impl", {"fold_mode": "clustered", "stage": "effects"}),
-            ("_ate_impl", {"fold_mode": "clustered", "stage": "sensitivity"}),
-            ("_att_impl", {"fold_mode": "clustered", "stage": "sensitivity"}),
-            ("_ate_impl", {"fold_mode": "clustered", "stage": "gate"}),
-            ("_att_impl", {"fold_mode": "clustered", "stage": "gate"}),
-        ])
+class RunAnalysisModeTests(unittest.TestCase):
+    def calls_for(self, *args, **kwargs):
+        with patch("analysis.run_analysis") as execute:
+            run_analysis.run(*args, **kwargs)
+        return [
+            (call.args[0].estimand, call.kwargs["fold_mode"], call.kwargs["stage"])
+            for call in execute.call_args_list
+        ]
 
-    def test_unclustered_does_not_call_clustered(self):
-        calls = []
-        modules = {
-            name: types.SimpleNamespace(
-                SEED=42,
-                main=lambda name=name, **kw: calls.append((name, kw)),
-            )
-            for name in ("_ate_impl", "_att_impl")
-        }
-        with patch.dict(sys.modules, modules):
-            run_analysis.run("unclustered")
-        self.assertEqual(len(calls), 6)
-        self.assertTrue(all(kw["fold_mode"] == "unclustered" for _, kw in calls))
+    def test_default_runs_clustered_ate_then_att_in_stage_order(self):
+        self.assertEqual(
+            self.calls_for(),
+            [("ATE", "clustered", "all"), ("ATT", "clustered", "all")],
+        )
+
+    def test_all_expands_clustered_before_unclustered(self):
+        self.assertEqual(
+            self.calls_for("all", estimand="ate", stage="effects"),
+            [
+                ("ATE", "clustered", "effects"),
+                ("ATE", "unclustered", "effects"),
+            ],
+        )
+
+    def test_estimand_and_stage_filters(self):
+        self.assertEqual(
+            self.calls_for(estimand="att", stage="gate"),
+            [("ATT", "clustered", "gate")],
+        )
+
+    def test_each_execution_uses_the_analysis_seed_and_restores_state(self):
+        draws = []
+
+        def record_draw(*_args, **_kwargs):
+            draws.append(np.random.random())
+
+        np.random.seed(999)
+        before = np.random.get_state()
+        with patch("analysis.run_analysis", side_effect=record_draw):
+            run_analysis.run(estimand="both", stage="gate")
+        after = np.random.get_state()
+
+        expected = np.random.RandomState(analysis.SEED).random_sample()
+        self.assertEqual(draws, [expected, expected])
+        self.assertEqual(before[0], after[0])
+        np.testing.assert_array_equal(before[1], after[1])
+        self.assertEqual(before[2:], after[2:])
+
+    def test_invalid_cli_value_exits_with_argparse_error(self):
+        with self.assertRaises(SystemExit) as raised:
+            run_analysis.main(["invalid"])
+        self.assertEqual(raised.exception.code, 2)
+
+
+if __name__ == "__main__":
+    unittest.main()

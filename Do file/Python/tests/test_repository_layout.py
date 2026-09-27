@@ -1,42 +1,46 @@
-"""The documented Python workflow must be complete in a fresh checkout."""
+"""The Python workflow must be complete and minimal in a fresh checkout."""
 
+import importlib
 from pathlib import Path
-import subprocess
 import unittest
 
 
 PYTHON_DIR = Path(__file__).resolve().parents[1]
-PROJECT = PYTHON_DIR.parents[1]
+ACTIVE_MODULES = {
+    "run_analysis.py",
+    "analysis.py",
+    "ddml.py",
+    "reporting.py",
+    "artifacts.py",
+}
+REMOVED_NAMES = (
+    "_ate_impl",
+    "_att_impl",
+    "_analysis_runner",
+    "_model_checkpoint_compat",
+    "_compare_ate_att_atu",
+    "_joint_inference",
+)
 
 
 class RepositoryLayoutTests(unittest.TestCase):
-    def test_documented_workflow_files_are_tracked(self):
-        required = [
-            "01_run_analysis.py",
-            "02_ate_c.py",
-            "03_att_c.py",
-            "04_sensitivity_c.py",
-            "05_gate_c.py",
-            "06_ate_u.py",
-            "07_att_u.py",
-            "08_sensitivity_u.py",
-            "09_gate_u.py",
-            "_analysis_runner.py",
-            "_compare_ate_att_atu.py",
-            "_joint_inference.py",
-            "_model_checkpoint_compat.py",
-            "_provenance.py",
-            "_sensitivity_groups.py",
-            "_sensitivity_scale.py",
-        ]
-        relative = [str(path.relative_to(PROJECT)) for path in map(PYTHON_DIR.joinpath, required)]
-        result = subprocess.run(
-            ["git", "ls-files", "--error-unmatch", "--", *relative],
-            cwd=PROJECT,
-            capture_output=True,
-            text=True,
+    def test_python_root_contains_only_five_active_modules(self):
+        self.assertEqual(
+            {path.name for path in PYTHON_DIR.glob("*.py")},
+            ACTIVE_MODULES,
         )
-        self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_no_active_import_mentions_removed_modules(self):
+        for filename in ACTIVE_MODULES:
+            source = (PYTHON_DIR / filename).read_text(encoding="utf-8")
+            for removed in REMOVED_NAMES:
+                with self.subTest(filename=filename, removed=removed):
+                    self.assertNotIn(removed, source)
+
+    def test_clean_import_of_all_active_modules(self):
+        for filename in sorted(ACTIVE_MODULES):
+            with self.subTest(filename=filename):
+                importlib.import_module(filename.removesuffix(".py"))
 
 
 if __name__ == "__main__":

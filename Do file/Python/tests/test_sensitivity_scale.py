@@ -1,7 +1,7 @@
 import math
 import unittest
 
-from _sensitivity_scale import diagonal_equivalent
+from reporting import diagonal_equivalent
 
 
 class DiagonalEquivalentTest(unittest.TestCase):

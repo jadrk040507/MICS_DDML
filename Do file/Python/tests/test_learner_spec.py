@@ -1,8 +1,8 @@
 """The production learner library keeps nested tuning bounded."""
 import unittest
 
-import _ate_impl as ate
-import _att_impl as att
+import analysis as ate
+import analysis as att
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from xgboost import XGBClassifier, XGBRegressor
 

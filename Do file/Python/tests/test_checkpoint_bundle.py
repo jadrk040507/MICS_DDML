@@ -7,14 +7,14 @@ from unittest.mock import patch
 import joblib
 import pandas as pd
 
-from _checkpoint_io import OutcomeCheckpointBundle
+from artifacts import OutcomeCheckpointBundle
 
 
 class OutcomeCheckpointBundleTests(unittest.TestCase):
     def test_bundle_returns_table_frame_without_loading_model(self):
         frame = pd.DataFrame({"y": [1, 2]})
         bundle = OutcomeCheckpointBundle({"irm": Path("missing.pkl")}, {"frame": frame})
-        with patch("_checkpoint_io.joblib.load") as load:
+        with patch("artifacts.joblib.load") as load:
             self.assertIs(bundle["frame"], frame)
         load.assert_not_called()
 

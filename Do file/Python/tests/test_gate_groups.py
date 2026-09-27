@@ -7,8 +7,9 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-import _ate_impl as ate
-import _att_impl as att
+import analysis as ate
+import analysis as att
+import reporting
 
 
 class GateGroupTests(unittest.TestCase):
@@ -32,7 +33,9 @@ class GateGroupTests(unittest.TestCase):
         scores = kept_signal[:, None, None]
         framework = SimpleNamespace(all_thetas=np.zeros((1, 1)), scaled_psi=-scores)
         contrast = SimpleNamespace(all_thetas=np.zeros((3, 1)), scaled_psi=-np.repeat(scores, 3, axis=1))
-        for module in (ate, att):
+        for estimand in ("ate", "att"):
+            module = ate
+            module._set_active_spec(module.get_analysis_spec(estimand))
             sample = module.complete_case_sample(data, 'SomeRiskHome', 'water_treatment', extra_columns=('RiskSource',))
             self.assertEqual(len(sample), n - 1)
             self.assertTrue(pd.isna(sample.RiskSource.iloc[0]))
@@ -42,7 +45,7 @@ class GateGroupTests(unittest.TestCase):
             }) for level in (0, 1, 2, 3)]
             apos = SimpleNamespace(causal_contrast=lambda **kwargs: contrast, modellist=models)
             for clustered in (False, True):
-                with self.subTest(module=module.__name__, clustered=clustered):
+                with self.subTest(estimand=estimand, clustered=clustered):
                     bundle = {'irm_cluster': irm, 'irm_no_cluster': irm, 'apos_cluster': apos, 'apos_no_cluster': apos}
                     rows = module.gate_for_specification(bundle, data, 'HH', 'SomeRiskHome', False, 'clustered_folds' if clustered else 'unclustered', clustered)
                     result = pd.concat(rows, ignore_index=True)
@@ -59,10 +62,29 @@ class GateGroupTests(unittest.TestCase):
                     self.assertTrue(result.sample_n.eq(n - 1).all())
                     result['source_ecoli_range'] = '0--100'
                     with tempfile.TemporaryDirectory() as directory:
-                        paths = module.create_heterogeneity_comparison_tables(result, directory, 'test_gate', (result.specification.iloc[0],), False)
+                        paths = reporting.create_heterogeneity_comparison_tables(
+                            result, directory, 'test_gate',
+                            (result.specification.iloc[0],), False,
+                            estimand=estimand,
+                            outcome_labels=reporting.OUTCOME_LABELS,
+                        )
                         table = Path(paths[0]).read_text()
                         for label in ('Decile 1', 'No Risk Source', 'Some Risk Source', 'Very High Risk Source'):
                             self.assertIn(label, table)
+
+
+                        published = reporting.write_gate_tables(
+                            result,
+                            fold_mode='clustered' if clustered else 'unclustered',
+                            output_dir=directory,
+                            estimand=estimand,
+                            outcome_labels=reporting.OUTCOME_LABELS,
+                        )
+                        self.assertTrue(published)
+                        self.assertIn(
+                            f'GATE ({estimand.upper()})',
+                            Path(published[0]).read_text(),
+                        )
 
 
 if __name__ == '__main__':

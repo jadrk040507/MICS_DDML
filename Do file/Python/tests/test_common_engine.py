@@ -9,9 +9,9 @@ from types import SimpleNamespace
 from unittest.mock import patch
 from sklearn.linear_model import LinearRegression, LogisticRegression, Ridge
 
-import _ate_impl as ate
-import _att_impl as att
-import _ddml_engine as ddml_engine
+import analysis as ate
+import analysis as att
+import ddml as ddml_engine
 
 
 class CommonEngineEquivalenceTests(unittest.TestCase):
