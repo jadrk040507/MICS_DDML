@@ -39,7 +39,9 @@ import _analysis_data
 import _cross_fitting
 from _sensitivity_scale import benchmark_diagonal_equivalent
 from _sensitivity_groups import benchmark_groups
-from _checkpoint_io import atomic_dump, valid_sensitivity_rows
+from _checkpoint_io import (
+    OutcomeCheckpointBundle, atomic_dump, valid_sensitivity_rows,
+)
 from _model_checkpoint_compat import legacy_model_path
 import sys
 import _ddml_engine as _legacy_ddml_engine
@@ -515,56 +517,6 @@ class CheckpointStore:
         return value
 
 
-class OutcomeCheckpointBundle:
-    """Expose saved models and lightweight table frames through one mapping.
-
-    Parameters
-    ----------
-    paths : dict[str, pathlib.Path]
-        Checkpoint paths for ``irm_cluster``, ``irm_no_cluster``,
-        ``apos_cluster``, and ``apos_no_cluster``.
-    table_frames : dict[str, pandas.DataFrame]
-        Small in-memory frames used for sample statistics and PSU identifiers.
-
-    Notes
-    -----
-    Accessing ``bundle[key]`` loads that model only for the current task. This
-    avoids keeping several large DoubleML models in memory simultaneously.
-    """
-
-    def __init__(self, paths, table_frames):
-        """Store checkpoint paths and already-small table data.
-
-        Parameters
-        ----------
-        paths, table_frames : dict
-            Model paths and in-memory descriptive frames documented above.
-        """
-
-        self.paths = paths
-        self.table_frames = table_frames
-
-    def __getitem__(self, key):
-        """Return a table frame immediately or load the requested model.
-
-        Parameters
-        ----------
-        key : str
-            Model or table-frame name.
-
-        Returns
-        -------
-        object
-            DataFrame or fitted DoubleML model associated with ``key``.
-        """
-
-        if key in self.table_frames:
-            return self.table_frames[key]
-
-        saved_object = joblib.load(self.paths[key])
-        if key == "apos_cluster":
-            return saved_object["model"]
-        return saved_object
 
 
 # -----------------------------------------------------------------------------
